@@ -1,0 +1,50 @@
+name: barber_app
+description: A modern barbershop registration and booking app with smooth animations.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
+  intl: ^0.19.0
+  shared_preferences: ^2.2.2
+  shimmer: ^3.0.0
+  cached_network_image: ^3.3.0
+  web: ^1.1.0
+  http: ^1.2.0
+  flutter_map: ^8.3.0
+  latlong2: ^0.9.1
+  proj4dart: ^3.0.0
+  geolocator: ^13.0.0
+  image_picker: ^1.1.2
+  url_launcher: ^6.3.0
+  supabase_flutter: ^2.8.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  image: ^4.3.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/tiles/
+
+flutter_launcher_icons:
+  android: "ic_launcher"
+  image_path: "assets/icon/icon_full.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/icon/icon_full.png"
+    background_color: "#2E8BFF"
+    theme_color: "#2E8BFF"

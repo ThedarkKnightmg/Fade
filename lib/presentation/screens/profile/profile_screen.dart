@@ -1,0 +1,635 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+
+import '../../../core/animations/app_animations.dart';
+import '../../../core/i18n/app_language.dart';
+import '../../../core/i18n/strings.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../data/app_state.dart';
+import '../../../data/models/booking.dart';
+import '../../widgets/paper_kit.dart';
+import '../../widgets/primary_button.dart';
+import '../../widgets/referral_card.dart';
+import '../atelier/atelier_screen.dart';
+import '../auth/login_screen.dart';
+import '../booking/booking_flow_screen.dart';
+import '../settings/settings_screen.dart';
+
+/// Profile — your card in the shop's notebook.
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
+  void _openSettings(BuildContext context) {
+    Navigator.of(context).push(
+      FadeThroughPageRoute(child: const SettingsScreen()),
+    );
+  }
+
+  Future<void> _pickLanguage(BuildContext context) async {
+    final p = Paper.of(context);
+    final picked = await showModalBottomSheet<AppLanguage>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: p.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 14),
+              Text(L.language, style: AppTypography.h3(context)),
+              const SizedBox(height: 8),
+              for (final l in AppLanguage.values)
+                ListTile(
+                  title: Text(l.label, style: AppTypography.h4(context)),
+                  trailing: l == AppState.instance.language
+                      ? const Icon(Icons.check_rounded,
+                          color: AppColors.accent)
+                      : null,
+                  onTap: () => Navigator.pop(ctx, l),
+                ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (picked != null) AppState.instance.setLanguage(picked);
+  }
+
+  void _shareInvite(BuildContext context) {
+    final code =
+        'CUT-${(AppState.instance.user.hashCode.abs() % 9000) + 1000}';
+    Clipboard.setData(ClipboardData(
+      text: 'Book your next cut on Fade with my code $code — '
+          'we both move up to VIP. ✂️',
+    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(L.inviteCopiedFriend)),
+    );
+  }
+
+  void _signOut(BuildContext context) async {
+    final p = Paper.of(context);
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: p.bg,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(L.signOutQ, style: AppTypography.h2(ctx)),
+              const SizedBox(height: 6),
+              Text(
+                L.signOutBody,
+                style: AppTypography.bodySmall(ctx),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: PrimaryButton(
+                      label: L.stay,
+                      height: 50,
+                      style: PrimaryButtonStyle.ghost,
+                      onPressed: () => Navigator.pop(ctx, false),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: PrimaryButton(
+                      label: L.signOut,
+                      height: 50,
+                      onPressed: () => Navigator.pop(ctx, true),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (yes == true && context.mounted) {
+      AppState.instance.signOut();
+      Navigator.of(context).pushAndRemoveUntil(
+        FadeThroughPageRoute(child: const LoginScreen()),
+        (route) => false,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return AnimatedBuilder(
+      animation: AppState.instance,
+      builder: (context, _) {
+        final state = AppState.instance;
+        final user = state.user;
+        final my = state.myBarber;
+        final cuts = state.totalCuts;
+        final streak = 2 + (cuts % 7); // weeks on the books — "keep it lit"
+        final upcoming =
+            state.bookingsByStatus(BookingStatus.upcoming).length +
+                state.bookingsByStatus(BookingStatus.requested).length;
+
+        return SafeArea(
+          bottom: false,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 150),
+            children: [
+              // Header — the rust circle says hi.
+              FadeSlideIn(
+                child: Row(
+                  children: [
+                    if (AppState.instance.userPhoto != null)
+                      Container(
+                        width: 74,
+                        height: 74,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                            image: MemoryImage(AppState.instance.userPhoto!),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      )
+                    else
+                      InitialAvatar(
+                        name: user.fullName,
+                        size: 74,
+                        color: AppColors.accentDeep,
+                      ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(user.fullName,
+                              style: AppTypography.h1(context)),
+                          const SizedBox(height: 2),
+                          Text(user.email,
+                              style: AppTypography.bodySmall(context)),
+                        ],
+                      ),
+                    ),
+                    CircleBtn(
+                      icon: Icons.settings_rounded,
+                      size: 44,
+                      onTap: () => _openSettings(context),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              // VIP progress — dark panel with a lime bar.
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 60),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: p.panel,
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            L.vipClub,
+                            style: GoogleFonts.nunito(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: p.panelText,
+                              height: 1.1,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE0683C)
+                                  .withValues(alpha: 0.20),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              '🔥 $streak wks',
+                              style: GoogleFonts.nunito(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                color: const Color(0xFFE0683C),
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          MiniPill('$cuts / 16 CUTS'),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(99),
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: (cuts / 16).clamp(0, 1)),
+                          duration: const Duration(milliseconds: 900),
+                          curve: Curves.easeOutCubic,
+                          builder: (_, t, __) => LinearProgressIndicator(
+                            value: t,
+                            minHeight: 10,
+                            backgroundColor: p.panelField,
+                            valueColor: const AlwaysStoppedAnimation(
+                                AppColors.accent),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        cuts >= 16
+                            ? 'VIP unlocked — priority booking & top-of-list slots 🎉'
+                            : '${16 - cuts} cuts to VIP — priority booking & recognition',
+                        style: GoogleFonts.nunito(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: p.panelTextDim,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Stats row.
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 120),
+                child: Row(
+                  children: [
+                    _Stat(value: '$cuts', label: L.cutsLabel),
+                    const SizedBox(width: 10),
+                    _Stat(value: '$upcoming', label: L.upcomingLabel),
+                    const SizedBox(width: 10),
+                    _Stat(
+                      value: '${state.favouriteShopIds.length}',
+                      label: L.savedShops,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              // My barber note.
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 180),
+                child: my == null
+                    ? PaperCard(
+                        radius: 26,
+                        padding: const EdgeInsets.all(16),
+                        onTap: () => Navigator.of(context).push(
+                          FadeThroughPageRoute(
+                              child: const AtelierScreen()),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                L.noBarberPinned,
+                                style:
+                                    AppTypography.scribble(context, size: 21),
+                              ),
+                            ),
+                            const ArrowCircle(size: 40),
+                          ],
+                        ),
+                      )
+                    : PaperCard(
+                        radius: 26,
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                InitialAvatar(
+                                  name: my.barber.name,
+                                  size: 52,
+                                  index: my.barber.id.hashCode,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              my.barber.name,
+                                              overflow:
+                                                  TextOverflow.ellipsis,
+                                              style: AppTypography.h4(
+                                                  context),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          const MiniPill('MY BARBER'),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'at ${my.shop.name}',
+                                        style: AppTypography.bodySmall(
+                                            context),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: PrimaryButton(
+                                    label: L.bookAgain,
+                                    height: 48,
+                                    onPressed: () =>
+                                        Navigator.of(context).push(
+                                      FadeThroughPageRoute(
+                                        child: BookingFlowScreen(
+                                          shop: my.shop,
+                                          preselectedBarberId:
+                                              my.barber.id,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: PrimaryButton(
+                                    label: L.changeWord,
+                                    height: 48,
+                                    style: PrimaryButtonStyle.ghost,
+                                    onPressed: () =>
+                                        Navigator.of(context).push(
+                                      FadeThroughPageRoute(
+                                          child: const AtelierScreen()),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+              const SizedBox(height: 12),
+              // Invite / referral — relocated from Home to keep Home uncluttered.
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 210),
+                child: ReferralCard(onShare: () => _shareInvite(context)),
+              ),
+              const SizedBox(height: 12),
+              // Settings note.
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 220),
+                child: PaperCard(
+                  radius: 24,
+                  padding: const EdgeInsets.all(16),
+                  onTap: () => state.setRole(AppRole.barber),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.content_cut_rounded,
+                            color: AppColors.accent),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(L.barberModeTitle,
+                                style: AppTypography.h4(context)),
+                            const SizedBox(height: 1),
+                            Text(L.barberModeSub,
+                                style: AppTypography.bodySmall(context)),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_ios_rounded,
+                          size: 14, color: p.textTertiary),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 240),
+                child: PaperCard(
+                  radius: 26,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 6),
+                  child: Column(
+                    children: [
+                      _SettingRow(
+                        icon: Icons.dark_mode_rounded,
+                        label: L.darkMode,
+                        trailing: _LimeSwitch(
+                          value: state.isDarkMode,
+                          onChanged: (_) => state.toggleDarkMode(),
+                        ),
+                      ),
+                      Divider(color: p.divider),
+                      _SettingRow(
+                        icon: Icons.notifications_rounded,
+                        label: L.reminders,
+                        trailing: _LimeSwitch(
+                          value: state.remindersOn,
+                          onChanged: state.setReminders,
+                        ),
+                      ),
+                      Divider(color: p.divider),
+                      _SettingRow(
+                        icon: Icons.language_rounded,
+                        label: L.language,
+                        trailing: MiniPill(state.language.code,
+                            style: MiniPillStyle.ghost),
+                        onTap: () => _pickLanguage(context),
+                      ),
+                      Divider(color: p.divider),
+                      _SettingRow(
+                        icon: Icons.logout_rounded,
+                        label: L.signOut,
+                        labelColor: AppColors.red,
+                        onTap: () => _signOut(context),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 300),
+                child: Center(
+                  child: Text(
+                    '${L.memberSincePrefix} ${DateFormat('MMMM yyyy').format(state.memberSince)} · ${L.madeWith}',
+                    style: AppTypography.scribble(context, size: 19)
+                        .copyWith(color: p.textTertiary),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Expanded(
+      child: PaperCard(
+        radius: 22,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: GoogleFonts.nunito(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: p.text,
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(label, style: AppTypography.caption(context)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingRow extends StatelessWidget {
+  const _SettingRow({
+    required this.icon,
+    required this.label,
+    this.trailing,
+    this.onTap,
+    this.labelColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final Color? labelColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: p.cardAlt,
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: p.border),
+              ),
+              child: Icon(icon,
+                  size: 18, color: labelColor ?? p.textSecondary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTypography.h4(context)
+                    .copyWith(color: labelColor),
+              ),
+            ),
+            trailing ??
+                Icon(Icons.chevron_right_rounded,
+                    size: 20, color: p.textTertiary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Pill switch with a lime thumb — ink track when on.
+class _LimeSwitch extends StatelessWidget {
+  const _LimeSwitch({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        width: 52,
+        height: 30,
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: value ? p.action : p.cardAlt,
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(
+            color: value ? Colors.transparent : p.border,
+          ),
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutBack,
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: value ? AppColors.accent : p.textTertiary,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
