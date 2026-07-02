@@ -1,8 +1,89 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+
+/// A frosted **liquid-glass** panel: a blurred translucent surface with a bright
+/// glass edge and a soft cool shadow, so it reads as pale glass floating over
+/// the blue canvas. Optionally [tint]ed (e.g. blue for a hero). Use it where a
+/// surface should feel airy/glassy rather than moulded clay.
+class GlassPanel extends StatelessWidget {
+  const GlassPanel({
+    super.key,
+    required this.child,
+    this.radius = 22,
+    this.padding = const EdgeInsets.all(16),
+    this.tint,
+    this.blur = 16,
+    this.fillAlpha = 0.55,
+    this.onTap,
+  });
+
+  final Widget child;
+  final double radius;
+  final EdgeInsetsGeometry padding;
+
+  /// Glass colour — defaults to white (pale frost). Pass an accent for a tinted
+  /// hero panel.
+  final Color? tint;
+  final double blur;
+  final double fillAlpha;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final base = tint ?? Colors.white;
+    final topA = p.isDark ? 0.16 : (fillAlpha + 0.14).clamp(0.0, 1.0);
+    final botA = p.isDark ? 0.09 : fillAlpha;
+    final panel = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        // Cool, soft glass shadow — light and close, not a heavy clay drop.
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x22244A9E),
+              blurRadius: 22,
+              spreadRadius: -8,
+              offset: Offset(0, 12)),
+          BoxShadow(
+              color: Color(0x0F000000), blurRadius: 5, offset: Offset(0, 2)),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(radius),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  base.withValues(alpha: topA),
+                  base.withValues(alpha: botA),
+                ],
+              ),
+              // A bright glass rim — lighter at the top-left.
+              border: Border.all(
+                color: Colors.white.withValues(alpha: p.isDark ? 0.10 : 0.6),
+                width: 1,
+              ),
+            ),
+            child: Padding(padding: padding, child: child),
+          ),
+        ),
+      ),
+    );
+    if (onTap == null) return panel;
+    return GestureDetector(
+        onTap: onTap, behavior: HitTestBehavior.opaque, child: panel);
+  }
+}
 
 // ============================================================
 // The paper kit — small signature pieces shared by every screen.
@@ -20,10 +101,10 @@ BoxDecoration clayDecoration(
   double depth = 1,
 }) {
   final base = color ?? p.card;
-  // Three-stop diagonal: a lit top-left sheen, the body, and a soft bottom-right
-  // lowlight — the extra stop is what reads as a rounded, moulded clay surface.
-  final sheen = Color.lerp(base, Colors.white, p.isDark ? 0.05 : 0.22)!;
-  final lowlight = Color.lerp(base, Colors.black, p.isDark ? 0.11 : 0.05)!;
+  // Light three-stop diagonal: a gentle top-left gloss, the body, a faint
+  // bottom-right shade — enough to read as a soft raised panel, not heavy clay.
+  final sheen = Color.lerp(base, Colors.white, p.isDark ? 0.05 : 0.10)!;
+  final lowlight = Color.lerp(base, Colors.black, p.isDark ? 0.09 : 0.03)!;
   return BoxDecoration(
     gradient: LinearGradient(
       begin: Alignment.topLeft,
@@ -35,19 +116,19 @@ BoxDecoration clayDecoration(
     border:
         borderColor != null ? Border.all(color: borderColor, width: 1.4) : null,
     boxShadow: [
-      // Big soft ambient shadow (bottom-right) — the clay pop.
+      // Soft ambient shadow (bottom-right) — a light, close drop, not a fat puff.
       BoxShadow(
         color: p.shadow,
-        blurRadius: 34 * depth,
-        spreadRadius: -3,
-        offset: Offset(0, 15 * depth),
+        blurRadius: 22 * depth,
+        spreadRadius: -6,
+        offset: Offset(0, 8 * depth),
       ),
-      // Top-left highlight — lit from above, a touch stronger so it feels puffy.
+      // Faint top-left highlight — a whisper of lift.
       BoxShadow(
         color: p.clayLight,
-        blurRadius: 18,
-        spreadRadius: -1,
-        offset: const Offset(-8, -9),
+        blurRadius: 10,
+        spreadRadius: -2,
+        offset: const Offset(-3, -4),
       ),
     ],
   );

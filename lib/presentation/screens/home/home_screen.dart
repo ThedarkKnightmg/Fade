@@ -374,11 +374,9 @@ class HomeScreen extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    // Clean near-white page (Yandex-style) in light mode so the
-                    // gray tiles read as distinct boxes; keep the navy in dark.
-                    colors: p.isDark
-                        ? [p.bgGradientTop, p.bg]
-                        : const [Color(0xFFFFFFFF), Color(0xFFF4F6FA)],
+                    // Soft blue airy canvas from the palette in both modes —
+                    // cards float bright-white on top of it.
+                    colors: [p.bgGradientTop, p.bg],
                     stops: const [0, 0.5],
                   ),
                 ),

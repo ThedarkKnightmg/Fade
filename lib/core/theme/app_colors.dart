@@ -130,25 +130,27 @@ class PaperPalette {
   // Claymorphism (default look) — a soft periwinkle canvas with puffy,
   // near-white surfaces that pop via a big ambient shadow + a white highlight.
   static const PaperPalette light = PaperPalette(
-    bg: Color(0xFFE7EAF6),
-    bgGradientTop: Color(0xFFF0F2FB),
-    bgGradientBottom: Color(0xFFE3E7F4),
-    card: Color(0xFFF6F8FE),
-    cardAlt: Color(0xFFEDF0FA),
-    text: Color(0xFF2B3352),
-    textSecondary: Color(0xFF6B7595),
-    textTertiary: Color(0xFFA3ABC6),
-    border: Color(0xFFE0E5F2),
-    divider: Color(0xFFE7EAF4),
+    // Soft blue airy canvas (was heavier periwinkle) — the reference look.
+    bg: Color(0xFFE7F0FE),
+    bgGradientTop: Color(0xFFF4F9FF),
+    bgGradientBottom: Color(0xFFDDEAFE),
+    card: Color(0xFFFCFDFF),
+    cardAlt: Color(0xFFEEF3FC),
+    text: Color(0xFF23304F),
+    textSecondary: Color(0xFF67728F),
+    textTertiary: Color(0xFFA1ACC5),
+    border: Color(0xFFDDE6F4),
+    divider: Color(0xFFE6ECF6),
     action: AppColors.accent,
     onAction: Colors.white,
     panel: Color(0xFF161F3A),
     panelField: Color(0xFF24304E),
     panelText: Color(0xFFEEF3FB),
     panelTextDim: Color(0x8CB7C3D6),
-    // Soft indigo ambient shadow + a bright top-left highlight = clay.
-    shadow: Color(0x422A3C78),
-    clayLight: Color(0xFFFFFFFF),
+    // Softer, lighter clay: a gentle blue ambient + a restrained highlight, so
+    // cards read as lightly raised glass rather than heavy inflated clay.
+    shadow: Color(0x1F3E63B0),
+    clayLight: Color(0x99FFFFFF),
     isDark: false,
   );
 }
