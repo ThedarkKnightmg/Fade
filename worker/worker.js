@@ -51,6 +51,17 @@ export default {
       );
     }
 
+    // Abuse guard: bail out early on oversized bodies so a huge base64 blob
+    // can't burn the whole CPU/memory budget on decode. A 768px PNG is well
+    // under 1.6M base64 chars; 6 MB total is a generous ceiling.
+    const contentLength = Number(request.headers.get("content-length") || 0);
+    if (contentLength > 6_000_000) {
+      return Response.json(
+        { error: "payload too large" },
+        { status: 413, headers: CORS }
+      );
+    }
+
     try {
       const body = await request.json();
       if (!body || !body.image) {
@@ -59,12 +70,26 @@ export default {
           { status: 400, headers: CORS }
         );
       }
+      // Reject oversized image/mask strings before the expensive decode.
+      const MAX_B64 = 1_800_000; // ~1.3 MB binary
+      if (
+        String(body.image).length > MAX_B64 ||
+        (body.mask && String(body.mask).length > MAX_B64)
+      ) {
+        return Response.json(
+          { error: "image too large" },
+          { status: 413, headers: CORS }
+        );
+      }
 
-      const prompt =
+      // Cap the prompt so the endpoint can't be turned into a free, arbitrary
+      // image generator with attacker-chosen text.
+      const prompt = (
         (body.prompt && String(body.prompt)) ||
         `a realistic ${body.color || ""} ${
           body.hairstyle || "haircut"
-        }, natural hair texture`;
+        }, natural hair texture`
+      ).slice(0, 500);
 
       const inputs = {
         prompt,

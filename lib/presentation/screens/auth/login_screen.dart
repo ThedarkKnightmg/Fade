@@ -20,8 +20,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _email = TextEditingController(text: 'alex.johnson@example.com');
-  final _password = TextEditingController(text: 'password');
+  // No prefilled credentials — a real-looking password in the field trips
+  // secret scanners and leaks into screenshots/recordings.
+  final _email = TextEditingController();
+  final _password = TextEditingController();
   bool _obscure = true;
   bool _submitted = false;
 

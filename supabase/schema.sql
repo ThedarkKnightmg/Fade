@@ -187,9 +187,44 @@ create policy "bookings_read" on public.bookings for select using (
 );
 create policy "bookings_client_insert" on public.bookings for insert
   with check (client_id = auth.uid());
-create policy "bookings_update" on public.bookings for update using (
-  client_id = auth.uid() or barber_id in (select public.my_barber_ids())
-);
+
+-- SECURITY: the blanket update policy below is intentionally NOT used, because
+-- `for update using (party)` lets EITHER party rewrite ANY column — price,
+-- start_at, status='no_show'/'completed', even client_id/barber_id — straight
+-- from supabase-js. That would let a barber fake a no-show to dodge commission
+-- (and strike the client's ban counter) or a client zero out the price /
+-- self-complete. Instead:
+--   • allow only the two safe, self-serve transitions via narrow policies, and
+--   • force every money/trust transition (completed, no_show, price changes)
+--     through SECURITY DEFINER RPCs that enforce the rules server-side
+--     (time window, QR check-in state) and write the wallet ledger.
+-- A BEFORE UPDATE trigger makes the immutable columns immutable no matter what.
+
+-- Client may only cancel their OWN still-pending/confirmed booking.
+create policy "bookings_client_cancel" on public.bookings for update
+  using (client_id = auth.uid() and status in ('requested','confirmed'))
+  with check (client_id = auth.uid() and status = 'cancelled');
+
+-- Barber may only accept/decline a request assigned to them.
+create policy "bookings_barber_respond" on public.bookings for update
+  using (barber_id in (select public.my_barber_ids()) and status = 'requested')
+  with check (barber_id in (select public.my_barber_ids())
+              and status in ('confirmed','declined'));
+
+-- Reject any change to money/identity/time columns from a direct UPDATE.
+-- (completed/no_show + commission are set only by SECURITY DEFINER RPCs.)
+create or replace function public.bookings_guard_immutable()
+returns trigger language plpgsql as $$
+begin
+  if new.price      is distinct from old.price      then raise exception 'price is immutable'; end if;
+  if new.client_id  is distinct from old.client_id  then raise exception 'client_id is immutable'; end if;
+  if new.barber_id  is distinct from old.barber_id  then raise exception 'barber_id is immutable'; end if;
+  if new.start_at   is distinct from old.start_at   then raise exception 'start_at is immutable'; end if;
+  return new;
+end $$;
+drop trigger if exists trg_bookings_guard on public.bookings;
+create trigger trg_bookings_guard before update on public.bookings
+  for each row execute function public.bookings_guard_immutable();
 
 -- Messages: only the two parties on the booking.
 create policy "messages_read" on public.messages for select using (

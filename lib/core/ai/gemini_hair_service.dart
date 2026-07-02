@@ -82,9 +82,11 @@ class GeminiHairService {
     String key,
     String prompt,
   ) async {
+    // Key goes in the x-goog-api-key HEADER, never the URL query string —
+    // query strings get logged by proxies/crash-reporters far more than headers.
     final uri = Uri.parse(
       'https://generativelanguage.googleapis.com/v1beta/models/'
-      '$model:generateContent?key=$key',
+      '$model:generateContent',
     );
     final body = <String, dynamic>{
       'contents': [
@@ -108,7 +110,10 @@ class GeminiHairService {
     final res = await _client
         .post(
           uri,
-          headers: const {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': key,
+          },
           body: jsonEncode(body),
         )
         .timeout(_timeout);
