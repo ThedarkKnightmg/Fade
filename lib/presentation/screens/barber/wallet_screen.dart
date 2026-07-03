@@ -1,4 +1,4 @@
-import 'dart:ui' show ImageFilter;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,10 +15,11 @@ import '../../../data/models/wallet_tx.dart';
 import '../../widgets/paper_kit.dart';
 import 'vip_boost_screen.dart';
 
-/// The barber's prepaid wallet — the monetization "vending machine", styled as
-/// airy **liquid glass** with subtle skeuomorphic depth: a frosted deep-blue
-/// balance hero with an embossed count-up, tactile raised top-up keys, and
-/// frosted tier + ledger cards floating on the soft-blue canvas.
+/// The barber's prepaid wallet — the monetization "vending machine", led by a
+/// skeuomorphic **coin wallet**: three metallic coins (Credit · Earned · Tips)
+/// poke out of a stitched teal→blue leather pocket that shows the embossed
+/// total, a weekly-gain delta, and Top-up · Activity · Boost. Below it float
+/// the frosted fee-tier slats, the white-label QR card, and the ledger.
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
 
@@ -51,8 +52,11 @@ class WalletScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 60),
-                  child:
-                      _BalanceHero(walletSom: s.walletSom, onTopUp: s.topUpWallet),
+                  child: _WalletPocket(
+                    onBoost: () => Navigator.of(context).push(
+                      FadeThroughPageRoute(child: const VipBoostScreen()),
+                    ),
+                  ),
                 ),
                 if (s.walletLow) ...[
                   const SizedBox(height: 12),
@@ -133,195 +137,531 @@ class _Tier {
   final String badge;
 }
 
-/// Frosted deep-blue glass with a drifting sheen + an embossed count-up balance.
-class _BalanceHero extends StatelessWidget {
-  const _BalanceHero({required this.walletSom, required this.onTopUp});
-  final int walletSom;
-  final void Function(int) onTopUp;
+// ═══════════════════════════════════════════════════════════════════════
+//  The skeuomorphic COIN WALLET. Three metallic coins — Credit (gold),
+//  Earned (emerald), Tips (copper) — poke out of the top and tuck behind a
+//  stitched teal→blue leather pocket that shows the embossed total, a
+//  weekly-gain delta, and the Top-up · Activity · Boost actions.
+// ═══════════════════════════════════════════════════════════════════════
+
+class _CoinData {
+  const _CoinData(this.label, this.som, this.metal, this.ink, this.icon);
+  final String label;
+  final int som;
+  final List<Color> metal; // [light, dark]
+  final Color ink; // embossed text / emblem colour
+  final IconData icon;
+}
+
+class _WalletPocket extends StatefulWidget {
+  const _WalletPocket({required this.onBoost});
+  final VoidCallback onBoost;
+
+  @override
+  State<_WalletPocket> createState() => _WalletPocketState();
+}
+
+class _WalletPocketState extends State<_WalletPocket> {
+  bool _hidden = false;
+
+  static const double _coinH = 34;
+  static const double _step = 22; // vertical peek strip per coin
 
   @override
   Widget build(BuildContext context) {
+    final s = AppState.instance;
+    final coins = <_CoinData>[
+      _CoinData(L.coinCredit, s.walletSom,
+          const [Color(0xFFF6DA86), Color(0xFFCB9A2E)], const Color(0xFF5A3D00),
+          Icons.bolt_rounded),
+      _CoinData(L.coinEarned, s.walletEarnedSom,
+          const [Color(0xFF93E3A6), Color(0xFF2E9E58)], const Color(0xFF0B4A28),
+          Icons.content_cut_rounded),
+      _CoinData(L.coinTips, s.walletTipsSom,
+          const [Color(0xFFF3B98A), Color(0xFFC26A2E)], const Color(0xFF5A2A08),
+          Icons.volunteer_activism_rounded),
+    ];
+    final total = s.walletTotalSom;
+    final gain = s.walletWeekGainSom;
+    final base = total - gain;
+    final pct = base <= 0 ? 0.0 : (gain / base * 100);
+    final pocketTop = coins.length * _step;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Coins painted back→front (Credit highest/behind, Tips lowest/front).
+        for (int i = 0; i < coins.length; i++)
+          Positioned(
+            top: i * _step,
+            left: 14,
+            right: 14,
+            child: _WalletCoin(data: coins[i], height: _coinH),
+          ),
+        // The pocket front, painted last so it tucks the coins' lower halves in.
+        Padding(
+          padding: EdgeInsets.only(top: pocketTop),
+          child: _PocketFront(
+            total: total,
+            hidden: _hidden,
+            pct: pct,
+            gain: gain,
+            onHideToggle: () {
+              HapticFeedback.selectionClick();
+              setState(() => _hidden = !_hidden);
+            },
+            onInfo: () => _walletToast(context, L.walletVending),
+            onTopUp: () {
+              HapticFeedback.selectionClick();
+              s.topUpWallet(50000);
+              _walletToast(context, L.topUpAddedToast);
+            },
+            onActivity: () => _walletToast(context, L.walletActivity),
+            onBoost: widget.onBoost,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+void _walletToast(BuildContext context, String msg) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(
+      content: Text(msg),
+      behavior: SnackBarBehavior.floating,
+    ));
+}
+
+/// One metallic coin poking out of the wallet — a reeded-edge medallion with an
+/// embossed emblem, label and amount. Only its top [_step] strip shows.
+class _WalletCoin extends StatelessWidget {
+  const _WalletCoin({required this.data, required this.height});
+  final _CoinData data;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final shadow = [
+      Shadow(color: Colors.white.withValues(alpha: 0.45), offset: const Offset(0, 1)),
+    ];
     return Container(
+      height: height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(11),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: data.metal,
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.45), width: 1),
         boxShadow: [
           BoxShadow(
-            color: AppColors.accent.withValues(alpha: 0.30),
-            blurRadius: 28,
-            spreadRadius: -6,
-            offset: const Offset(0, 16),
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0x66429BFF), Color(0x8C1E5FCC)],
-              ),
-              border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.5), width: 1.2),
-            ),
-            child: Stack(
-              children: [
-                // Light drifting under the glass.
-                Positioned.fill(
-                  child: Breathe(
-                    builder: (context, t) => DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: Alignment(-0.8 + 1.6 * t, -0.9 + 0.5 * t),
-                          radius: 1.1,
-                          colors: [
-                            Colors.white.withValues(alpha: 0.30),
-                            Colors.white.withValues(alpha: 0.0),
-                          ],
-                          stops: const [0.0, 0.6],
-                        ),
-                      ),
-                    ),
+        borderRadius: BorderRadius.circular(11),
+        child: Stack(
+          children: [
+            // Thin specular sheen across the top.
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 9,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.4),
+                      Colors.white.withValues(alpha: 0.0),
+                    ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+              ),
+            ),
+            // Milled (reeded) coin edge — subtle.
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 5,
+              child: CustomPaint(
+                  painter: _MilledEdge(data.ink.withValues(alpha: 0.22))),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 3, 12, 0),
+              child: Row(
+                children: [
+                  // Embossed mini-coin emblem.
+                  Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        center: const Alignment(-0.3, -0.4),
+                        colors: [
+                          Colors.white.withValues(alpha: 0.72),
+                          data.metal.last.withValues(alpha: 0.25),
+                        ],
+                      ),
+                      border: Border.all(
+                          color: data.ink.withValues(alpha: 0.32), width: 1),
+                    ),
+                    child: Icon(data.icon, size: 10, color: data.ink),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(data.label,
+                      style: GoogleFonts.nunito(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: data.ink,
+                        shadows: shadow,
+                      )),
+                  const Spacer(),
+                  Text("${Money.group(data.som)} so'm",
+                      style: GoogleFonts.nunito(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: data.ink,
+                        shadows: shadow,
+                      )),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The leather wallet front: teal→blue gradient, stitched border, the embossed
+/// total, a weekly-gain delta, and three actions.
+class _PocketFront extends StatelessWidget {
+  const _PocketFront({
+    required this.total,
+    required this.hidden,
+    required this.pct,
+    required this.gain,
+    required this.onHideToggle,
+    required this.onInfo,
+    required this.onTopUp,
+    required this.onActivity,
+    required this.onBoost,
+  });
+  final int total;
+  final bool hidden;
+  final double pct;
+  final int gain;
+  final VoidCallback onHideToggle;
+  final VoidCallback onInfo;
+  final VoidCallback onTopUp;
+  final VoidCallback onActivity;
+  final VoidCallback onBoost;
+
+  @override
+  Widget build(BuildContext context) {
+    const balanceStyle = TextStyle(
+      fontSize: 30,
+      fontWeight: FontWeight.w900,
+      color: Colors.white,
+      height: 1,
+      shadows: [
+        Shadow(color: Color(0x55003049), offset: Offset(0, 1.5), blurRadius: 1),
+      ],
+    );
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2FB8C6), Color(0xFF1E8FC4), Color(0xFF176BA6)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E8FC4).withValues(alpha: 0.42),
+            blurRadius: 24,
+            spreadRadius: -6,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Leather sheen: bright top-left → dark bottom-right.
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.16),
+                    Colors.white.withValues(alpha: 0.0),
+                    Colors.black.withValues(alpha: 0.10),
+                  ],
+                  stops: const [0.0, 0.45, 1.0],
+                ),
+              ),
+            ),
+          ),
+          // Stitched border.
+          Positioned.fill(
+            child: CustomPaint(
+                painter: _StitchBorder(Colors.white.withValues(alpha: 0.55))),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    _PocketMiniBtn(
+                      icon: hidden
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                      onTap: onHideToggle,
+                    ),
+                    const Spacer(),
+                    Text(L.walletTitle.toUpperCase(),
+                        style: GoogleFonts.nunito(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2,
+                          color: Colors.white.withValues(alpha: 0.72),
+                        )),
+                    const Spacer(),
+                    _PocketMiniBtn(
+                        icon: Icons.info_outline_rounded, onTap: onInfo),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(L.walletTotalLabel,
+                    style: GoogleFonts.nunito(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withValues(alpha: 0.82),
+                    )),
+                const SizedBox(height: 3),
+                hidden
+                    ? const Text('••• ••• •••', style: balanceStyle)
+                    : AnimatedCount(
+                        value: total.toDouble(),
+                        builder: (context, v) => Text(
+                          "${Money.group(v.round())} so'm",
+                          style: balanceStyle,
+                        ),
+                      ),
+                const SizedBox(height: 10),
+                // Weekly-gain delta.
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.20),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.account_balance_wallet_rounded,
-                              color: Colors.white, size: 22),
-                          const SizedBox(width: 8),
-                          Text(L.walletBalanceLabel,
+                          const Icon(Icons.north_east_rounded,
+                              size: 12, color: Colors.white),
+                          const SizedBox(width: 2),
+                          Text('+${pct.toStringAsFixed(1)}%',
                               style: GoogleFonts.nunito(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
                               )),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      // Embossed / letterpress balance.
-                      AnimatedCount(
-                        value: walletSom.toDouble(),
-                        builder: (context, v) => Text(
-                          "${Money.group(v.round())} so'm",
-                          style: GoogleFonts.nunito(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            height: 1,
-                            shadows: const [
-                              Shadow(
-                                  color: Color(0x66001B4D),
-                                  offset: Offset(0, 1.5),
-                                  blurRadius: 1),
-                            ],
-                          ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        '(+${Money.group(gain)} so\'m) ${L.walletThisWeek}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.nunito(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.85),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Text(L.walletVendingHint,
-                          style: GoogleFonts.nunito(
-                            fontSize: 12.5,
-                            height: 1.35,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          )),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          for (final amt in const [50000, 100000]) ...[
-                            Expanded(
-                              child: _TopUpKey(
-                                label: L.topUpBySom(
-                                    "${Money.group(amt)} so'm"),
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  onTopUp(amt);
-                                },
-                              ),
-                            ),
-                            if (amt == 50000) const SizedBox(width: 10),
-                          ],
-                        ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _PocketAction(
+                        icon: Icons.arrow_downward_rounded,
+                        label: L.actTopUp,
+                        onTap: onTopUp,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 10),
+                    _PocketAction(
+                      icon: Icons.swap_vert_rounded,
+                      onTap: onActivity,
+                      circle: true,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _PocketAction(
+                        icon: Icons.rocket_launch_rounded,
+                        label: L.actBoost,
+                        onTap: onBoost,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-/// A tactile, skeuomorphic raised "key" — a physical top-up button that dips
-/// when pressed.
-class _TopUpKey extends StatefulWidget {
-  const _TopUpKey({required this.label, required this.onTap});
-  final String label;
+class _PocketMiniBtn extends StatelessWidget {
+  const _PocketMiniBtn({required this.icon, required this.onTap});
+  final IconData icon;
   final VoidCallback onTap;
 
   @override
-  State<_TopUpKey> createState() => _TopUpKeyState();
-}
-
-class _TopUpKeyState extends State<_TopUpKey> {
-  bool _down = false;
-
-  @override
   Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (_) => setState(() => _down = true),
-      onPointerUp: (_) => setState(() => _down = false),
-      onPointerCancel: (_) => setState(() => _down = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 110),
-          height: 44,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: _down
-                  ? const [Color(0xFFDDE7F7), Color(0xFFD3E0F4)]
-                  : const [Colors.white, Color(0xFFEAF1FF)],
-            ),
-            border: Border.all(
-                color: Colors.white.withValues(alpha: _down ? 0.4 : 0.9),
-                width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0x33244A9E),
-                blurRadius: _down ? 3 : 10,
-                offset: Offset(0, _down ? 1 : 5),
-              ),
-            ],
-          ),
-          child: Text(widget.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.nunito(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w900,
-                color: AppColors.accentDeep,
-              )),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.30)),
         ),
+        child: Icon(icon, size: 17, color: Colors.white),
       ),
     );
   }
+}
+
+class _PocketAction extends StatelessWidget {
+  const _PocketAction({
+    required this.icon,
+    required this.onTap,
+    this.label,
+    this.circle = false,
+  });
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? label;
+  final bool circle;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 44,
+        width: circle ? 44 : null,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(circle ? 22 : 14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.30)),
+        ),
+        child: circle
+            ? Icon(icon, size: 20, color: Colors.white)
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 16, color: Colors.white),
+                  const SizedBox(width: 6),
+                  Text(label ?? '',
+                      style: GoogleFonts.nunito(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      )),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+/// Dashed "stitching" around the pocket.
+class _StitchBorder extends CustomPainter {
+  const _StitchBorder(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(7, 7, size.width - 14, size.height - 14),
+      const Radius.circular(21),
+    );
+    final src = Path()..addRRect(rrect);
+    final dashed = Path();
+    for (final m in src.computeMetrics()) {
+      double d = 0;
+      while (d < m.length) {
+        final len = math.min(6.0, m.length - d);
+        dashed.addPath(m.extractPath(d, d + len), Offset.zero);
+        d += 10; // 6 dash + 4 gap
+      }
+    }
+    canvas.drawPath(
+      dashed,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.6
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_StitchBorder old) => old.color != color;
+}
+
+/// Reeded coin edge — short vertical ticks along the top rim.
+class _MilledEdge extends CustomPainter {
+  const _MilledEdge(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round;
+    for (double x = 6; x < size.width - 6; x += 5) {
+      canvas.drawLine(Offset(x, 2), Offset(x, size.height - 1), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_MilledEdge old) => old.color != color;
 }
 
 class _LowBalanceStrip extends StatelessWidget {

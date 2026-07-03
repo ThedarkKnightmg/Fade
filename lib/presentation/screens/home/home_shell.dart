@@ -1,5 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/animations/motion.dart';
 import '../../../core/theme/app_colors.dart';
@@ -21,18 +23,64 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell>
+    with SingleTickerProviderStateMixin {
   int _index = 0;
+  int _prevIndex = 0;
   // Tabs are built lazily on first visit, then kept alive — re-opening a tab
   // (especially the map) is instant instead of rebuilding from scratch.
   final Set<int> _built = {0};
 
+  // Drives the cross-dissolve + settle-scale when switching tabs. Starts settled
+  // (value 1) so the first tab is fully visible with no entrance flash.
+  late final AnimationController _tabCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 340),
+    value: 1,
+  );
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
   void _go(int i) {
     if (_index == i) return;
+    HapticFeedback.selectionClick();
     setState(() {
+      _prevIndex = _index;
       _index = i;
       _built.add(i);
     });
+    _tabCtrl.forward(from: 0);
+  }
+
+  /// One kept-alive tab layer. The structure is identical every build (only its
+  /// parameters change) so each tab's State — and the map's camera — survive
+  /// switches. Active + outgoing cross-dissolve; the incoming one settles up
+  /// from 0.98 scale. Everything else is offstage (mounted, not painted).
+  Widget _tabLayer(int i, double t, bool animating) {
+    final isActive = i == _index;
+    final isPrev = i == _prevIndex && _prevIndex != _index;
+    final show = isActive || (isPrev && animating);
+    final opacity =
+        (isActive ? (animating ? t : 1.0) : (isPrev ? 1 - t : 0.0))
+            .clamp(0.0, 1.0);
+    final scale = isActive && animating ? (0.98 + 0.02 * t) : 1.0;
+    return Offstage(
+      offstage: !show,
+      child: IgnorePointer(
+        ignoring: !isActive,
+        child: Opacity(
+          opacity: opacity,
+          child: Transform.scale(
+            scale: scale,
+            child: TickerMode(enabled: isActive, child: _bodyFor(i)),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _bodyFor(int i) {
@@ -82,21 +130,24 @@ class _HomeShellState extends State<HomeShell> {
       backgroundColor: p.bg,
       extendBody: true,
       // Keep visited tabs mounted (instant switching + preserved scroll/map
-      // state); pause off-screen tabs' tickers so they cost nothing.
-      body: Stack(
-        children: [
-          for (int i = 0; i < 5; i++)
-            if (_built.contains(i))
-              Positioned.fill(
-                child: Offstage(
-                  offstage: _index != i,
-                  child: TickerMode(
-                    enabled: _index == i,
-                    child: _bodyFor(i),
+      // state); pause off-screen tabs' tickers so they cost nothing. Switching
+      // cross-dissolves the outgoing tab into the incoming one.
+      body: AnimatedBuilder(
+        animation: _tabCtrl,
+        builder: (context, _) {
+          final t = Curves.easeOutCubic.transform(_tabCtrl.value);
+          final animating = _tabCtrl.isAnimating && _prevIndex != _index;
+          return Stack(
+            children: [
+              for (int i = 0; i < 5; i++)
+                if (_built.contains(i))
+                  Positioned.fill(
+                    key: ValueKey(i),
+                    child: _tabLayer(i, t, animating),
                   ),
-                ),
-              ),
-        ],
+            ],
+          );
+        },
       ),
       bottomNavigationBar: _HomiesNav(
         index: _index,
@@ -129,12 +180,25 @@ class _HomiesNav extends StatelessWidget {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: Container(
-          height: 68,
-          decoration: clayDecoration(p, radius: 26),
-          // Bookings lives on the Home card now; the bar is
-          // Home + Map · AI (centre) · Chat + Profile.
-          child: Row(
+        // One-time entrance: the bar rises + fades in on first mount (it keeps
+        // its position across tab changes, so this plays once, not every switch).
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: const Duration(milliseconds: 560),
+          curve: Curves.easeOutCubic,
+          builder: (context, v, child) => Opacity(
+            opacity: v,
+            child: Transform.translate(
+              offset: Offset(0, (1 - v) * 30),
+              child: child,
+            ),
+          ),
+          child: Container(
+            height: 68,
+            decoration: clayDecoration(p, radius: 26),
+            // Bookings lives on the Home card now; the bar is
+            // Home + Map · AI (centre) · Chat + Profile.
+            child: Row(
             children: [
               Expanded(
                 child: Row(
@@ -146,7 +210,7 @@ class _HomiesNav extends StatelessWidget {
                       onTap: () => onTap(0),
                     ),
                     _NavItem(
-                      icon: Icons.map_rounded,
+                      icon: Icons.explore_rounded,
                       active: index == 4,
                       onTap: () => onTap(4),
                     ),
@@ -159,12 +223,12 @@ class _HomiesNav extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _NavItem(
-                      icon: Icons.chat_bubble_rounded,
+                      icon: Icons.forum_rounded,
                       active: index == 2,
                       onTap: () => onTap(2),
                     ),
                     _NavItem(
-                      icon: Icons.person_rounded,
+                      icon: Icons.face_rounded,
                       active: index == 3,
                       onTap: () => onTap(3),
                     ),
@@ -172,6 +236,7 @@ class _HomiesNav extends StatelessWidget {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),
@@ -189,50 +254,56 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
+    // Each tab lives in its own circular slot; the active slot lights up in the
+    // accent with a soft glow + a 1px ring, and its glyph pops in the accent.
     return PressableScale(
       onTap: onTap,
       pressedScale: 0.85,
       child: SizedBox(
-        width: 50,
+        width: 52,
         height: 68,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedScale(
-              scale: active ? 1.18 : 1.0,
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: active
+                  ? AppColors.accent.withValues(alpha: 0.16)
+                  : p.textTertiary.withValues(alpha: 0.08),
+              border: Border.all(
+                color: active
+                    ? AppColors.accent.withValues(alpha: 0.40)
+                    : Colors.transparent,
+                width: 1.4,
+              ),
+              boxShadow: active
+                  ? [
+                      BoxShadow(
+                        color: AppColors.accent.withValues(alpha: 0.28),
+                        blurRadius: 12,
+                        spreadRadius: -2,
+                      )
+                    ]
+                  : null,
+            ),
+            child: AnimatedScale(
+              scale: active ? 1.12 : 1.0,
               duration: const Duration(milliseconds: 320),
               curve: Curves.easeOutCubic,
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 280),
+                duration: const Duration(milliseconds: 260),
                 child: Icon(
                   icon,
                   key: ValueKey(active),
-                  size: 25,
+                  size: 24,
                   color: active ? AppColors.accent : p.textTertiary,
                 ),
               ),
             ),
-            const SizedBox(height: 5),
-            // A glowing dot slides/grows in under the active tab.
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 260),
-              curve: Curves.easeOut,
-              width: active ? 6 : 0,
-              height: 6,
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                shape: BoxShape.circle,
-                boxShadow: active
-                    ? [
-                        BoxShadow(
-                          color: AppColors.accent.withValues(alpha: 0.7),
-                          blurRadius: 8,
-                        )
-                      ]
-                    : null,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -249,17 +320,23 @@ class _AiButton extends StatefulWidget {
 }
 
 class _AiButtonState extends State<_AiButton>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _glow = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2600),
   )..repeat(reverse: true);
   late final Animation<double> _breathe =
       CurvedAnimation(parent: _glow, curve: Curves.easeInOut);
+  // A slow, continuous spin so the sparkle feels alive without demanding notice.
+  late final AnimationController _spin = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 18),
+  )..repeat();
 
   @override
   void dispose() {
     _glow.dispose();
+    _spin.dispose();
     super.dispose();
   }
 
@@ -269,18 +346,22 @@ class _AiButtonState extends State<_AiButton>
       onTap: widget.onTap,
       pressedScale: 0.9,
       child: AnimatedBuilder(
-        animation: _breathe,
-        builder: (_, child) => Container(
+        animation: Listenable.merge([_breathe, _spin]),
+        builder: (_, __) => Container(
           width: 58,
           height: 58,
-          transform: Matrix4.translationValues(0, -6, 0),
+          transform: Matrix4.translationValues(0, -8, 0),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF55A8FF), Color(0xFF1E6FE0)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+            shape: BoxShape.circle,
+            // A lit sphere: bright highlight top-left → deep blue bottom-right.
+            gradient: const RadialGradient(
+              center: Alignment(-0.3, -0.4),
+              radius: 0.95,
+              colors: [Color(0xFF8CC6FF), Color(0xFF3E8DF0), Color(0xFF1E6FE0)],
+              stops: [0.0, 0.55, 1.0],
             ),
-            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+                color: Colors.white.withValues(alpha: 0.35), width: 1),
             boxShadow: [
               BoxShadow(
                 color: AppColors.accent
@@ -291,24 +372,62 @@ class _AiButtonState extends State<_AiButton>
               ),
             ],
           ),
-          child: child,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.auto_awesome_rounded, size: 22, color: Colors.white),
-            Text('AI',
-                style: GoogleFonts.nunito(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    letterSpacing: 1,
-                    height: 1)),
-          ],
+          // The sparkle slowly rotates and twinkles (scale pulse) with the glow.
+          child: Center(
+            child: Transform.rotate(
+              angle: _spin.value * 2 * math.pi,
+              child: Transform.scale(
+                scale: 0.9 + _breathe.value * 0.14,
+                child: const CustomPaint(
+                  size: Size(26, 26),
+                  painter: _FourPointStarPainter(Colors.white),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
+}
+
+/// A clean single 4-point star (sparkle) — there is no crisp 4-point glyph in
+/// Material Icons, so the AI orb paints its own: 4 sharp arms on the axes with
+/// concave sides, filled white over a faint bloom.
+class _FourPointStarPainter extends CustomPainter {
+  const _FourPointStarPainter(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final r = size.width / 2;
+    final rIn = r * 0.30;
+    final path = Path();
+    for (int k = 0; k < 8; k++) {
+      final angle = -math.pi / 2 + k * math.pi / 4;
+      final rad = k.isEven ? r : rIn;
+      final x = cx + rad * math.cos(angle);
+      final y = cy + rad * math.sin(angle);
+      if (k == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color.withValues(alpha: 0.55)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_FourPointStarPainter old) => old.color != color;
 }
 
 // ============================================================

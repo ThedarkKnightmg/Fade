@@ -520,10 +520,16 @@ class HomeScreen extends StatelessWidget {
                   onCuts: () => onOpenBookings?.call(),
                 ),
                 const SizedBox(height: 18),
-                // Book your usual — the rebook trigger. Earned: it only shows
-                // after a completed visit, and springs in with a celebratory
-                // entrance so coming back to book again feels like a reward.
-                if (hasVisited && state.hasMyBarber) ...[
+                // Book your usual — the rebook trigger. Earned AND exclusive:
+                // it only shows once a visit is COMPLETED *and* there is no live
+                // booking in flight (a pending request → "Waiting for reply";
+                // a confirmed one → the "My bookings" hero take priority). So
+                // right after booking it stays hidden, and re-appears — with a
+                // celebratory entrance — only after that cut is done.
+                if (hasVisited &&
+                    state.hasMyBarber &&
+                    pendingBookings.isEmpty &&
+                    confirmedBookings.isEmpty) ...[
                   const SizedBox(height: 16),
                   _CelebrateIn(
                     child: _BookAgainCard(

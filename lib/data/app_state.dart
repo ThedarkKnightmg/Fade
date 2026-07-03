@@ -1010,6 +1010,16 @@ class AppState extends ChangeNotifier {
   int get walletSom => _walletSom;
   bool get walletLow => _walletSom < 12000;
 
+  // ── The three "coins" in the skeuomorphic wallet ──────────────────────
+  // Credit = the prepaid spendable balance (walletSom; top-up refills it,
+  // fees/boosts draw from it). Earned = money made from completed cuts (real,
+  // lifetime). Tips = a modest mock (~12% of earned). Total = the sum shown in
+  // the wallet pocket; the week-gain drives the "▲ this week" delta line.
+  int get walletEarnedSom => Money.toSom(barberTotalEarned);
+  int get walletTipsSom => (walletEarnedSom * 0.12).round();
+  int get walletTotalSom => _walletSom + walletEarnedSom + walletTipsSom;
+  int get walletWeekGainSom => (barberEarnedThisWeekSom * 1.12).round();
+
   final List<WalletTx> _ledger = [];
   bool _ledgerSeeded = false;
   List<WalletTx> get walletLedger {

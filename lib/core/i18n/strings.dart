@@ -264,6 +264,19 @@ class L {
       "Bir soat qidiruv tepasida — yoki VIP");
   static String get boostedNowChip =>
       _t('Live 🚀', 'В топе 🚀', 'Tepada 🚀');
+  // ── Skeuomorphic coin wallet ──
+  static String get walletTotalLabel =>
+      _t('Total balance', 'Общий баланс', 'Umumiy balans');
+  static String get coinCredit => _t('Credit', 'Кредит', 'Kredit');
+  static String get coinEarned => _t('Earned', 'Заработано', 'Ishlangan');
+  static String get coinTips => _t('Tips', 'Чаевые', 'Choychaqa');
+  static String get walletThisWeek =>
+      _t('this week', 'за неделю', 'shu hafta');
+  static String get actTopUp => _t('Top up', 'Пополнить', "To'ldirish");
+  static String get actActivity => _t('Activity', 'История', 'Faoliyat');
+  static String get actBoost => _t('Boost', 'Буст', 'Bust');
+  static String get topUpAddedToast =>
+      _t('Credit topped up ✓', 'Кредит пополнен ✓', "Kredit to'ldirildi ✓");
   static String get accountSection =>
       _t('Account', 'Аккаунт', 'Hisob');
   static String get preferencesSection =>
