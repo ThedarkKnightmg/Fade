@@ -786,7 +786,7 @@ class _QuickActions extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -878,29 +878,33 @@ class _QuickTile extends StatelessWidget {
       onTap: onTap,
       pressedScale: 0.96,
       child: Container(
-        height: 138,
-        padding: const EdgeInsets.fromLTRB(8, 14, 8, 12),
-        // Puffy clay tile (shared clay surface) instead of the old flat box.
-        decoration: clayDecoration(p, radius: 26),
-        child: Column(
+        height: 66,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        // Puffy clay tile — now a short, horizontal card: sticker + label.
+        decoration: clayDecoration(p, radius: 20),
+        child: Row(
           children: [
-            // Big sticker, centred in the upper area of the box.
-            Expanded(
+            // Sticker on the left.
+            SizedBox(
+              width: 46,
+              height: 46,
               child: Center(
                 child: FittedBox(fit: BoxFit.contain, child: sticker),
               ),
             ),
-            const SizedBox(height: 4),
-            // Label centred at the bottom, INSIDE the box (Yandex layout).
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.nunito(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w700,
-                color: p.text,
+            const SizedBox(width: 10),
+            // Label fills the rest of the row.
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.nunito(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                  color: p.text,
+                ),
               ),
             ),
           ],
