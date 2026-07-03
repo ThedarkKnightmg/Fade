@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/app_state.dart';
 import 'barber_dashboard_screen.dart';
@@ -113,49 +112,47 @@ class _BarberNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
+    // Reference look, same as the client bar: a minimal near-black floating
+    // pill (dark in BOTH themes), each tab in its own dark circular slot —
+    // no labels, no borders, just the glyphs. The badge stays on Requests.
     return AnimatedBuilder(
       animation: AppState.instance,
       builder: (context, _) {
         final pending = AppState.instance.incomingRequests.length;
         return Container(
+          height: 72,
           margin: EdgeInsets.fromLTRB(
               16, 0, 16, 12 + MediaQuery.of(context).padding.bottom),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
-            color: p.card,
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: p.border),
+            color: const Color(0xFF17181C),
+            borderRadius: BorderRadius.circular(36),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: p.isDark ? 0.3 : 0.08),
-                blurRadius: 22,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: 0.30),
+                blurRadius: 24,
+                spreadRadius: -4,
+                offset: const Offset(0, 12),
               ),
             ],
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _NavItem(
                   icon: Icons.today_rounded,
-                  label: L.today,
                   selected: index == 0,
                   onTap: () => onTap(0)),
               _NavItem(
                   icon: Icons.inbox_rounded,
-                  label: L.requestsTitle,
                   selected: index == 1,
                   badge: pending,
                   onTap: () => onTap(1)),
               _NavItem(
                   icon: Icons.calendar_month_rounded,
-                  label: L.scheduleTitle,
                   selected: index == 2,
                   onTap: () => onTap(2)),
               _NavItem(
                   icon: Icons.person_rounded,
-                  label: L.profileTab,
                   selected: index == 3,
                   onTap: () => onTap(3)),
             ],
@@ -169,45 +166,55 @@ class _BarberNav extends StatelessWidget {
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.icon,
-    required this.label,
     required this.selected,
     required this.onTap,
     this.badge = 0,
   });
 
   final IconData icon;
-  final String label;
   final bool selected;
   final VoidCallback onTap;
   final int badge;
 
   @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    final color = selected ? AppColors.accent : p.textTertiary;
+    // Same slot treatment as the client bar: a dark circle that lights up a
+    // touch when selected, grey → white glyph. Minimal — no label.
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.accent.withValues(alpha: 0.12)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
+      child: SizedBox(
+        width: 56,
+        height: 72,
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: selected ? 0.18 : 0.06),
+            ),
+            child: Stack(
               clipBehavior: Clip.none,
+              alignment: Alignment.center,
               children: [
-                Icon(icon, size: 22, color: color),
+                AnimatedScale(
+                  scale: selected ? 1.08 : 1.0,
+                  duration: const Duration(milliseconds: 320),
+                  curve: Curves.easeOutCubic,
+                  child: Icon(
+                    icon,
+                    size: 24,
+                    color:
+                        selected ? Colors.white : const Color(0xFF8E939E),
+                  ),
+                ),
                 if (badge > 0)
                   Positioned(
-                    right: -8,
-                    top: -6,
+                    right: 4,
+                    top: 6,
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       constraints:
@@ -230,16 +237,7 @@ class _NavItem extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: GoogleFonts.nunito(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w800,
-                color: color,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
