@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 
 import '../../../core/animations/motion.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../widgets/paper_kit.dart';
 import '../ai/ai_hair_screen.dart';
 import '../bookings/my_bookings_screen.dart';
 import '../chat/messages_screen.dart';
@@ -175,7 +174,6 @@ class _HomiesNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
     return SafeArea(
       top: false,
       child: Padding(
@@ -193,9 +191,22 @@ class _HomiesNav extends StatelessWidget {
               child: child,
             ),
           ),
+          // Reference look: a minimal near-black floating pill (dark in BOTH
+          // themes), each tab in its own dark circular slot, the AI orb inline.
           child: Container(
-            height: 68,
-            decoration: clayDecoration(p, radius: 26),
+            height: 72,
+            decoration: BoxDecoration(
+              color: const Color(0xFF17181C),
+              borderRadius: BorderRadius.circular(36),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.30),
+                  blurRadius: 24,
+                  spreadRadius: -4,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
             // Bookings lives on the Home card now; the bar is
             // Home + Map · AI (centre) · Chat + Profile.
             child: Row(
@@ -253,44 +264,28 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    // Each tab lives in its own circular slot; the active slot lights up in the
-    // accent with a soft glow + a 1px ring, and its glyph pops in the accent.
+    // Reference look: every tab sits in a dark circular slot. Inactive = faint
+    // circle + grey glyph; active = lighter circle + white glyph. Nothing else —
+    // no ring, no glow, no under-dot.
     return PressableScale(
       onTap: onTap,
       pressedScale: 0.85,
       child: SizedBox(
-        width: 52,
-        height: 68,
+        width: 56,
+        height: 72,
         child: Center(
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutCubic,
-            width: 46,
-            height: 46,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: active
-                  ? AppColors.accent.withValues(alpha: 0.16)
-                  : p.textTertiary.withValues(alpha: 0.08),
-              border: Border.all(
-                color: active
-                    ? AppColors.accent.withValues(alpha: 0.40)
-                    : Colors.transparent,
-                width: 1.4,
-              ),
-              boxShadow: active
-                  ? [
-                      BoxShadow(
-                        color: AppColors.accent.withValues(alpha: 0.28),
-                        blurRadius: 12,
-                        spreadRadius: -2,
-                      )
-                    ]
-                  : null,
+              color: Colors.white
+                  .withValues(alpha: active ? 0.18 : 0.06),
             ),
             child: AnimatedScale(
-              scale: active ? 1.12 : 1.0,
+              scale: active ? 1.08 : 1.0,
               duration: const Duration(milliseconds: 320),
               curve: Curves.easeOutCubic,
               child: AnimatedSwitcher(
@@ -299,7 +294,7 @@ class _NavItem extends StatelessWidget {
                   icon,
                   key: ValueKey(active),
                   size: 24,
-                  color: active ? AppColors.accent : p.textTertiary,
+                  color: active ? Colors.white : const Color(0xFF8E939E),
                 ),
               ),
             ),
@@ -350,7 +345,6 @@ class _AiButtonState extends State<_AiButton>
         builder: (_, __) => Container(
           width: 58,
           height: 58,
-          transform: Matrix4.translationValues(0, -8, 0),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             // A lit sphere: bright highlight top-left → deep blue bottom-right.
@@ -360,15 +354,12 @@ class _AiButtonState extends State<_AiButton>
               colors: [Color(0xFF8CC6FF), Color(0xFF3E8DF0), Color(0xFF1E6FE0)],
               stops: [0.0, 0.55, 1.0],
             ),
-            border: Border.all(
-                color: Colors.white.withValues(alpha: 0.35), width: 1),
             boxShadow: [
               BoxShadow(
                 color: AppColors.accent
-                    .withValues(alpha: 0.4 + _breathe.value * 0.4),
-                blurRadius: 16 + _breathe.value * 12,
-                spreadRadius: 1 + _breathe.value * 2,
-                offset: const Offset(0, 5),
+                    .withValues(alpha: 0.35 + _breathe.value * 0.35),
+                blurRadius: 14 + _breathe.value * 10,
+                spreadRadius: _breathe.value * 2,
               ),
             ],
           ),

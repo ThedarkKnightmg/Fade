@@ -877,34 +877,44 @@ class _QuickTile extends StatelessWidget {
     return PressableScale(
       onTap: onTap,
       pressedScale: 0.96,
-      child: Container(
-        height: 66,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        // Puffy clay tile — now a short, horizontal card: sticker + label.
-        decoration: clayDecoration(p, radius: 20),
-        child: Row(
+      child: SizedBox(
+        height: 102,
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            // Sticker on the left.
-            SizedBox(
-              width: 46,
-              height: 46,
-              child: Center(
-                child: FittedBox(fit: BoxFit.contain, child: sticker),
+            // The box itself is half-height and horizontal; the label sits
+            // inside it, to the right of the sticker.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                height: 62,
+                padding: const EdgeInsets.fromLTRB(80, 8, 10, 8),
+                decoration: clayDecoration(p, radius: 20),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                    color: p.text,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(width: 10),
-            // Label fills the rest of the row.
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.nunito(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w800,
-                  height: 1.1,
-                  color: p.text,
-                ),
+            // The big 3D sticker stays FULL SIZE and stands OUTSIDE the box,
+            // popping above its top edge.
+            Positioned(
+              left: 0,
+              bottom: 8,
+              child: SizedBox(
+                width: 78,
+                height: 92,
+                child: FittedBox(fit: BoxFit.contain, child: sticker),
               ),
             ),
           ],
