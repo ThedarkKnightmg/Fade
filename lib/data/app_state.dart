@@ -120,6 +120,16 @@ class BarberRef {
   final Barber barber;
 }
 
+/// A "Barber Fuel" micro-transaction pack — a bundle of Boosts ("Ups") sold at
+/// a decreasing per-boost price, kept in the wallet and spent on dead hours.
+class BoostPack {
+  const BoostPack(this.id, this.priceSom, this.count);
+  final String id;
+  final int priceSom;
+  final int count;
+  int get perBoostSom => (priceSom / count).round();
+}
+
 /// Lightweight in-memory app state — the single source of truth for
 /// the current user, their bookings, and the barber they've chosen
 /// as their personal "master". Uses ChangeNotifier so any widget
@@ -1135,6 +1145,50 @@ class AppState extends ChangeNotifier {
     final base = barberVip ? _vipUntil! : DateTime.now();
     _vipUntil = base.add(const Duration(days: 30));
     notifyListeners();
+  }
+
+  // ── Barber Fuel — pay-as-you-go boosts ("Ups") ──
+  // Micro-transactions instead of a subscription: buy a cheap pack of Ups, keep
+  // them in the wallet, and spend one to fill a dead hour. An active Up (or VIP)
+  // promotes the chair — top of search, gold map pin. Purchases are provider
+  // stubs; nothing is server-enforced until the backend lands.
+  static const List<BoostPack> boostPacks = [
+    BoostPack('starter', 15000, 3),
+    BoostPack('growth', 40000, 10),
+    BoostPack('pro', 90000, 25),
+  ];
+  static const Duration boostDuration = Duration(hours: 1);
+
+  int _boosts = 2; // seed a couple so "use a boost" is demoable immediately
+  int get boosts => _boosts;
+
+  DateTime? _boostActiveUntil;
+  DateTime? get boostActiveUntil => _boostActiveUntil;
+  bool get boostActive =>
+      _boostActiveUntil != null && _boostActiveUntil!.isAfter(DateTime.now());
+
+  /// The single source of truth for "is this barber promoted right now" — a live
+  /// Up OR an active VIP subscription. (A future map/roster can read this to
+  /// gold-pin + float them to the top.)
+  bool get barberBoosted => boostActive || barberVip;
+
+  /// Buy a Fuel pack — provider-handoff stub; adds Ups to the wallet.
+  void buyBoostPack(String packId) {
+    final pack = boostPacks.firstWhere((p) => p.id == packId,
+        orElse: () => boostPacks.first);
+    _boosts += pack.count;
+    notifyListeners();
+  }
+
+  /// Spend one Up to fill a dead hour — promotes the chair for [boostDuration].
+  /// Returns false when out of Ups.
+  bool useBoost() {
+    if (_boosts <= 0) return false;
+    _boosts -= 1;
+    final base = boostActive ? _boostActiveUntil! : DateTime.now();
+    _boostActiveUntil = base.add(boostDuration);
+    notifyListeners();
+    return true;
   }
 
   // ═══════════════════ QR check-in handshake ═══════════════════════════════

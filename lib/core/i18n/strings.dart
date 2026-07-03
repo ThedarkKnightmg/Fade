@@ -1046,6 +1046,35 @@ class L {
       _t('VIP active until $date', 'VIP до $date', '$date gacha VIP');
   static String get vipTag => _t('VIP', 'VIP', 'VIP');
 
+  // ══ Barber Fuel — pay-as-you-go boosts (micro-transactions) ══
+  static String get fuelTitle => _t('Barber Fuel', 'Топливо', 'Yoqilg\'i');
+  static String get fillChairNow => _t('Fill your chair right now',
+      'Заполните кресло прямо сейчас', 'O\'rindig\'ingizni hoziroq to\'ldiring');
+  static String get fillChairNowSub => _t(
+      'A dead hour? Spend one Up to jump to the top for an hour.',
+      'Пустой час? Потратьте один Up — час в топе.',
+      'Bo\'sh soatmi? Bitta Up sarflab, bir soat tepada bo\'ling.');
+  static String upsInWallet(int n) => _t(
+      '$n Ups in your wallet', '$n Up в кошельке', 'Hamyonda $n Up');
+  static String get useBoostNow =>
+      _t('Use a boost now', 'Использовать буст', 'Bustni ishlatish');
+  static String boostedUntilTime(String t) => _t('Boosted until $t 🚀',
+      'В топе до $t 🚀', '$t gacha tepada 🚀');
+  static String get outOfUps => _t('Out of Ups — grab a pack below',
+      'Нет Up — купите пакет ниже', 'Up tugadi — quyidan paket oling');
+  static String get boostOnToast => _t("Boost on — you're at the top 🚀",
+      'Буст включён — вы в топе 🚀', 'Bust yoqildi — tepadasiz 🚀');
+  static String upsUnit(int n) => _t('$n Ups', '$n Up', '$n Up');
+  static String perBoostLabel(String som) =>
+      _t('$som / boost', '$som / буст', '$som / bust');
+  static String get bestValue =>
+      _t('Best value', 'Выгодно', 'Eng foydali');
+  static String get orGoUnlimited => _t('Or go unlimited',
+      'Или безлимит', 'Yoki cheksiz');
+  static String upsAddedToast(int n) =>
+      _t('$n Ups added ⚡', '$n Up добавлено ⚡', '$n Up qo\'shildi ⚡');
+  static String get buyWord => _t('Buy', 'Купить', 'Sotib olish');
+
   // ── Client registration ───────────────────────────────
   static String get whatsYourName =>
       _t("What's your\nname?", 'Как вас\nзовут?', 'Ismingiz\nnima?');
