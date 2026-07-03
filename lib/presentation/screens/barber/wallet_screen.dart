@@ -138,20 +138,10 @@ class _Tier {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-//  The skeuomorphic COIN WALLET. Three metallic coins — Credit (gold),
-//  Earned (emerald), Tips (copper) — poke out of the top and tuck behind a
-//  stitched teal→blue leather pocket that shows the embossed total, a
-//  weekly-gain delta, and the Top-up · Activity · Boost actions.
+//  The wallet pocket — a stitched teal→blue leather pocket showing the
+//  prepaid balance, the barber's scannable booking QR tucked inside, and the
+//  Top-up · Activity · Boost actions.
 // ═══════════════════════════════════════════════════════════════════════
-
-class _CoinData {
-  const _CoinData(this.label, this.som, this.metal, this.ink, this.icon);
-  final String label;
-  final int som;
-  final List<Color> metal; // [light, dark]
-  final Color ink; // embossed text / emblem colour
-  final IconData icon;
-}
 
 class _WalletPocket extends StatefulWidget {
   const _WalletPocket({required this.onBoost});
@@ -164,212 +154,9 @@ class _WalletPocket extends StatefulWidget {
 class _WalletPocketState extends State<_WalletPocket> {
   bool _hidden = false;
 
-  static const double _coinH = 34;
-  static const double _step = 22; // vertical peek strip per coin
-
   @override
   Widget build(BuildContext context) {
     final s = AppState.instance;
-    final coins = <_CoinData>[
-      _CoinData(L.coinCredit, s.walletSom,
-          const [Color(0xFFF6DA86), Color(0xFFCB9A2E)], const Color(0xFF5A3D00),
-          Icons.bolt_rounded),
-      _CoinData(L.coinEarned, s.walletEarnedSom,
-          const [Color(0xFF93E3A6), Color(0xFF2E9E58)], const Color(0xFF0B4A28),
-          Icons.content_cut_rounded),
-      _CoinData(L.coinTips, s.walletTipsSom,
-          const [Color(0xFFF3B98A), Color(0xFFC26A2E)], const Color(0xFF5A2A08),
-          Icons.volunteer_activism_rounded),
-    ];
-    final total = s.walletTotalSom;
-    final gain = s.walletWeekGainSom;
-    final base = total - gain;
-    final pct = base <= 0 ? 0.0 : (gain / base * 100);
-    final pocketTop = coins.length * _step;
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // Coins painted back→front (Credit highest/behind, Tips lowest/front).
-        for (int i = 0; i < coins.length; i++)
-          Positioned(
-            top: i * _step,
-            left: 14,
-            right: 14,
-            child: _WalletCoin(data: coins[i], height: _coinH),
-          ),
-        // The pocket front, painted last so it tucks the coins' lower halves in.
-        Padding(
-          padding: EdgeInsets.only(top: pocketTop),
-          child: _PocketFront(
-            total: total,
-            hidden: _hidden,
-            pct: pct,
-            gain: gain,
-            onHideToggle: () {
-              HapticFeedback.selectionClick();
-              setState(() => _hidden = !_hidden);
-            },
-            onInfo: () => _walletToast(context, L.walletVending),
-            onTopUp: () {
-              HapticFeedback.selectionClick();
-              s.topUpWallet(50000);
-              _walletToast(context, L.topUpAddedToast);
-            },
-            onActivity: () => _walletToast(context, L.walletActivity),
-            onBoost: widget.onBoost,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-void _walletToast(BuildContext context, String msg) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(
-      content: Text(msg),
-      behavior: SnackBarBehavior.floating,
-    ));
-}
-
-/// One metallic coin poking out of the wallet — a reeded-edge medallion with an
-/// embossed emblem, label and amount. Only its top [_step] strip shows.
-class _WalletCoin extends StatelessWidget {
-  const _WalletCoin({required this.data, required this.height});
-  final _CoinData data;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final shadow = [
-      Shadow(color: Colors.white.withValues(alpha: 0.45), offset: const Offset(0, 1)),
-    ];
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(11),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: data.metal,
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.45), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(11),
-        child: Stack(
-          children: [
-            // Thin specular sheen across the top.
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 9,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.4),
-                      Colors.white.withValues(alpha: 0.0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Milled (reeded) coin edge — subtle.
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 5,
-              child: CustomPaint(
-                  painter: _MilledEdge(data.ink.withValues(alpha: 0.22))),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 3, 12, 0),
-              child: Row(
-                children: [
-                  // Embossed mini-coin emblem.
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        center: const Alignment(-0.3, -0.4),
-                        colors: [
-                          Colors.white.withValues(alpha: 0.72),
-                          data.metal.last.withValues(alpha: 0.25),
-                        ],
-                      ),
-                      border: Border.all(
-                          color: data.ink.withValues(alpha: 0.32), width: 1),
-                    ),
-                    child: Icon(data.icon, size: 10, color: data.ink),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(data.label,
-                      style: GoogleFonts.nunito(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        color: data.ink,
-                        shadows: shadow,
-                      )),
-                  const Spacer(),
-                  Text("${Money.group(data.som)} so'm",
-                      style: GoogleFonts.nunito(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        color: data.ink,
-                        shadows: shadow,
-                      )),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The leather wallet front: teal→blue gradient, stitched border, the embossed
-/// total, a weekly-gain delta, and three actions.
-class _PocketFront extends StatelessWidget {
-  const _PocketFront({
-    required this.total,
-    required this.hidden,
-    required this.pct,
-    required this.gain,
-    required this.onHideToggle,
-    required this.onInfo,
-    required this.onTopUp,
-    required this.onActivity,
-    required this.onBoost,
-  });
-  final int total;
-  final bool hidden;
-  final double pct;
-  final int gain;
-  final VoidCallback onHideToggle;
-  final VoidCallback onInfo;
-  final VoidCallback onTopUp;
-  final VoidCallback onActivity;
-  final VoidCallback onBoost;
-
-  @override
-  Widget build(BuildContext context) {
     const balanceStyle = TextStyle(
       fontSize: 30,
       fontWeight: FontWeight.w900,
@@ -429,10 +216,13 @@ class _PocketFront extends StatelessWidget {
                 Row(
                   children: [
                     _PocketMiniBtn(
-                      icon: hidden
+                      icon: _hidden
                           ? Icons.visibility_off_rounded
                           : Icons.visibility_rounded,
-                      onTap: onHideToggle,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _hidden = !_hidden);
+                      },
                     ),
                     const Spacer(),
                     Text(L.walletTitle.toUpperCase(),
@@ -444,68 +234,31 @@ class _PocketFront extends StatelessWidget {
                         )),
                     const Spacer(),
                     _PocketMiniBtn(
-                        icon: Icons.info_outline_rounded, onTap: onInfo),
+                      icon: Icons.info_outline_rounded,
+                      onTap: () => _walletToast(context, L.walletVending),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(L.walletTotalLabel,
+                Text(L.walletBalanceLabel,
                     style: GoogleFonts.nunito(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                       color: Colors.white.withValues(alpha: 0.82),
                     )),
                 const SizedBox(height: 3),
-                hidden
+                _hidden
                     ? const Text('••• ••• •••', style: balanceStyle)
                     : AnimatedCount(
-                        value: total.toDouble(),
+                        value: s.walletSom.toDouble(),
                         builder: (context, v) => Text(
                           "${Money.group(v.round())} so'm",
                           style: balanceStyle,
                         ),
                       ),
-                const SizedBox(height: 10),
-                // Weekly-gain delta.
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.20),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.north_east_rounded,
-                              size: 12, color: Colors.white),
-                          const SizedBox(width: 2),
-                          Text('+${pct.toStringAsFixed(1)}%',
-                              style: GoogleFonts.nunito(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                              )),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        '(+${Money.group(gain)} so\'m) ${L.walletThisWeek}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.nunito(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white.withValues(alpha: 0.85),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                const SizedBox(height: 16),
+                // The barber's scannable booking QR, tucked into the wallet.
+                _QrTicket(link: s.barberLink),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -513,13 +266,17 @@ class _PocketFront extends StatelessWidget {
                       child: _PocketAction(
                         icon: Icons.arrow_downward_rounded,
                         label: L.actTopUp,
-                        onTap: onTopUp,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          s.topUpWallet(50000);
+                          _walletToast(context, L.topUpAddedToast);
+                        },
                       ),
                     ),
                     const SizedBox(width: 10),
                     _PocketAction(
                       icon: Icons.swap_vert_rounded,
-                      onTap: onActivity,
+                      onTap: () => _walletToast(context, L.walletActivity),
                       circle: true,
                     ),
                     const SizedBox(width: 10),
@@ -527,7 +284,7 @@ class _PocketFront extends StatelessWidget {
                       child: _PocketAction(
                         icon: Icons.rocket_launch_rounded,
                         label: L.actBoost,
-                        onTap: onBoost,
+                        onTap: widget.onBoost,
                       ),
                     ),
                   ],
@@ -536,6 +293,76 @@ class _PocketFront extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+void _walletToast(BuildContext context, String msg) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(
+      content: Text(msg),
+      behavior: SnackBarBehavior.floating,
+    ));
+}
+
+/// A white "ticket" of the barber's booking QR, tucked into the wallet pocket.
+/// A regular who scans it books at 0% commission (Tier 3).
+class _QrTicket extends StatelessWidget {
+  const _QrTicket({required this.link});
+  final String link;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            QrImageView(
+              data: 'https://$link',
+              version: QrVersions.auto,
+              size: 128,
+              backgroundColor: Colors.white,
+              eyeStyle: const QrEyeStyle(
+                eyeShape: QrEyeShape.circle,
+                color: AppColors.accentDeep,
+              ),
+              dataModuleStyle: const QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.circle,
+                color: AppColors.accentDeep,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.qr_code_scanner_rounded,
+                    size: 13, color: Color(0xFF8A94A6)),
+                const SizedBox(width: 5),
+                Text(L.scanToBookMe,
+                    style: GoogleFonts.nunito(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF8A94A6),
+                    )),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -642,26 +469,6 @@ class _StitchBorder extends CustomPainter {
 
   @override
   bool shouldRepaint(_StitchBorder old) => old.color != color;
-}
-
-/// Reeded coin edge — short vertical ticks along the top rim.
-class _MilledEdge extends CustomPainter {
-  const _MilledEdge(this.color);
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.1
-      ..strokeCap = StrokeCap.round;
-    for (double x = 6; x < size.width - 6; x += 5) {
-      canvas.drawLine(Offset(x, 2), Offset(x, size.height - 1), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_MilledEdge old) => old.color != color;
 }
 
 class _LowBalanceStrip extends StatelessWidget {
@@ -802,63 +609,11 @@ class _LinkCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.qr_code_2_rounded,
+              const Icon(Icons.link_rounded,
                   size: 20, color: AppColors.accent),
               const SizedBox(width: 8),
               Text(L.yourLinkLabel, style: AppTypography.h4(context)),
             ],
-          ),
-          const SizedBox(height: 12),
-          // The white-label QR "sticker" (Tier 3) — a static QR of the barber's
-          // personal link; a regular who scans it books at 0% commission.
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.accent.withValues(alpha: 0.16),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  QrImageView(
-                    data: 'https://$link',
-                    version: QrVersions.auto,
-                    size: 152,
-                    backgroundColor: Colors.white,
-                    eyeStyle: const QrEyeStyle(
-                      eyeShape: QrEyeShape.circle,
-                      color: AppColors.accentDeep,
-                    ),
-                    dataModuleStyle: const QrDataModuleStyle(
-                      dataModuleShape: QrDataModuleShape.circle,
-                      color: AppColors.accentDeep,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.qr_code_scanner_rounded,
-                          size: 13, color: Color(0xFF8A94A6)),
-                      const SizedBox(width: 5),
-                      Text(L.scanToBookMe,
-                          style: GoogleFonts.nunito(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF8A94A6),
-                          )),
-                    ],
-                  ),
-                ],
-              ),
-            ),
           ),
           const SizedBox(height: 12),
           Row(
