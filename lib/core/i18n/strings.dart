@@ -244,6 +244,26 @@ class L {
   // ── Settings + contact verification ───────────────────
   static String get settingsTitle =>
       _t('Settings', 'Настройки', 'Sozlamalar');
+  static String get manageShopSettings => _t('Shop, services & settings',
+      'Барбершоп, услуги, настройки', 'Barbershop, xizmatlar, sozlamalar');
+  static String get appAndAccount => _t('App & account',
+      'Приложение и аккаунт', 'Ilova va akkaunt');
+  static String get appAndAccountSub => _t('Language, notifications, sign out',
+      'Язык, уведомления, выход', 'Til, bildirishnomalar, chiqish');
+  static String get growBookingsTitle =>
+      _t('Get more bookings', 'Больше записей', "Ko'proq yozuv");
+  static String get growBookingsSub => _t(
+      'Share your QR — regulars book you free',
+      'Поделитесь QR — постоянные записываются бесплатно',
+      "QR ulashing — doimiylar bepul yoziladi");
+  static String get boostSellTitle =>
+      _t('Turbo Boost', 'Турбо-буст', 'Turbo Bust');
+  static String get boostSellSub => _t(
+      'Top of search for an hour — or go VIP',
+      'Час в топе поиска — или VIP',
+      "Bir soat qidiruv tepasida — yoki VIP");
+  static String get boostedNowChip =>
+      _t('Live 🚀', 'В топе 🚀', 'Tepada 🚀');
   static String get accountSection =>
       _t('Account', 'Аккаунт', 'Hisob');
   static String get preferencesSection =>

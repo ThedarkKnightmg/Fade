@@ -20,9 +20,13 @@ import '../../widgets/primary_button.dart';
 import 'barber_avatar.dart';
 import 'shop_location_picker_screen.dart';
 import 'wallet_screen.dart';
+import 'vip_boost_screen.dart';
+import '../settings/settings_screen.dart';
 
-/// The barber's own profile: stats, an editable service menu (re-price, switch
-/// off, add, remove), and the switch back to Client mode.
+/// The barber's own profile — now a lean, conversion-focused surface: identity,
+/// live stats, the wallet bank-card, a gold Turbo-Boost sell card, and a
+/// "grow your bookings" share card. All the config (services, hours, shop, app
+/// settings, role switch) lives one tap away in [BarberSettingsScreen].
 class BarberProfileScreen extends StatelessWidget {
   const BarberProfileScreen({super.key});
 
@@ -40,20 +44,35 @@ class BarberProfileScreen extends StatelessWidget {
               .where((b) => b.status == BookingStatus.completed)
               .length;
           final upcoming = s.barberAgenda.length;
-          final services = s.barberServices;
 
           return SafeArea(
             bottom: false,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 140),
               children: [
+                // Gear → all the config now lives in BarberSettingsScreen.
                 FadeSlideIn(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: CircleBtn(
+                      icon: Icons.settings_rounded,
+                      size: 44,
+                      onTap: () => Navigator.of(context).push(
+                        FadeThroughPageRoute(
+                            child: const BarberSettingsScreen()),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 40),
                   child: _ProfileHero(
                       name: me.barber.name, shop: me.shop.name),
                 ),
                 const SizedBox(height: 14),
                 FadeSlideIn(
-                  delay: const Duration(milliseconds: 70),
+                  delay: const Duration(milliseconds: 80),
                   child: Row(
                     children: [
                       _ColorStat(
@@ -78,10 +97,24 @@ class BarberProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // ── Wallet (monetization: the "vending machine") ──
+                // ── Wallet bank-card (the prepaid "vending machine") ──
                 FadeSlideIn(
-                  delay: const Duration(milliseconds: 85),
+                  delay: const Duration(milliseconds: 110),
                   child: const _WalletTile(),
+                ),
+                const SizedBox(height: 12),
+
+                // ── SELL: Turbo Boost / VIP — fill the chair right now ──
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 140),
+                  child: const _BoostSellCard(),
+                ),
+                const SizedBox(height: 12),
+
+                // ── DRIVE BOOKINGS: white-label share link / QR ──
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 170),
+                  child: const _GrowBookingsCard(),
                 ),
                 const SizedBox(height: 16),
 
@@ -89,80 +122,416 @@ class BarberProfileScreen extends StatelessWidget {
                 if (s.isShopOwner)
                   _RosterRequestsCard(requests: s.rosterRequestsForMyShop()),
 
-                // ── Editable service menu ──
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(L.yourServices,
-                              style: AppTypography.h3(context)),
-                          const SizedBox(height: 2),
-                          Text(L.servicesHint,
-                              style: AppTypography.bodySmall(context)),
-                        ],
-                      ),
+                // ── Manage: services, hours, shop, app settings, role switch ──
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 200),
+                  child: _NavTile(
+                    icon: Icons.tune_rounded,
+                    title: L.settingsTitle,
+                    subtitle: L.manageShopSettings,
+                    onTap: () => Navigator.of(context).push(
+                      FadeThroughPageRoute(
+                          child: const BarberSettingsScreen()),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                for (final svc in services) ...[
-                  _ServiceRow(service: svc),
-                  const SizedBox(height: 8),
-                ],
-                const SizedBox(height: 4),
-                _AddServiceButton(
-                  onTap: () => _openEditor(context, null),
-                ),
-
-                const SizedBox(height: 22),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 120),
-                  child: _WorkingHoursCard(
-                      start: s.workStartHour, end: s.workEndHour),
-                ),
-                const SizedBox(height: 16),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 160),
-                  child: _MyShopCard(
-                    lat: s.shopLat,
-                    lng: s.shopLng,
-                    address: s.shopAddress,
-                    photos: s.shopPhotos,
-                    description: s.shopDescription,
-                    editable: s.isShopOwner,
-                  ),
-                ),
-
-                const SizedBox(height: 22),
-                PaperCard(
-                  radius: 20,
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(L.bookingAsClient,
-                          style: AppTypography.h4(context)),
-                      const SizedBox(height: 4),
-                      Text(L.switchClientBody,
-                          style: AppTypography.bodySmall(context)),
-                      const SizedBox(height: 14),
-                      PrimaryButton(
-                        label: L.switchToClient,
-                        icon: Icons.swap_horiz_rounded,
-                        height: 50,
-                        onPressed: () =>
-                            AppState.instance.setRole(AppRole.client),
-                      ),
-                    ],
                   ),
                 ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+//  Barber Settings — the config that used to clutter the profile now lives
+//  here: services, working hours, the shop, app & account, and role switch.
+// ═════════════════════════════════════════════════════════════════════════
+
+/// Everything the barber configures, one tap behind the profile's gear. Reuses
+/// the same service / hours / shop editors the profile used to inline.
+class BarberSettingsScreen extends StatelessWidget {
+  const BarberSettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Scaffold(
+      backgroundColor: p.bg,
+      body: AnimatedBuilder(
+        animation: AppState.instance,
+        builder: (context, _) {
+          final s = AppState.instance;
+          final services = s.barberServices;
+          return SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 48),
+              children: [
+                // Header.
+                Row(
+                  children: [
+                    CircleBtn(
+                      icon: Icons.arrow_back_rounded,
+                      size: 44,
+                      onTap: () => Navigator.of(context).maybePop(),
+                    ),
+                    const SizedBox(width: 14),
+                    Text(L.settingsTitle, style: AppTypography.h2(context)),
+                  ],
+                ),
+                const SizedBox(height: 22),
+
+                // ── Services (re-price, switch off, add, remove) ──
+                Text(L.yourServices, style: AppTypography.h3(context)),
+                const SizedBox(height: 2),
+                Text(L.servicesHint, style: AppTypography.bodySmall(context)),
+                const SizedBox(height: 12),
+                for (final svc in services) ...[
+                  _ServiceRow(service: svc),
+                  const SizedBox(height: 8),
+                ],
+                const SizedBox(height: 4),
+                _AddServiceButton(onTap: () => _openEditor(context, null)),
+                const SizedBox(height: 26),
+
+                // ── Working hours ──
+                FadeSlideIn(
+                  child: _WorkingHoursCard(
+                      start: s.workStartHour, end: s.workEndHour),
+                ),
+                const SizedBox(height: 22),
+
+                // ── My shop: map, photos, description ──
+                _MyShopCard(
+                  lat: s.shopLat,
+                  lng: s.shopLng,
+                  address: s.shopAddress,
+                  photos: s.shopPhotos,
+                  description: s.shopDescription,
+                  editable: s.isShopOwner,
+                ),
+                const SizedBox(height: 26),
+
+                // ── App & account (shared client settings screen) ──
+                _NavTile(
+                  icon: Icons.manage_accounts_rounded,
+                  title: L.appAndAccount,
+                  subtitle: L.appAndAccountSub,
+                  onTap: () => Navigator.of(context).push(
+                    FadeThroughPageRoute(child: const SettingsScreen()),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // ── Switch to client mode ──
+                _NavTile(
+                  icon: Icons.swap_horiz_rounded,
+                  tint: AppColors.green,
+                  title: L.switchToClient,
+                  subtitle: L.switchClientBody,
+                  onTap: () {
+                    Navigator.of(context).maybePop();
+                    AppState.instance.setRole(AppRole.client);
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// A tappable settings/nav row: tinted icon tile, title + subtitle, chevron.
+class _NavTile extends StatelessWidget {
+  const _NavTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.subtitle,
+    this.tint = AppColors.accent,
+  });
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onTap;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      behavior: HitTestBehavior.opaque,
+      child: PaperCard(
+        radius: 18,
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: tint.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 21, color: tint),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppTypography.h4(context)),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 1),
+                    Text(subtitle!, style: AppTypography.bodySmall(context)),
+                  ],
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, size: 20, color: p.textTertiary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The gold "sell" card on the profile — Turbo Boost / VIP. Shows live Ups and
+/// current boost/VIP status; taps into the full Boost hub.
+class _BoostSellCard extends StatelessWidget {
+  const _BoostSellCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppState.instance;
+    final boosted = s.barberBoosted;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        Navigator.of(context)
+            .push(FadeThroughPageRoute(child: const VipBoostScreen()));
+      },
+      behavior: HitTestBehavior.opaque,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFFD778), Color(0xFFE7A11B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFE7A11B).withValues(alpha: 0.38),
+                blurRadius: 20,
+                spreadRadius: -6,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Breathe(
+                  builder: (context, t) => DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment(-0.9 + 1.8 * t, -0.8),
+                        radius: 1.0,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.30),
+                          Colors.white.withValues(alpha: 0.0),
+                        ],
+                        stops: const [0.0, 0.6],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.30),
+                        borderRadius: BorderRadius.circular(13),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.5)),
+                      ),
+                      child: const Icon(Icons.rocket_launch_rounded,
+                          size: 24, color: Color(0xFF6B4400)),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(L.boostSellTitle,
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900,
+                                    color: const Color(0xFF4A3200),
+                                  )),
+                              if (s.barberVip) ...[
+                                const SizedBox(width: 6),
+                                const _GoldPill(label: 'VIP'),
+                              ] else if (boosted) ...[
+                                const SizedBox(width: 6),
+                                _GoldPill(label: L.boostedNowChip),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(L.boostSellSub,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.nunito(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF6B4E12),
+                              )),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Live Ups balance chip.
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 11, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.bolt_rounded,
+                              size: 15, color: Color(0xFFE7A11B)),
+                          const SizedBox(width: 3),
+                          Text('${s.boosts}',
+                              style: GoogleFonts.nunito(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                color: const Color(0xFF4A3200),
+                              )),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A small dark pill used on the gold boost card (VIP / Live).
+class _GoldPill extends StatelessWidget {
+  const _GoldPill({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF4A3200),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(label,
+          style: GoogleFonts.nunito(
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.5,
+            color: const Color(0xFFFFD778),
+          )),
+    );
+  }
+}
+
+/// "Grow your bookings" — surfaces the white-label link/QR (the anti-leakage
+/// hook). Taps into the wallet, where the full scannable QR lives.
+class _GrowBookingsCard extends StatelessWidget {
+  const _GrowBookingsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final s = AppState.instance;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        Navigator.of(context)
+            .push(FadeThroughPageRoute(child: const WalletScreen()));
+      },
+      behavior: HitTestBehavior.opaque,
+      child: PaperCard(
+        radius: 20,
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(Icons.qr_code_2_rounded,
+                  size: 24, color: AppColors.accent),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(L.growBookingsTitle, style: AppTypography.h4(context)),
+                  const SizedBox(height: 2),
+                  Text(L.growBookingsSub,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySmall(context)),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.link_rounded,
+                          size: 13, color: p.textTertiary),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(s.barberLink,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.nunito(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.accent,
+                            )),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, size: 20, color: p.textTertiary),
+          ],
+        ),
       ),
     );
   }
