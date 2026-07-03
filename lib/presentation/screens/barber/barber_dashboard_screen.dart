@@ -503,9 +503,8 @@ class _NextBookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    return Container(
-      decoration: clayDecoration(p, radius: 26),
+    return GlassPanel(
+      radius: 26,
       padding: const EdgeInsets.all(18),
       child: booking == null ? _empty(context) : _content(context, booking!),
     );
@@ -812,9 +811,9 @@ class _HistoryCard extends StatelessWidget {
           FadeThroughPageRoute(child: const BarberHistoryScreen()),
         );
       },
-      child: Container(
+      child: GlassPanel(
+        radius: 20,
         padding: const EdgeInsets.all(14),
-        decoration: clayDecoration(p, radius: 20),
         child: Row(
           children: [
             Container(
@@ -878,9 +877,9 @@ class _GoalCard extends StatelessWidget {
     final pct = goalSom <= 0 ? 0.0 : (earnedSom / goalSom).clamp(0.0, 1.0);
     final reached = goalSom > 0 && earnedSom >= goalSom;
     final toGo = goalSom - earnedSom;
-    return Container(
+    return GlassPanel(
+      radius: 22,
       padding: const EdgeInsets.all(18),
-      decoration: clayDecoration(p, radius: 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1121,9 +1120,9 @@ class _EarningsChartCardState extends State<_EarningsChartCard> {
     final reduced = _reduced(context);
     final selTotal = totals[_selected];
 
-    return Container(
+    return GlassPanel(
+      radius: 22,
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-      decoration: clayDecoration(p, radius: 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

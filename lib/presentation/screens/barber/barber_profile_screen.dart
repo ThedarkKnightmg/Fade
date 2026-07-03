@@ -860,64 +860,181 @@ class _StepRow extends StatelessWidget {
 
 /// A compact wallet balance tile on the barber profile → taps into the full
 /// wallet screen. Shows the "vending machine" balance at a glance.
+/// A premium "bank-card" style wallet surface: a blue gradient card with a
+/// drifting sheen, a skeuomorphic chip, the balance, and live boosts/VIP.
 class _WalletTile extends StatelessWidget {
   const _WalletTile();
 
   @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
     final s = AppState.instance;
     return GestureDetector(
       onTap: () => Navigator.of(context)
           .push(FadeThroughPageRoute(child: const WalletScreen())),
       behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: clayDecoration(p, radius: 20),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Icon(Icons.account_balance_wallet_rounded,
-                  color: AppColors.accent, size: 22),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF3D9BFF), Color(0xFF1E5FCC)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(L.walletTitle, style: AppTypography.h4(context)),
-                      if (s.barberVip) ...[
-                        const SizedBox(width: 8),
-                        const MiniPill('VIP',
-                            style: MiniPillStyle.gold,
-                            icon: Icons.workspace_premium_rounded),
-                      ],
-                    ],
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.accent.withValues(alpha: 0.32),
+                blurRadius: 22,
+                spreadRadius: -6,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Breathe(
+                  builder: (context, t) => DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment(-0.9 + 1.8 * t, -0.8),
+                        radius: 1.0,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.18),
+                          Colors.white.withValues(alpha: 0.0),
+                        ],
+                        stops: const [0.0, 0.6],
+                      ),
+                    ),
                   ),
-                  Text("${Money.group(s.walletSom)} so'm",
-                      style: GoogleFonts.nunito(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.accent,
-                      )),
-                ],
+                ),
               ),
-            ),
-            if (s.walletLow)
-              const Icon(Icons.warning_amber_rounded,
-                  color: AppColors.gold, size: 20)
-            else
-              Icon(Icons.chevron_right_rounded, color: p.textTertiary),
-          ],
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text('WALLET',
+                            style: GoogleFonts.nunito(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.5,
+                              color: Colors.white.withValues(alpha: 0.85),
+                            )),
+                        const Spacer(),
+                        // Skeuomorphic card chip.
+                        Container(
+                          width: 34,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFF3D98A), Color(0xFFD9A94A)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.4)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      "${Money.group(s.walletSom)} so'm",
+                      style: GoogleFonts.nunito(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        shadows: const [
+                          Shadow(
+                              color: Color(0x55001B4D),
+                              offset: Offset(0, 1.5),
+                              blurRadius: 1),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _CardChip(
+                          icon: Icons.bolt_rounded,
+                          label: L.upsUnit(s.boosts),
+                        ),
+                        if (s.barberVip) ...[
+                          const SizedBox(width: 8),
+                          _CardChip(
+                            icon: Icons.workspace_premium_rounded,
+                            label: 'VIP',
+                            gold: true,
+                          ),
+                        ],
+                        const Spacer(),
+                        Row(
+                          children: [
+                            Text(
+                              s.walletLow ? L.walletLowWarn : L.walletTitle,
+                              style: GoogleFonts.nunito(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                            const SizedBox(width: 3),
+                            Icon(
+                              s.walletLow
+                                  ? Icons.warning_amber_rounded
+                                  : Icons.chevron_right_rounded,
+                              size: 18,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// A frosted chip inside the wallet card (boosts / VIP).
+class _CardChip extends StatelessWidget {
+  const _CardChip({required this.icon, required this.label, this.gold = false});
+  final IconData icon;
+  final String label;
+  final bool gold;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = gold ? AppColors.gold : Colors.white;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: c),
+          const SizedBox(width: 4),
+          Text(label,
+              style: GoogleFonts.nunito(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w900,
+                color: c,
+              )),
+        ],
       ),
     );
   }
