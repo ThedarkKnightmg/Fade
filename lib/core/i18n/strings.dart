@@ -941,6 +941,14 @@ class L {
       _t('Your booking link', 'Ваша ссылка', 'Havolangiz');
   static String get shareYourLink =>
       _t('Share — regulars book free', 'Поделиться', 'Ulashish');
+  static String get scanToBookMe =>
+      _t('Scan to book me', 'Сканируй, чтобы записаться', 'Yozilish uchun skanerlang');
+  static String get qrStickerHint => _t(
+      'Regulars who scan this book you at 0% — stick it on your mirror.',
+      'Постоянные по этому QR платят 0% — повесьте у зеркала.',
+      'Bu QR orqali doimiylar 0% to\'laydi — koʻzguga yopishtiring.');
+  static String get shareSticker =>
+      _t('Share my QR', 'Поделиться QR', 'QR ulashish');
   static String get linkCopiedToast =>
       _t('Link copied ✓', 'Ссылка скопирована ✓', 'Havola nusxalandi ✓');
   static String get getVipBoost => _t('Get VIP Boost', 'Купить VIP', 'VIP olish');

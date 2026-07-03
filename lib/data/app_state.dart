@@ -1032,18 +1032,50 @@ class AppState extends ChangeNotifier {
     ]);
   }
 
-  /// Commission for a completed booking under the tiered model.
+  /// True if this barber has already completed a cut for this named client
+  /// before — a returning "regular" the app must NOT keep charging for (Tier 3).
+  bool isReturningClient(Booking b) {
+    final name = b.clientName;
+    if (name == null || name.isEmpty) return false;
+    return _bookings.any((x) =>
+        x.id != b.id &&
+        !x.isWalkIn &&
+        x.clientName == name &&
+        x.barber.id == b.barber.id &&
+        x.status == BookingStatus.completed);
+  }
+
+  /// Commission under the tiered model: walk-ins (Tier 1) and returning regulars
+  /// (Tier 3) are FREE — only a brand-new client the app delivered pays 5%
+  /// (Tier 2). This is the whole "vending machine": you only pay for new chairs.
   int commissionSomFor(Booking b) {
-    if (b.isWalkIn) return 0; // Tier 1: walk-ins are free forever
+    if (b.isWalkIn) return 0;
+    if (isReturningClient(b)) return 0;
     return (Money.toSom(b.service.price) * newClientFeePercent / 100).round();
   }
 
   void _chargeCommission(String id) {
     final b = _bookingById(id);
     if (b == null || b.isWalkIn) return; // walk-ins never charge
+    _ensureLedgerSeed();
+    // A returning regular — kept free. Log a 0-fee line so the barber SEES the
+    // value ("this regular cost me nothing"), reinforcing the model.
+    if (isReturningClient(b)) {
+      _ledger.insert(
+        0,
+        WalletTx(
+          label: b.clientName ?? b.barber.name,
+          sub: 'Regular · kept free',
+          amountSom: 0,
+          credit: false,
+          at: DateTime.now(),
+        ),
+      );
+      notifyListeners();
+      return;
+    }
     final fee = commissionSomFor(b);
     if (fee <= 0) return;
-    _ensureLedgerSeed();
     _walletSom -= fee;
     _ledger.insert(
       0,

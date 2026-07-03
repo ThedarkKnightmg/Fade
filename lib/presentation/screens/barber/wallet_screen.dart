@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/format/money.dart';
@@ -467,7 +468,59 @@ class _LinkCard extends StatelessWidget {
               Text(L.yourLinkLabel, style: AppTypography.h4(context)),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
+          // The white-label QR "sticker" (Tier 3) — a static QR of the barber's
+          // personal link; a regular who scans it books at 0% commission.
+          Center(
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.accent.withValues(alpha: 0.16),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  QrImageView(
+                    data: 'https://$link',
+                    version: QrVersions.auto,
+                    size: 152,
+                    backgroundColor: Colors.white,
+                    eyeStyle: const QrEyeStyle(
+                      eyeShape: QrEyeShape.circle,
+                      color: AppColors.accentDeep,
+                    ),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.circle,
+                      color: AppColors.accentDeep,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.qr_code_scanner_rounded,
+                          size: 13, color: Color(0xFF8A94A6)),
+                      const SizedBox(width: 5),
+                      Text(L.scanToBookMe,
+                          style: GoogleFonts.nunito(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF8A94A6),
+                          )),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -502,7 +555,7 @@ class _LinkCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(L.shareYourLink, style: AppTypography.caption(context)),
+          Text(L.qrStickerHint, style: AppTypography.caption(context)),
         ],
       ),
     );
@@ -572,8 +625,10 @@ class _LedgerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    final color = tx.credit ? AppColors.green : p.text;
-    final sign = tx.credit ? '+' : '−';
+    // A 0-fee debit = a returning regular kept free (Tier 3).
+    final isFree = !tx.credit && tx.amountSom == 0;
+    final positive = tx.credit || isFree;
+    final tint = positive ? AppColors.green : AppColors.accent;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -582,16 +637,19 @@ class _LedgerRow extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: (tx.credit ? AppColors.green : AppColors.accent)
-                  .withValues(alpha: 0.12),
+              color: tint.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(11),
               border:
                   Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
             ),
             child: Icon(
-              tx.credit ? Icons.add_rounded : Icons.content_cut_rounded,
+              tx.credit
+                  ? Icons.add_rounded
+                  : (isFree
+                      ? Icons.favorite_rounded
+                      : Icons.content_cut_rounded),
               size: 18,
-              color: tx.credit ? AppColors.green : AppColors.accent,
+              color: tint,
             ),
           ),
           const SizedBox(width: 12),
@@ -610,11 +668,14 @@ class _LedgerRow extends StatelessWidget {
               ],
             ),
           ),
-          Text('$sign ${Money.group(tx.amountSom)}',
+          Text(
+              isFree
+                  ? L.walkInFreeTag.split(' ').first // "FREE"
+                  : '${tx.credit ? '+' : '−'} ${Money.group(tx.amountSom)}',
               style: GoogleFonts.nunito(
                 fontSize: 14.5,
                 fontWeight: FontWeight.w900,
-                color: color,
+                color: positive ? AppColors.green : p.text,
               )),
         ],
       ),
