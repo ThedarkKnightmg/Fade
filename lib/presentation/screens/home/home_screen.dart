@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart'
     show CupertinoSliverRefreshControl, RefreshIndicatorMode;
 import 'package:flutter/material.dart';
@@ -782,6 +784,7 @@ class _QuickActions extends StatelessWidget {
                   sub: L.quickAiSub,
                   asset: 'assets/tiles/ai_star.png',
                   onTap: onAi,
+                  spin: true, // the AI sticker flips around the X axis
                 ),
               ),
             ],
@@ -826,6 +829,7 @@ class _QuickTile extends StatelessWidget {
     required this.sub,
     required this.onTap,
     this.asset,
+    this.spin = false,
   });
 
   final IconData icon;
@@ -836,6 +840,9 @@ class _QuickTile extends StatelessWidget {
 
   /// Optional 3D sticker PNG (assets/tiles/…). Falls back to [icon] if missing.
   final String? asset;
+
+  /// When true, the sticker continuously flips around the X axis (the AI tile).
+  final bool spin;
 
   Widget _iconChip(PaperPalette p, double size) => Container(
         width: size,
@@ -874,15 +881,21 @@ class _QuickTile extends StatelessWidget {
                 ),
               );
 
+    // Sticker is 0.6× bigger (×1.6) than before and pops higher above the box.
+    final Widget stickerBox = SizedBox(
+      width: 125,
+      height: 147,
+      child: FittedBox(fit: BoxFit.contain, child: sticker),
+    );
     return PressableScale(
       onTap: onTap,
       pressedScale: 0.96,
       child: SizedBox(
-        height: 102,
+        height: 150,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // The box itself is half-height and horizontal; the label sits
+            // The box itself is unchanged (short + horizontal); the label sits
             // inside it, to the right of the sticker.
             Positioned(
               left: 0,
@@ -890,36 +903,74 @@ class _QuickTile extends StatelessWidget {
               bottom: 0,
               child: Container(
                 height: 62,
-                padding: const EdgeInsets.fromLTRB(80, 8, 10, 8),
+                padding: const EdgeInsets.fromLTRB(100, 8, 12, 8),
                 decoration: clayDecoration(p, radius: 20),
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.nunito(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    height: 1.1,
-                    color: p.text,
+                // Auto-shrink to one clean line so the bigger sticker never
+                // truncates the label.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: GoogleFonts.nunito(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: p.text,
+                    ),
                   ),
                 ),
               ),
             ),
-            // The big 3D sticker stays FULL SIZE and stands OUTSIDE the box,
-            // popping above its top edge.
+            // The big 3D sticker stands OUTSIDE the box, popping above its top.
             Positioned(
-              left: 0,
-              bottom: 8,
-              child: SizedBox(
-                width: 78,
-                height: 92,
-                child: FittedBox(fit: BoxFit.contain, child: sticker),
-              ),
+              left: -6,
+              bottom: 6,
+              child: spin ? _SpinX(child: stickerBox) : stickerBox,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Continuously flips its child around the X axis (a 3D coin-flip) with a
+/// touch of perspective — used for the AI sticker so it feels alive.
+class _SpinX extends StatefulWidget {
+  const _SpinX({required this.child});
+  final Widget child;
+
+  @override
+  State<_SpinX> createState() => _SpinXState();
+}
+
+class _SpinXState extends State<_SpinX> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 3200),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (_, child) => Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.identity()
+          ..setEntry(3, 2, 0.0012) // perspective
+          ..rotateX(_c.value * 2 * math.pi),
+        child: child,
+      ),
+      child: widget.child,
     );
   }
 }
