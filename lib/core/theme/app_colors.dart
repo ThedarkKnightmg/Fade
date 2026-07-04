@@ -129,28 +129,29 @@ class PaperPalette {
   // crisp dark accents on the light background.
   // Claymorphism (default look) — a soft periwinkle canvas with puffy,
   // near-white surfaces that pop via a big ambient shadow + a white highlight.
+  // Yandex-clean, blue-tinted: a bright near-white cool canvas, crisp white
+  // cards, near-black ink, and a soft low shadow — with the blue accent + slight
+  // blue gradients reserved for hero surfaces (liquid-glass done per-surface).
   static const PaperPalette light = PaperPalette(
-    // Soft blue airy canvas (was heavier periwinkle) — the reference look.
-    bg: Color(0xFFE7F0FE),
-    bgGradientTop: Color(0xFFF4F9FF),
-    bgGradientBottom: Color(0xFFDDEAFE),
-    card: Color(0xFFFCFDFF),
-    cardAlt: Color(0xFFEEF3FC),
-    text: Color(0xFF23304F),
-    textSecondary: Color(0xFF67728F),
-    textTertiary: Color(0xFFA1ACC5),
-    border: Color(0xFFDDE6F4),
-    divider: Color(0xFFE6ECF6),
+    bg: Color(0xFFEEF1F6),
+    bgGradientTop: Color(0xFFF7F9FD),
+    bgGradientBottom: Color(0xFFE8EDF4),
+    card: Color(0xFFFFFFFF),
+    cardAlt: Color(0xFFF1F4FA),
+    text: Color(0xFF1B2434),
+    textSecondary: Color(0xFF69728A),
+    textTertiary: Color(0xFFA3ABBC),
+    border: Color(0xFFE7EBF2),
+    divider: Color(0xFFEDF0F5),
     action: AppColors.accent,
     onAction: Colors.white,
     panel: Color(0xFF161F3A),
     panelField: Color(0xFF24304E),
     panelText: Color(0xFFEEF3FB),
     panelTextDim: Color(0x8CB7C3D6),
-    // Softer, lighter clay: a gentle blue ambient + a restrained highlight, so
-    // cards read as lightly raised glass rather than heavy inflated clay.
-    shadow: Color(0x1F3E63B0),
-    clayLight: Color(0x99FFFFFF),
+    // A soft, low, neutral-blue shadow — flat cards that float gently, not clay.
+    shadow: Color(0x12233A63),
+    clayLight: Color(0x33FFFFFF),
     isDark: false,
   );
 }

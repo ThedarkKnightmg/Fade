@@ -403,42 +403,12 @@ class ProfileScreen extends StatelessWidget {
                 child: ReferralCard(onShare: () => _shareInvite(context)),
               ),
               const SizedBox(height: 12),
-              // Settings note.
+              // "Become a barber" — an aspirational blue-gradient upsell (like a
+              // "Become a PRO" card), not a plain toggle. Opens the barber side.
               FadeSlideIn(
                 delay: const Duration(milliseconds: 220),
-                child: PaperCard(
-                  radius: 24,
-                  padding: const EdgeInsets.all(16),
+                child: _BecomeBarberCard(
                   onTap: () => state.setRole(AppRole.barber),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 46,
-                        height: 46,
-                        decoration: BoxDecoration(
-                          color: AppColors.accent.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(Icons.content_cut_rounded,
-                            color: AppColors.accent),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(L.barberModeTitle,
-                                style: AppTypography.h4(context)),
-                            const SizedBox(height: 1),
-                            Text(L.barberModeSub,
-                                style: AppTypography.bodySmall(context)),
-                          ],
-                        ),
-                      ),
-                      Icon(Icons.arrow_forward_ios_rounded,
-                          size: 14, color: p.textTertiary),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(height: 14),
@@ -530,6 +500,95 @@ class _Stat extends StatelessWidget {
             ),
             const SizedBox(height: 1),
             Text(label, style: AppTypography.caption(context)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Aspirational blue-gradient "Become a barber" card (mirrors a "Become a PRO"
+/// upsell): a glass icon chip, title + subtitle, and a white Start pill.
+class _BecomeBarberCard extends StatelessWidget {
+  const _BecomeBarberCard({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF4AA3FF), Color(0xFF1E6FE0)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.accent.withValues(alpha: 0.38),
+              blurRadius: 22,
+              spreadRadius: -6,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.22),
+                borderRadius: BorderRadius.circular(14),
+                border:
+                    Border.all(color: Colors.white.withValues(alpha: 0.35)),
+              ),
+              child: const Icon(Icons.content_cut_rounded,
+                  color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(L.becomeBarber,
+                      style: GoogleFonts.nunito(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      )),
+                  const SizedBox(height: 2),
+                  Text(L.becomeBarberSub,
+                      style: GoogleFonts.nunito(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(L.becomeBarberCta,
+                  style: GoogleFonts.nunito(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.accentDeep,
+                  )),
+            ),
           ],
         ),
       ),

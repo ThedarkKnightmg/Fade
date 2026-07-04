@@ -89,46 +89,31 @@ class GlassPanel extends StatelessWidget {
 // The paper kit — small signature pieces shared by every screen.
 // ============================================================
 
-/// The shared **claymorphism** surface: a puffy tile with a top-left sheen,
-/// a big soft ambient shadow, and a light highlight. Used by [PaperCard], the
-/// home tiles, and any bespoke surface that wants the clay look — so the whole
-/// app stays consistent.
+/// The shared app surface — one clean, Yandex-style soft card used everywhere
+/// (via [PaperCard], the home tiles, and bespoke surfaces) so the whole app
+/// reads as ONE design language: a crisp flat card with a single soft shadow,
+/// no puffy clay. Pass a [color] for a tinted card.
 BoxDecoration clayDecoration(
   PaperPalette p, {
   Color? color,
-  double radius = 28,
+  double radius = 24,
   Color? borderColor,
   double depth = 1,
 }) {
   final base = color ?? p.card;
-  // Light three-stop diagonal: a gentle top-left gloss, the body, a faint
-  // bottom-right shade — enough to read as a soft raised panel, not heavy clay.
-  final sheen = Color.lerp(base, Colors.white, p.isDark ? 0.05 : 0.10)!;
-  final lowlight = Color.lerp(base, Colors.black, p.isDark ? 0.09 : 0.03)!;
   return BoxDecoration(
-    gradient: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [sheen, base, lowlight],
-      stops: const [0.0, 0.55, 1.0],
-    ),
+    color: base,
     borderRadius: BorderRadius.circular(radius),
-    border:
-        borderColor != null ? Border.all(color: borderColor, width: 1.4) : null,
+    border: borderColor != null
+        ? Border.all(color: borderColor, width: 1.4)
+        : (p.isDark ? null : Border.all(color: p.border, width: 1)),
     boxShadow: [
-      // Soft ambient shadow (bottom-right) — a light, close drop, not a fat puff.
+      // One soft, low shadow — gentle float, not a fat clay puff.
       BoxShadow(
         color: p.shadow,
-        blurRadius: 22 * depth,
-        spreadRadius: -6,
+        blurRadius: 18 * depth,
+        spreadRadius: -4,
         offset: Offset(0, 8 * depth),
-      ),
-      // Faint top-left highlight — a whisper of lift.
-      BoxShadow(
-        color: p.clayLight,
-        blurRadius: 10,
-        spreadRadius: -2,
-        offset: const Offset(-3, -4),
       ),
     ],
   );

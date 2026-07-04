@@ -1234,6 +1234,14 @@ class L {
       _t('Barber mode', 'Режим барбера', 'Barber rejimi');
   static String get barberModeSub => _t('Manage bookings & confirm clients',
       'Записи и подтверждение клиентов', 'Yozuvlar va mijozlarni tasdiqlash');
+  static String get becomeBarber =>
+      _t('Become a barber', 'Стать барбером', 'Barber bo\'ling');
+  static String get becomeBarberSub => _t(
+      'Open your chair, take bookings, earn',
+      'Откройте кресло, принимайте записи, зарабатывайте',
+      "O'rindig'ingizni oching, yozuvlar oling, daromad qiling");
+  static String get becomeBarberCta =>
+      _t('Start', 'Начать', 'Boshlash');
   static String get vipClub => _t('VIP Club', 'VIP-клуб', 'VIP klub');
   static String get noBarberPinned => _t(
       'no barber pinned yet — find your person',
