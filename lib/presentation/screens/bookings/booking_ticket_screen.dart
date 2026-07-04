@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
@@ -8,7 +11,6 @@ import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
 import '../../widgets/paper_kit.dart';
-import '../../widgets/pseudo_qr_painter.dart';
 
 /// The client's "Booking Ticket": a dynamic QR the barber scans at the chair to
 /// verify the visit (locking their commission). Refreshes every 30s. The
@@ -62,7 +64,7 @@ class BookingTicketScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        PseudoQrView(bookingId: booking.id, size: 220),
+                        _TicketQr(bookingId: booking.id, size: 220),
                         const SizedBox(height: 12),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -202,6 +204,55 @@ class _Row extends StatelessWidget {
               )),
         ),
       ],
+    );
+  }
+}
+
+/// A REAL, scannable ticket QR. Encodes `fade:ticket:<bookingId>:<slice>`
+/// where the slice advances every 30s — so the refresh promise is genuine and
+/// a stale screenshot ages out.
+class _TicketQr extends StatefulWidget {
+  const _TicketQr({required this.bookingId, required this.size});
+  final String bookingId;
+  final double size;
+
+  @override
+  State<_TicketQr> createState() => _TicketQrState();
+}
+
+class _TicketQrState extends State<_TicketQr> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Re-encode on each 30s boundary.
+    _timer = Timer.periodic(
+        const Duration(seconds: 30), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final slice = DateTime.now().millisecondsSinceEpoch ~/ 30000;
+    return QrImageView(
+      data: 'fade:ticket:${widget.bookingId}:$slice',
+      version: QrVersions.auto,
+      size: widget.size,
+      backgroundColor: Colors.white,
+      eyeStyle: const QrEyeStyle(
+        eyeShape: QrEyeShape.circle,
+        color: Color(0xFF1B2430),
+      ),
+      dataModuleStyle: const QrDataModuleStyle(
+        dataModuleShape: QrDataModuleShape.circle,
+        color: Color(0xFF1B2430),
+      ),
     );
   }
 }

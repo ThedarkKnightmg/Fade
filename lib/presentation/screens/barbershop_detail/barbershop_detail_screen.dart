@@ -1188,11 +1188,81 @@ class _ReviewsBlock extends StatelessWidget {
           const SizedBox(height: 8),
         ],
         if (total > reviews.length)
-          Text(
-            '+ ${total - reviews.length} more reviews',
-            style: AppTypography.caption(context),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _showAllReviews(
+                context, [...barberRevs, ...shopRevs, ...shop.reviews]),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Text(
+                    '+ ${total - reviews.length} more reviews',
+                    style: AppTypography.caption(context).copyWith(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded,
+                      size: 16, color: AppColors.accent),
+                ],
+              ),
+            ),
           ),
       ],
+    );
+  }
+
+  /// Every review we actually have, in a scrollable sheet — the "+ N more"
+  /// line opens this instead of being dead text.
+  void _showAllReviews(BuildContext context, List<Review> all) {
+    final p = Paper.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => Container(
+        constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8),
+        decoration: BoxDecoration(
+          color: p.bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+        ),
+        padding: EdgeInsets.fromLTRB(
+            20, 12, 20, 12 + MediaQuery.of(context).padding.bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: p.border, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(L.reviewsWord, style: AppTypography.h2(context)),
+            const SizedBox(height: 14),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final r in all) ...[
+                    PaperCard(
+                      radius: 24,
+                      padding: const EdgeInsets.all(16),
+                      child: _ReviewCardBody(review: r),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -277,6 +277,46 @@ class L {
   static String get actBoost => _t('Boost', 'Буст', 'Bust');
   static String get topUpAddedToast =>
       _t('Credit topped up ✓', 'Кредит пополнен ✓', "Kredit to'ldirildi ✓");
+
+  // ── Help & feedback ──
+  static String get helpFeedback =>
+      _t('Help & feedback', 'Помощь и отзыв', 'Yordam va fikr');
+  static String get helpFeedbackSub => _t(
+      'Report a bug, suggest an idea, or just tell us',
+      'Сообщите об ошибке, предложите идею или просто напишите',
+      "Xatolik haqida yozing, g'oya bering yoki shunchaki ayting");
+  static String get feedbackTitle =>
+      _t("What's wrong?", 'Что случилось?', 'Nima bo\'ldi?');
+  static String get feedbackSub => _t(
+      'We read every message and fix fast.',
+      'Мы читаем каждое сообщение и быстро чиним.',
+      "Har bir xabarni o'qiymiz va tez tuzatamiz.");
+  static String get fbBug => _t('Bug', 'Ошибка', 'Xatolik');
+  static String get fbIdea => _t('Idea', 'Идея', "G'oya");
+  static String get fbOther => _t('Other', 'Другое', 'Boshqa');
+  static String get fbMessageHint => _t(
+      'Describe what happened…',
+      'Опишите, что произошло…',
+      'Nima bo\'lganini yozing…');
+  static String get fbContactHint => _t(
+      'Phone or Telegram (optional)',
+      'Телефон или Telegram (необязательно)',
+      'Telefon yoki Telegram (ixtiyoriy)');
+  static String get fbSend => _t('Send', 'Отправить', 'Yuborish');
+  static String get fbThanks => _t(
+      "Thank you! We're on it 🙌",
+      'Спасибо! Уже разбираемся 🙌',
+      "Rahmat! Ko'rib chiqyapmiz 🙌");
+  static String get fbEmpty => _t(
+      'Please write a few words first',
+      'Сначала напишите пару слов',
+      "Avval bir-ikki so'z yozing");
+  static String get fbEmailUs =>
+      _t('Or email us', 'Или напишите на почту', 'Yoki pochtaga yozing');
+  static String get yourPasses =>
+      _t('Your passes', 'Ваши пассы', 'Sizning passlaringiz');
+  static String get perkDoublePoints =>
+      _t('Double loyalty points', 'Двойные баллы', 'Ikki barobar ball');
   static String get accountSection =>
       _t('Account', 'Аккаунт', 'Hisob');
   static String get preferencesSection =>
@@ -1151,9 +1191,9 @@ class L {
   static String get bookedExcl =>
       _t('Booked!', 'Записано!', 'Yozildi!');
   static String sentToBarber(String name) => _t(
-      "Sent to $name — you'll get a ping the moment it's confirmed.",
-      'Отправлено $name — уведомим, как только подтвердят.',
-      "$name'ga yuborildi — tasdiqlanishi bilan xabar beramiz.");
+      "Sent to $name — your home card updates the moment they reply.",
+      'Отправлено $name — карточка на главной обновится, как только ответят.',
+      "$name'ga yuborildi — javob berishi bilan bosh sahifadagi karta yangilanadi.");
 
   // ── Waiting for reply (request pending the barber's confirmation) ──
   static String get waitingTitle =>
@@ -1167,9 +1207,9 @@ class L {
       '$n заявок ожидают подтверждения',
       "$n ta so'rov tasdiqlanishini kutmoqda");
   static String get waitingHint => _t(
-      "We'll ping you the moment it's confirmed",
-      'Уведомим, как только подтвердят',
-      'Tasdiqlanishi bilan darhol xabar beramiz');
+      'This card updates the moment they reply',
+      'Эта карточка обновится, как только ответят',
+      'Javob berishlari bilan bu karta yangilanadi');
 
   // ── Explore ───────────────────────────────────────────
   static String get searchShopsHint => _t('Search shops, fades, beards…',

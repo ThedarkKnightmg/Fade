@@ -1257,11 +1257,17 @@ class _BonusSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    const goal = 16;
+    // The ONE loyalty goal, shared with the ticket + punch card.
+    const goal = AppState.vipStreakGoal;
     final cuts = AppState.instance.totalCuts;
     final pct = (cuts / goal).clamp(0.0, 1.0);
     final remaining = goal - cuts;
     final streak = 2 + (cuts % 7);
+    // Earned passes (from the booking-confirmation reward), aggregated.
+    final passCounts = <String, int>{};
+    for (final id in AppState.instance.perks) {
+      passCounts[id] = (passCounts[id] ?? 0) + 1;
+    }
 
     Widget perk(IconData icon, String title, String sub) => Padding(
           padding: const EdgeInsets.only(top: 14),
@@ -1393,6 +1399,64 @@ class _BonusSheet extends StatelessWidget {
                 remaining <= 0 ? L.vipUnlocked : L.cutsToVip(remaining),
                 style: AppTypography.bodySmall(context),
               ),
+              // Earned passes — the confirmation-screen rewards, now real and
+              // waiting here instead of vanishing.
+              if (passCounts.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(L.yourPasses, style: AppTypography.h3(context)),
+                for (final e in passCounts.entries)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: AppColors.gold.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Icon(
+                            switch (e.key) {
+                              'priority' => Icons.bolt_rounded,
+                              'skip' => Icons.fast_forward_rounded,
+                              _ => Icons.star_rounded,
+                            },
+                            size: 20,
+                            color: AppColors.gold,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            switch (e.key) {
+                              'priority' => L.perkPriority,
+                              'skip' => L.perkSkipQueue,
+                              _ => L.perkDoublePoints,
+                            },
+                            style: GoogleFonts.nunito(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w800,
+                                color: p.text),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 9, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.gold.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text('×${e.value}',
+                              style: GoogleFonts.nunito(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF8A6100))),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
               const SizedBox(height: 8),
               perk(Icons.bolt_rounded, L.perkPriority, L.perkPrioritySub),
               perk(Icons.fast_forward_rounded, L.perkSkipQueue,

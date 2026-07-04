@@ -12,6 +12,7 @@ import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../auth/login_screen.dart';
 import 'calendar_sync_screen.dart';
+import 'support_sheet.dart';
 import 'verify_contact_screen.dart';
 
 /// One home for the account + app preferences. Editing email or phone routes
@@ -283,7 +284,9 @@ class SettingsScreen extends StatelessWidget {
                         label: L.emailWord,
                         value:
                             user.email.isEmpty ? L.tapToVerifyChange : user.email,
-                        badge: _VerifiedBadge(),
+                        // Every stored contact went through VerifyContactScreen,
+                        // so non-empty = verified; empty shows no badge.
+                        badge: user.email.isEmpty ? null : _VerifiedBadge(),
                         onTap: () => _changeContact(context, isEmail: true),
                       ),
                       _Divider(),
@@ -292,7 +295,7 @@ class SettingsScreen extends StatelessWidget {
                         label: L.phoneWord,
                         value:
                             user.phone.isEmpty ? L.tapToVerifyChange : user.phone,
-                        badge: _VerifiedBadge(),
+                        badge: user.phone.isEmpty ? null : _VerifiedBadge(),
                         onTap: () => _changeContact(context, isEmail: false),
                       ),
                     ],
@@ -349,6 +352,22 @@ class SettingsScreen extends StatelessWidget {
                           FadeThroughPageRoute(
                               child: const CalendarSyncScreen()),
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 22),
+
+                // Help & feedback — report a bug, pitch an idea, or just talk.
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 135),
+                  child: _Card(
+                    children: [
+                      _Tile(
+                        icon: Icons.support_agent_rounded,
+                        label: L.helpFeedback,
+                        value: L.helpFeedbackSub,
+                        onTap: () => showSupportSheet(context),
                       ),
                     ],
                   ),

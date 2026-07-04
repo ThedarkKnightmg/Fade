@@ -112,9 +112,10 @@ class _BarberNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Reference look, same as the client bar: a minimal near-black floating
-    // pill (dark in BOTH themes), each tab in its own dark circular slot —
-    // no labels, no borders, just the glyphs. The badge stays on Requests.
+    final p = Paper.of(context);
+    // Reference layout, same as the client bar — a minimal floating pill with
+    // circular slots, no labels — but THEME-coloured, not black. The badge
+    // stays on Requests.
     return AnimatedBuilder(
       animation: AppState.instance,
       builder: (context, _) {
@@ -124,11 +125,12 @@ class _BarberNav extends StatelessWidget {
           margin: EdgeInsets.fromLTRB(
               16, 0, 16, 12 + MediaQuery.of(context).padding.bottom),
           decoration: BoxDecoration(
-            color: const Color(0xFF17181C),
+            color: p.card,
             borderRadius: BorderRadius.circular(36),
+            border: Border.all(color: p.border),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.30),
+                color: p.shadow,
                 blurRadius: 24,
                 spreadRadius: -4,
                 offset: const Offset(0, 12),
@@ -178,8 +180,9 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Same slot treatment as the client bar: a dark circle that lights up a
-    // touch when selected, grey → white glyph. Minimal — no label.
+    final p = Paper.of(context);
+    // Same slot treatment as the client bar: a circle that lights up with the
+    // accent when selected, grey glyph otherwise. Minimal — no label.
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -194,7 +197,9 @@ class _NavItem extends StatelessWidget {
             height: 52,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: selected ? 0.18 : 0.06),
+              color: selected
+                  ? AppColors.accent.withValues(alpha: 0.14)
+                  : p.textTertiary.withValues(alpha: 0.08),
             ),
             child: Stack(
               clipBehavior: Clip.none,
@@ -207,8 +212,7 @@ class _NavItem extends StatelessWidget {
                   child: Icon(
                     icon,
                     size: 24,
-                    color:
-                        selected ? Colors.white : const Color(0xFF8E939E),
+                    color: selected ? AppColors.accent : p.textTertiary,
                   ),
                 ),
                 if (badge > 0)

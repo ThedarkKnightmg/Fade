@@ -1470,6 +1470,7 @@ class AppState extends ChangeNotifier {
   String? get address => _address;
   void setAddress(String? value) {
     _address = (value == null || value.trim().isEmpty) ? null : value.trim();
+    _save();
     notifyListeners();
   }
 
@@ -1477,6 +1478,39 @@ class AppState extends ChangeNotifier {
   bool get remindersOn => _remindersOn;
   void setReminders(bool value) {
     _remindersOn = value;
+    _save();
+    notifyListeners();
+  }
+
+  // === Feedback / bug reports ===
+  // Stored locally (and kept across restarts) so nothing a user writes is
+  // lost; when the Supabase backend lands these sync to a `feedback` table.
+  final List<String> _feedback = [];
+  int get feedbackCount => _feedback.length;
+
+  Future<void> submitFeedback({
+    required String category,
+    required String message,
+    String? contact,
+  }) async {
+    final entry =
+        '${DateTime.now().toIso8601String()}|$category|${contact ?? ''}|$message';
+    _feedback.add(entry);
+    final sp = await SharedPreferences.getInstance();
+    await sp.setStringList('feedback', _feedback);
+    notifyListeners();
+  }
+
+  // === Earned perks (variable-reward loop) ===
+  // The confirmation screen's "YOU JUST EARNED" pass is real now: perks are
+  // stored here (persisted), listed in the home bonus sheet, and cleared when
+  // used. Ids: 'priority' | 'skip' | 'double'.
+  final List<String> _perks = [];
+  List<String> get perks => List.unmodifiable(_perks);
+
+  void addPerk(String id) {
+    _perks.add(id);
+    _save();
     notifyListeners();
   }
 
@@ -1672,6 +1706,14 @@ class AppState extends ChangeNotifier {
     if (role != null) {
       _activeRole = role == 'barber' ? AppRole.barber : AppRole.client;
     }
+    _feedback
+      ..clear()
+      ..addAll(sp.getStringList('feedback') ?? const []);
+    _address = sp.getString('address');
+    _remindersOn = sp.getBool('reminders') ?? _remindersOn;
+    _perks
+      ..clear()
+      ..addAll(sp.getStringList('perks') ?? const []);
     final lang = sp.getString('lang');
     if (lang != null) {
       _language = AppLanguage.values
@@ -1791,6 +1833,15 @@ class AppState extends ChangeNotifier {
     await sp.setString('cl_email', _user.email);
     await sp.setString('cl_phone', _user.phone);
     await _putPhoto(sp, 'cl_photo', _userPhoto);
+    // Profile extras — the home address, reminder preference, and earned
+    // perks survive restarts (they're all promised to the user as "saved").
+    if (_address == null) {
+      await sp.remove('address');
+    } else {
+      await sp.setString('address', _address!);
+    }
+    await sp.setBool('reminders', _remindersOn);
+    await sp.setStringList('perks', _perks);
     await sp.setString('aiEndpoint', _aiEndpoint);
     await sp.setString('geminiKey', _geminiKey);
     // Persist the user's OWN bookings (clientName == null) so appointments

@@ -174,6 +174,7 @@ class _HomiesNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = Paper.of(context);
     return SafeArea(
       top: false,
       child: Padding(
@@ -191,16 +192,18 @@ class _HomiesNav extends StatelessWidget {
               child: child,
             ),
           ),
-          // Reference look: a minimal near-black floating pill (dark in BOTH
-          // themes), each tab in its own dark circular slot, the AI orb inline.
+          // Reference layout — a minimal floating pill with each tab in its own
+          // circular slot and the AI orb inline — but THEME-coloured (light
+          // card on the light theme), not black.
           child: Container(
             height: 72,
             decoration: BoxDecoration(
-              color: const Color(0xFF17181C),
+              color: p.card,
               borderRadius: BorderRadius.circular(36),
+              border: Border.all(color: p.border),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.30),
+                  color: p.shadow,
                   blurRadius: 24,
                   spreadRadius: -4,
                   offset: const Offset(0, 12),
@@ -264,9 +267,10 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Reference look: every tab sits in a dark circular slot. Inactive = faint
-    // circle + grey glyph; active = lighter circle + white glyph. Nothing else —
-    // no ring, no glow, no under-dot.
+    final p = Paper.of(context);
+    // Reference look, theme-coloured: every tab sits in its own circular slot.
+    // Inactive = faint grey circle + grey glyph; active = accent-tinted circle
+    // + accent glyph. Nothing else — no ring, no glow, no under-dot.
     return PressableScale(
       onTap: onTap,
       pressedScale: 0.85,
@@ -281,8 +285,9 @@ class _NavItem extends StatelessWidget {
             height: 52,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white
-                  .withValues(alpha: active ? 0.18 : 0.06),
+              color: active
+                  ? AppColors.accent.withValues(alpha: 0.14)
+                  : p.textTertiary.withValues(alpha: 0.08),
             ),
             child: AnimatedScale(
               scale: active ? 1.08 : 1.0,
@@ -294,7 +299,7 @@ class _NavItem extends StatelessWidget {
                   icon,
                   key: ValueKey(active),
                   size: 24,
-                  color: active ? Colors.white : const Color(0xFF8E939E),
+                  color: active ? AppColors.accent : p.textTertiary,
                 ),
               ),
             ),

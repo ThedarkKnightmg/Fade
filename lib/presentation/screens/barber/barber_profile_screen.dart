@@ -22,6 +22,7 @@ import 'shop_location_picker_screen.dart';
 import 'wallet_screen.dart';
 import 'vip_boost_screen.dart';
 import '../settings/settings_screen.dart';
+import '../settings/support_sheet.dart';
 
 /// The barber's own profile — now a lean, conversion-focused surface: identity,
 /// live stats, the wallet bank-card, a gold Turbo-Boost sell card, and a
@@ -221,6 +222,15 @@ class BarberSettingsScreen extends StatelessWidget {
                   onTap: () => Navigator.of(context).push(
                     FadeThroughPageRoute(child: const SettingsScreen()),
                   ),
+                ),
+                const SizedBox(height: 12),
+
+                // ── Help & feedback: bug reports, ideas, anything wrong ──
+                _NavTile(
+                  icon: Icons.support_agent_rounded,
+                  title: L.helpFeedback,
+                  subtitle: L.helpFeedbackSub,
+                  onTap: () => showSupportSheet(context),
                 ),
                 const SizedBox(height: 12),
 

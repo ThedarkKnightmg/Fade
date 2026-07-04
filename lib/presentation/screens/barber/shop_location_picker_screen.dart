@@ -36,14 +36,30 @@ class _ShopLocationPickerScreenState extends State<ShopLocationPickerScreen> {
     super.dispose();
   }
 
+  void _snack(String msg) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+      ));
+  }
+
   Future<void> _locateMe() async {
     setState(() => _locating = true);
     final pos = await createLocator().position();
     if (!mounted) return;
     setState(() => _locating = false);
-    if (pos == null) return;
-    // Tashkent-only app — ignore a fix outside the city.
-    if (!isInTashkent(pos.lat, pos.lng)) return;
+    // Never fail silently — say why the map didn't move.
+    if (pos == null) {
+      _snack(L.locationFailed);
+      return;
+    }
+    // Tashkent-only app — a fix outside the city can't be used.
+    if (!isInTashkent(pos.lat, pos.lng)) {
+      _snack(L.outsideCity);
+      return;
+    }
     _map.move(LatLng(pos.lat, pos.lng), _zoom);
   }
 

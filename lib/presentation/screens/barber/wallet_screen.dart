@@ -276,7 +276,7 @@ class _WalletPocketState extends State<_WalletPocket> {
                     const SizedBox(width: 10),
                     _PocketAction(
                       icon: Icons.swap_vert_rounded,
-                      onTap: () => _walletToast(context, L.walletActivity),
+                      onTap: () => _showActivitySheet(context),
                       circle: true,
                     ),
                     const SizedBox(width: 10),
@@ -305,6 +305,53 @@ void _walletToast(BuildContext context, String msg) {
       content: Text(msg),
       behavior: SnackBarBehavior.floating,
     ));
+}
+
+/// The full ledger in a bottom sheet — the pocket's Activity key opens this.
+void _showActivitySheet(BuildContext context) {
+  HapticFeedback.selectionClick();
+  final p = Paper.of(context);
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (_) => Container(
+      constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7),
+      decoration: BoxDecoration(
+        color: p.bg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+          20, 12, 20, 16 + MediaQuery.of(context).padding.bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: p.border, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(L.walletActivity, style: AppTypography.h2(context)),
+          const SizedBox(height: 14),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                for (final tx in AppState.instance.walletLedger)
+                  _LedgerRow(tx: tx),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// A white "ticket" of the barber's booking QR, tucked into the wallet pocket.

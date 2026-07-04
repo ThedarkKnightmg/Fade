@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/animations/motion.dart';
@@ -51,6 +52,11 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
     if (id != null) {
       _look = HairData.byId(id);
       AppState.instance.clearDesiredStyle();
+    }
+    // The pass is real: persist it so it shows up in the home bonus sheet
+    // instead of vanishing when this screen pops.
+    if (_reward.id.isNotEmpty) {
+      AppState.instance.addPerk(_reward.id);
     }
   }
 
@@ -209,13 +215,34 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                       height: 56,
                       style: PrimaryButtonStyle.ghost,
                       icon: Icons.calendar_month_rounded,
-                      onPressed: () {
+                      onPressed: () async {
+                        // A real calendar entry via the Google Calendar
+                        // template URL; clipboard only as a fallback.
+                        String z(DateTime d) => DateFormat("yyyyMMdd'T'HHmmss")
+                            .format(d.toUtc());
+                        final end = b.dateTime.add(Duration(
+                            minutes: b.service.durationMinutes));
+                        final url = Uri.parse(
+                          'https://calendar.google.com/calendar/render'
+                          '?action=TEMPLATE'
+                          '&text=${Uri.encodeComponent('${b.service.name} · ${b.barbershop.name}')}'
+                          '&dates=${z(b.dateTime)}Z/${z(end)}Z'
+                          '&details=${Uri.encodeComponent('With ${b.barber.name} — booked via Fade')}'
+                          '&location=${Uri.encodeComponent(b.barbershop.address)}',
+                        );
+                        var ok = false;
+                        try {
+                          ok = await launchUrl(url,
+                              mode: LaunchMode.externalApplication);
+                        } catch (_) {}
+                        if (ok || !context.mounted) return;
                         final when =
                             DateFormat('EEE d MMM, HH:mm').format(b.dateTime);
-                        Clipboard.setData(ClipboardData(
+                        await Clipboard.setData(ClipboardData(
                           text: '${b.service.name} with ${b.barber.name} '
                               'at ${b.barbershop.name} — $when',
                         ));
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(L.apptCopied)),
                         );
@@ -236,7 +263,11 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
 /// A surprise perk. Variable-ratio: mostly small, occasionally a real prize —
 /// which is exactly what makes a reward habit-forming (the slot-machine effect).
 class _Reward {
-  const _Reward(this.emoji, this.title, this.sub, this.color);
+  const _Reward(this.id, this.emoji, this.title, this.sub, this.color);
+
+  /// AppState perk id ('priority' | 'skip' | 'double'); empty = the loyalty
+  /// filler, which isn't a stored pass.
+  final String id;
   final String emoji;
   final String title;
   final String sub;
@@ -246,18 +277,18 @@ class _Reward {
 _Reward _pickReward(String id) {
   final roll = id.hashCode.abs() % 100;
   if (roll < 8) {
-    return const _Reward('🔓', 'Priority booking pass',
+    return const _Reward('priority', '🔓', 'Priority booking pass',
         'First pick of slots next time', Color(0xFFE0467E));
   }
   if (roll < 22) {
-    return const _Reward('⚡', 'Skip-the-queue pass', 'Jump the waitlist once',
-        Color(0xFFE0683C));
+    return const _Reward('skip', '⚡', 'Skip-the-queue pass',
+        'Jump the waitlist once', Color(0xFFE0683C));
   }
   if (roll < 42) {
-    return const _Reward('⭐', 'Double loyalty points', 'Earned on this booking',
-        Color(0xFFE0A12E));
+    return const _Reward('double', '⭐', 'Double loyalty points',
+        'Earned on this booking', Color(0xFFE0A12E));
   }
-  return const _Reward('✂️', '+1 toward your next perk',
+  return const _Reward('', '✂️', '+1 toward your next perk',
       'Loyalty progress saved', AppColors.accent);
 }
 
@@ -336,7 +367,8 @@ class _LoyaltyMini extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    const goal = 8;
+    // One shared loyalty goal everywhere (home sheet, ticket, punch card).
+    const goal = AppState.vipStreakGoal;
     final cuts = AppState.instance.totalCuts;
     final into = cuts % goal;
     final unlocked = into == 0;
