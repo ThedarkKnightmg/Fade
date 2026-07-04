@@ -8,7 +8,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
-import '../../widgets/category_chip.dart';
 import '../../widgets/directions_sheet.dart';
 import '../../widgets/late_cancel_sheet.dart';
 import '../../widgets/paper_kit.dart';
@@ -16,7 +15,7 @@ import '../../widgets/primary_button.dart';
 import '../booking/booking_flow_screen.dart';
 import 'booking_ticket_screen.dart';
 
-/// Bookings as a stack of dated notes, filtered by count chips.
+/// Bookings — one clean card per visit, filtered by a segmented status row.
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key, this.onExplore});
 
@@ -31,7 +30,6 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
     return AnimatedBuilder(
       animation: AppState.instance,
       builder: (context, _) {
@@ -69,81 +67,39 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         return SafeArea(
           bottom: false,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 150),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 150),
             children: [
               FadeSlideIn(
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'My ',
-                        style: AppTypography.display(context),
-                      ),
-                      markerBoxSpan(
-                          'appointments', AppTypography.display(context)),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 50),
-                child: Text(
-                  'every cut, written down',
-                  style: AppTypography.scribble(context, size: 21)
-                      .copyWith(color: p.textSecondary),
-                ),
+                child:
+                    Text('My appointments', style: AppTypography.h1(context)),
               ),
               const SizedBox(height: 16),
               FadeSlideIn(
-                delay: const Duration(milliseconds: 100),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  clipBehavior: Clip.none,
-                  child: Row(
-                    children: [
-                      for (final (s, label) in [
-                        (BookingStatus.upcoming, L.upcomingWord),
-                        (BookingStatus.completed, L.tabPast),
-                        (BookingStatus.cancelled, L.tabCancelled),
-                      ]) ...[
-                        CountChip(
-                          label: label,
-                          count: counts[s],
-                          selected: _tab == s,
-                          onTap: () => setState(() => _tab = s),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    ],
-                  ),
+                delay: const Duration(milliseconds: 60),
+                child: _StatusTabs(
+                  tabs: [
+                    (BookingStatus.upcoming, L.upcomingWord),
+                    (BookingStatus.completed, L.tabPast),
+                    (BookingStatus.cancelled, L.tabCancelled),
+                  ],
+                  counts: counts,
+                  selected: _tab,
+                  onSelect: (s) => setState(() => _tab = s),
                 ),
               ),
               const SizedBox(height: 16),
               if (items.isEmpty)
                 FadeSlideIn(
-                  delay: const Duration(milliseconds: 150),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 40),
-                    child: Column(
-                      children: [
-                        ScribbleNote(L.nothingHere),
-                        const SizedBox(height: 20),
-                        if (_tab == BookingStatus.upcoming)
-                          PrimaryButton(
-                            label: L.findAShop,
-                            expanded: false,
-                            height: 52,
-                            onPressed: widget.onExplore,
-                          ),
-                      ],
-                    ),
+                  delay: const Duration(milliseconds: 120),
+                  child: _EmptyState(
+                    showExplore: _tab == BookingStatus.upcoming,
+                    onExplore: widget.onExplore,
                   ),
                 )
               else
                 for (var i = 0; i < items.length; i++) ...[
                   FadeSlideIn(
-                    delay: Duration(milliseconds: 140 + i * 60),
+                    delay: Duration(milliseconds: 120 + i * 60),
                     child: _BookingNote(booking: items[i]),
                   ),
                   const SizedBox(height: 12),
@@ -152,6 +108,143 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Yandex-style segmented row — a quiet track with a white pill on the
+/// selected tab and a small blue count beside its label.
+class _StatusTabs extends StatelessWidget {
+  const _StatusTabs({
+    required this.tabs,
+    required this.counts,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final List<(BookingStatus, String)> tabs;
+  final Map<BookingStatus, int> counts;
+  final BookingStatus selected;
+  final ValueChanged<BookingStatus> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: p.cardAlt,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          for (final (status, label) in tabs)
+            Expanded(
+              child: GestureDetector(
+                onTap: () => onSelect(status),
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: status == selected ? p.card : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: status == selected
+                        ? [
+                            BoxShadow(
+                              color: p.shadow,
+                              blurRadius: 10,
+                              spreadRadius: -2,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.nunito(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color:
+                                status == selected ? p.text : p.textSecondary,
+                          ),
+                        ),
+                      ),
+                      if ((counts[status] ?? 0) > 0) ...[
+                        const SizedBox(width: 5),
+                        Text(
+                          '${counts[status]}',
+                          style: GoogleFonts.nunito(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: status == selected
+                                ? AppColors.accent
+                                : p.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Quiet empty state — a soft blue calendar chip, a line of copy, and the
+/// explore CTA on the Upcoming tab.
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.showExplore, this.onExplore});
+
+  final bool showExplore;
+  final VoidCallback? onExplore;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 48),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.event_note_rounded,
+              size: 28,
+              color: AppColors.accent,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            L.nothingHere,
+            textAlign: TextAlign.center,
+            style: AppTypography.bodySmall(context),
+          ),
+          if (showExplore) ...[
+            const SizedBox(height: 18),
+            PrimaryButton(
+              label: L.findAShop,
+              expanded: false,
+              height: 52,
+              onPressed: onExplore,
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -182,9 +275,9 @@ class _BookingNote extends StatelessWidget {
     final yes = await showDialog<bool>(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: p.bg,
+        backgroundColor: p.card,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Padding(
           padding: const EdgeInsets.all(22),
@@ -246,7 +339,7 @@ class _BookingNote extends StatelessWidget {
     };
 
     return PaperCard(
-      radius: 26,
+      radius: 24,
       padding: const EdgeInsets.all(16),
       onTap: isActive ? null : () => _rebook(context),
       child: Column(
@@ -254,36 +347,38 @@ class _BookingNote extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Lime date block — the day, torn off a calendar.
+              // Tinted date chip — blue while the visit is still ahead.
               Container(
-                width: 56,
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
-                  color:
-                      isActive ? AppColors.accent : p.cardAlt,
-                  borderRadius: BorderRadius.circular(18),
-                  border: isActive ? null : Border.all(color: p.border),
+                  color: isActive
+                      ? AppColors.accent.withValues(alpha: 0.12)
+                      : p.cardAlt,
+                  borderRadius: BorderRadius.circular(13),
                 ),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       '${b.dateTime.day}',
                       style: GoogleFonts.nunito(
-                        fontSize: 20,
+                        fontSize: 17,
                         fontWeight: FontWeight.w900,
                         height: 1,
-                        color: isActive ? AppColors.ink : p.textSecondary,
+                        color:
+                            isActive ? AppColors.accent : p.textSecondary,
                       ),
                     ),
+                    const SizedBox(height: 1),
                     Text(
                       DateFormat('MMM').format(b.dateTime).toUpperCase(),
                       style: GoogleFonts.nunito(
-                        fontSize: 10,
+                        fontSize: 8.5,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
-                        color: isActive
-                            ? AppColors.accentDeep
-                            : p.textTertiary,
+                        letterSpacing: 1,
+                        color:
+                            isActive ? AppColors.accent : p.textTertiary,
                       ),
                     ),
                   ],
@@ -294,7 +389,7 @@ class _BookingNote extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(b.service.name, style: AppTypography.h3(context)),
+                    Text(b.service.name, style: AppTypography.h4(context)),
                     const SizedBox(height: 2),
                     Text(
                       '${b.barber.name} · ${b.barbershop.name}',
@@ -317,19 +412,30 @@ class _BookingNote extends StatelessWidget {
                   ],
                 ),
               ),
-              if (isActive)
+              if (isActive) ...[
+                const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () => _cancel(context),
-                  child: Icon(
-                    Icons.more_horiz_rounded,
-                    color: p.textTertiary,
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: p.cardAlt,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.more_horiz_rounded,
+                      size: 20,
+                      color: p.textTertiary,
+                    ),
                   ),
                 ),
+              ],
             ],
           ),
           // Fuller detail set — location, duration and price.
           const SizedBox(height: 12),
-          Divider(height: 1, color: p.border),
+          Divider(height: 1, color: p.divider),
           const SizedBox(height: 10),
           // Tap the location to open it in Google Maps / Yandex / Uklon.
           GestureDetector(
@@ -391,25 +497,44 @@ class _BookingNote extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Text(
-                  b.status == BookingStatus.completed
-                      ? '${L.likedIt}  '
-                      : '${L.changedMind}  ',
-                  style: AppTypography.scribble(context, size: 19)
-                      .copyWith(color: p.textTertiary),
+                Expanded(
+                  child: Text(
+                    b.status == BookingStatus.completed
+                        ? L.likedIt
+                        : L.changedMind,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.bodySmall(context),
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () => _rebook(context),
-                  child: Text(
-                    '${L.bookAgain} →',
-                    style: GoogleFonts.nunito(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: p.text,
-                      decoration: TextDecoration.underline,
-                      decorationColor: AppColors.accent,
-                      decorationThickness: 2.5,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          L.bookAgain,
+                          style: GoogleFonts.nunito(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 15,
+                          color: AppColors.accent,
+                        ),
+                      ],
                     ),
                   ),
                 ),

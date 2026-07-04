@@ -9,6 +9,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/barber.dart';
 import '../../../data/models/barbershop.dart';
+import '../../../data/models/chat_message.dart';
 import '../../widgets/paper_kit.dart';
 import 'chat_screen.dart';
 
@@ -26,7 +27,7 @@ class MessagesScreen extends StatelessWidget {
       body: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -44,7 +45,7 @@ class MessagesScreen extends StatelessWidget {
                     return ListView.separated(
                       padding: const EdgeInsets.only(bottom: 120),
                       itemCount: convos.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (_, i) {
                         final ref = convos[i];
                         final msgs = AppState.instance.chatWith(ref.barber.id);
@@ -82,7 +83,6 @@ class _EmptyMessages extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 60),
@@ -93,11 +93,10 @@ class _EmptyMessages extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: p.card,
+                color: AppColors.accent.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
-                border: Border.all(color: p.border),
               ),
-              child: Icon(Icons.forum_outlined,
+              child: const Icon(Icons.forum_outlined,
                   size: 30, color: AppColors.accent),
             ),
             const SizedBox(height: 16),
@@ -131,13 +130,16 @@ class _ConvoTile extends StatelessWidget {
   final Barbershop shop;
   final Barber barber;
   final int index;
-  final dynamic last;
+  final ChatMessage? last;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    final preview = last == null ? 'Tap to message ✍️' : (last.text as String);
+    final msg = last;
+    final preview = msg == null ? 'Tap to message ✍️' : msg.text;
+    // Barber spoke last and you haven't replied — surface it as "unread".
+    final unread = msg != null && !msg.mine;
     return PaperCard(
       onTap: onTap,
       radius: 20,
@@ -156,27 +158,46 @@ class _ConvoTile extends StatelessWidget {
                       child: Text(barber.name,
                           style: AppTypography.h4(context)),
                     ),
-                    if (last != null)
+                    if (msg != null)
                       Text(
-                        DateFormat('HH:mm').format(last.at as DateTime),
+                        DateFormat('HH:mm').format(msg.at),
                         style: GoogleFonts.nunito(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: p.textTertiary,
+                          color: unread ? AppColors.accent : p.textTertiary,
                         ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  '${shop.name} · $preview',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.bodySmall(context),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${shop.name} · $preview',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.bodySmall(context),
+                      ),
+                    ),
+                    if (unread) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 9,
+                        height: 9,
+                        decoration: const BoxDecoration(
+                          color: AppColors.accent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 6),
+          Icon(Icons.chevron_right_rounded, color: p.textTertiary, size: 22),
         ],
       ),
     );

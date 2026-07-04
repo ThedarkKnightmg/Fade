@@ -22,9 +22,10 @@ import '../../widgets/shop_art.dart';
 import '../booking/booking_review_screen.dart';
 import '../chat/chat_screen.dart';
 
-/// One shop, one page: a storefront hero with the name + trust band over it,
-/// an "inside the shop" gallery, the service list, reviews, a booking panel,
-/// and a sticky Book bar pinned to the bottom.
+/// One shop, one page: the standard back-arrow header with the shop name,
+/// a blue hero card carrying the trust band (rating · reviews · distance ·
+/// price), the "inside the shop" gallery, the service checklist, reviews,
+/// the booking cockpit, and a sticky Book bar pinned to the bottom.
 class BarbershopDetailScreen extends StatefulWidget {
   const BarbershopDetailScreen({super.key, required this.shop});
 
@@ -127,7 +128,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
       builder: (sheetCtx) => Container(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 30),
         decoration: BoxDecoration(
-          color: p.panel,
+          color: p.bg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
@@ -139,7 +140,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                 width: 44,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: p.panelField,
+                  color: p.border,
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
@@ -234,166 +235,165 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
         animation: AppState.instance,
         builder: (context, _) {
           final fav = AppState.instance.isFavourite(shop.id);
-          return ListView(
-            padding: const EdgeInsets.only(bottom: 24),
-            children: [
-                  _ShopHero(
-                    shop: shop,
-                    base: base,
-                    favourite: fav,
-                    onBack: () => Navigator.of(context).maybePop(),
-                    onFavourite: () =>
-                        AppState.instance.toggleFavourite(shop.id),
+          return SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              children: [
+                Row(
+                  children: [
+                    CircleBtn(
+                      icon: Icons.arrow_back_rounded,
+                      size: 42,
+                      onTap: () => Navigator.of(context).maybePop(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        shop.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.h2(context),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    CircleBtn(
+                      icon: fav
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_outline_rounded,
+                      size: 42,
+                      iconColor: fav ? AppColors.red : p.text,
+                      onTap: () =>
+                          AppState.instance.toggleFavourite(shop.id),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                FadeSlideIn(child: _ShopHero(shop: shop)),
+                const SizedBox(height: 24),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 60),
+                  child: Text(L.insideTheShop,
+                      style: AppTypography.h3(context)),
+                ),
+                const SizedBox(height: 10),
+                _GalleryRow(base: base, premium: shop.isPremium),
+                const SizedBox(height: 22),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 110),
+                  child: _AboutCard(shop: shop),
+                ),
+                const SizedBox(height: 24),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 150),
+                  child: Row(
+                    children: [
+                      Text(L.services, style: AppTypography.h3(context)),
+                      const Spacer(),
+                      Text(
+                        L.tickWhatYouNeed,
+                        style: AppTypography.caption(context),
+                      ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                const SizedBox(height: 12),
+                for (var i = 0; i < shop.services.length; i++) ...[
+                  ServiceCheckRow(
+                    service: shop.services[i],
+                    selected:
+                        _selectedServices.contains(shop.services[i].id),
+                    onTap: () => setState(() {
+                      final id = shop.services[i].id;
+                      if (_selectedServices.contains(id)) {
+                        _selectedServices.remove(id);
+                      } else {
+                        _selectedServices.add(id);
+                      }
+                    }),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                const SizedBox(height: 14),
+                _ReviewsBlock(shop: shop),
+                const SizedBox(height: 22),
+                _ScarcityChip(count: freeCount, day: _dayWord(_dateIndex)),
+                const SizedBox(height: 12),
+                InkPanel(
+                  title: 'Book your visit',
+                  trailing: Text(
+                    _minutes == 0 ? '—' : '$_minutes min',
+                    style: GoogleFonts.nunito(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: p.textTertiary,
+                    ),
+                  ),
+                  children: [
+                    const PanelLabel('with'),
+                    BarberSwatchRow(
+                      barbers: shop.barbers,
+                      selectedId: _barberId,
+                      onSelect: (id) => setState(() {
+                        _barberId = id;
+                        // Availability is per-barber — drop a time that
+                        // is now taken for the newly chosen barber.
+                        if (_time != null &&
+                            _bookedSlots.contains(_time)) {
+                          _time = null;
+                        }
+                      }),
+                      dark: true,
+                    ),
+                    const SizedBox(height: 12),
+                    _MyBarberToggle(
+                      shopId: shop.id,
+                      barber: shop.barbers.firstWhere(
+                        (x) => x.id == _barberId,
+                        orElse: () => shop.barbers.first,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _MessageBarberButton(
+                      shop: shop,
+                      barber: shop.barbers.firstWhere(
+                        (x) => x.id == _barberId,
+                        orElse: () => shop.barbers.first,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const PanelLabel('day'),
+                    DatePillRow(
+                      dates: _days,
+                      selectedIndex: _dateIndex,
+                      onSelect: (i) => setState(() {
+                        _dateIndex = i;
+                        _time = null;
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
                       children: [
-                        Text(L.insideTheShop,
-                            style: AppTypography.h4(context)),
-                        const SizedBox(height: 10),
-                        _GalleryRow(base: base, premium: shop.isPremium),
-                        const SizedBox(height: 20),
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              markerSpan(
-                                shop.tagline,
-                                AppTypography.body(context)
-                                    .copyWith(fontWeight: FontWeight.w800),
-                              ),
-                              TextSpan(
-                                text: ' — ${shop.description}',
-                                style: AppTypography.body(context)
-                                    .copyWith(color: p.textSecondary),
-                              ),
-                            ],
+                        Expanded(
+                          child: PanelField(
+                            value: _time == null
+                                ? 'Pick a time'
+                                : DateFormat('HH:mm').format(_time!),
+                            onTap: _pickTime,
                           ),
                         ),
-                        const SizedBox(height: 14),
-                        _InfoLine(
-                          icon: Icons.schedule_rounded,
-                          text: shop.openingHours,
-                        ),
-                        const SizedBox(height: 6),
-                        _InfoLine(
-                          icon: Icons.place_outlined,
-                          text: shop.address,
-                        ),
-                        const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Text(L.services, style: AppTypography.h2(context)),
-                            const Spacer(),
-                            Text(
-                              L.tickWhatYouNeed,
-                              style: AppTypography.scribble(context, size: 19)
-                                  .copyWith(color: p.textTertiary),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        for (var i = 0; i < shop.services.length; i++) ...[
-                          ServiceCheckRow(
-                            service: shop.services[i],
-                            selected: _selectedServices
-                                .contains(shop.services[i].id),
-                            onTap: () => setState(() {
-                              final id = shop.services[i].id;
-                              if (_selectedServices.contains(id)) {
-                                _selectedServices.remove(id);
-                              } else {
-                                _selectedServices.add(id);
-                              }
-                            }),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                        const SizedBox(height: 16),
-                        _ReviewsBlock(shop: shop),
-                        const SizedBox(height: 18),
-                        _ScarcityChip(
-                            count: freeCount, day: _dayWord(_dateIndex)),
-                        const SizedBox(height: 12),
-                        InkPanel(
-                          title: 'Book your visit',
-                          trailing: Text(
-                            _minutes == 0 ? '—' : '$_minutes min',
-                            style: GoogleFonts.nunito(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: p.panelTextDim,
-                            ),
-                          ),
-                          children: [
-                            const PanelLabel('with'),
-                            BarberSwatchRow(
-                              barbers: shop.barbers,
-                              selectedId: _barberId,
-                              onSelect: (id) => setState(() {
-                                _barberId = id;
-                                // Availability is per-barber — drop a time that
-                                // is now taken for the newly chosen barber.
-                                if (_time != null &&
-                                    _bookedSlots.contains(_time)) {
-                                  _time = null;
-                                }
-                              }),
-                              dark: true,
-                            ),
-                            const SizedBox(height: 12),
-                            _MyBarberToggle(
-                              shopId: shop.id,
-                              barber: shop.barbers.firstWhere(
-                                (x) => x.id == _barberId,
-                                orElse: () => shop.barbers.first,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            _MessageBarberButton(
-                              shop: shop,
-                              barber: shop.barbers.firstWhere(
-                                (x) => x.id == _barberId,
-                                orElse: () => shop.barbers.first,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            const PanelLabel('day'),
-                            DatePillRow(
-                              dates: _days,
-                              selectedIndex: _dateIndex,
-                              onSelect: (i) => setState(() {
-                                _dateIndex = i;
-                                _time = null;
-                              }),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: PanelField(
-                                    value: _time == null
-                                        ? 'Pick a time'
-                                        : DateFormat('HH:mm').format(_time!),
-                                    onTap: _pickTime,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                PanelField(
-                                  value: _picked.length == 1
-                                      ? _picked.first.name
-                                      : '${_picked.length} services',
-                                  expanded: false,
-                                ),
-                              ],
-                            ),
-                          ],
+                        const SizedBox(width: 8),
+                        PanelField(
+                          value: _picked.length == 1
+                              ? _picked.first.name
+                              : '${_picked.length} services',
+                          expanded: false,
                         ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -406,142 +406,97 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
   }
 }
 
-/// Full-bleed storefront hero with the back/heart controls, the shop name and
-/// a trust band (rating · reviews · distance · price) over a scrim.
+/// The one blue hero on this page — the shop's tagline over the trust band
+/// (rating · reviews · distance · price) as frosted-glass chips.
 class _ShopHero extends StatelessWidget {
-  const _ShopHero({
-    required this.shop,
-    required this.base,
-    required this.favourite,
-    required this.onBack,
-    required this.onFavourite,
-  });
+  const _ShopHero({required this.shop});
 
   final Barbershop shop;
-  final Color base;
-  final bool favourite;
-  final VoidCallback onBack;
-  final VoidCallback onFavourite;
 
   @override
   Widget build(BuildContext context) {
-    final top = MediaQuery.of(context).padding.top;
-    return SizedBox(
-      height: 254 + top,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          CustomPaint(
-            painter: ShopCoverPainter(base: base, premium: shop.isPremium),
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF4AA3FF), Color(0xFF1E6FE0)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.accent.withValues(alpha: 0.35),
+            blurRadius: 22,
+            spreadRadius: -6,
+            offset: const Offset(0, 12),
           ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0x40000000), Colors.transparent, Color(0xC2000000)],
-                stops: [0.0, 0.42, 1.0],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (shop.isPremium) ...[
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.gold,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.workspace_premium_rounded,
+                      size: 13, color: AppColors.ink),
+                  const SizedBox(width: 4),
+                  Text(
+                    'PREMIUM',
+                    style: GoogleFonts.nunito(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          Positioned(
-            top: top + 10,
-            left: 14,
-            right: 14,
-            child: Row(
-              children: [
-                _RoundIconBtn(
-                    icon: Icons.arrow_back_ios_new_rounded, onTap: onBack),
-                const Spacer(),
-                _RoundIconBtn(
-                  icon: favourite
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_outline_rounded,
-                  iconColor:
-                      favourite ? AppColors.red : const Color(0xFF1A1A1A),
-                  onTap: onFavourite,
-                ),
-              ],
+            const SizedBox(height: 10),
+          ],
+          Text(
+            shop.tagline,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.nunito(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              height: 1.15,
+              color: Colors.white,
             ),
           ),
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 16,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (shop.isPremium) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFF2C75A), Color(0xFFD99A2E)],
-                      ),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.workspace_premium_rounded,
-                            size: 13, color: Color(0xFF3A2E10)),
-                        const SizedBox(width: 4),
-                        Text(
-                          'PREMIUM',
-                          style: GoogleFonts.nunito(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1,
-                            color: const Color(0xFF3A2E10),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-                Text(
-                  shop.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.nunito(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    height: 1.05,
-                    shadows: const [
-                      Shadow(color: Color(0x99000000), blurRadius: 12),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _TrustChip(
-                      icon: Icons.star_rounded,
-                      label: shop.rating.toStringAsFixed(1),
-                      iconColor: const Color(0xFFFFC53D),
-                    ),
-                    _TrustChip(
-                      icon: Icons.reviews_outlined,
-                      label: '${shop.reviewCount} reviews',
-                    ),
-                    _TrustChip(
-                      icon: Icons.near_me_outlined,
-                      label: shop.distanceLabel,
-                    ),
-                    _TrustChip(
-                      icon: Icons.payments_outlined,
-                      label: shop.priceLevelLabel,
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _HeroChip(
+                icon: Icons.star_rounded,
+                label: shop.rating.toStringAsFixed(1),
+              ),
+              _HeroChip(
+                icon: Icons.reviews_outlined,
+                label: '${shop.reviewCount} reviews',
+              ),
+              _HeroChip(
+                icon: Icons.near_me_outlined,
+                label: shop.distanceLabel,
+              ),
+              _HeroChip(
+                icon: Icons.payments_outlined,
+                label: shop.priceLevelLabel,
+              ),
+            ],
           ),
         ],
       ),
@@ -549,62 +504,26 @@ class _ShopHero extends StatelessWidget {
   }
 }
 
-class _RoundIconBtn extends StatelessWidget {
-  const _RoundIconBtn({
-    required this.icon,
-    required this.onTap,
-    this.iconColor = const Color(0xFF1A1A1A),
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-  final Color iconColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.92),
-          shape: BoxShape.circle,
-          boxShadow: const [
-            BoxShadow(color: Color(0x33000000), blurRadius: 6, offset: Offset(0, 2)),
-          ],
-        ),
-        child: Icon(icon, size: 19, color: iconColor),
-      ),
-    );
-  }
-}
-
-class _TrustChip extends StatelessWidget {
-  const _TrustChip({
-    required this.icon,
-    required this.label,
-    this.iconColor = Colors.white,
-  });
+/// Frosted-glass chip that sits on the blue hero.
+class _HeroChip extends StatelessWidget {
+  const _HeroChip({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
-  final Color iconColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.34),
+        color: Colors.white.withValues(alpha: 0.20),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: iconColor),
+          Icon(icon, size: 13, color: Colors.white),
           const SizedBox(width: 4),
           Text(
             label,
@@ -658,28 +577,70 @@ class _GalleryRow extends StatelessWidget {
   }
 }
 
-class _InfoLine extends StatelessWidget {
-  const _InfoLine({required this.icon, required this.text});
+/// Flat card with the shop's blurb and the practical rows (hours, address)
+/// as tinted icon-chip lines.
+class _AboutCard extends StatelessWidget {
+  const _AboutCard({required this.shop});
+
+  final Barbershop shop;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return PaperCard(
+      radius: 24,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            shop.description,
+            style:
+                AppTypography.body(context).copyWith(color: p.textSecondary),
+          ),
+          const SizedBox(height: 6),
+          _InfoRow(icon: Icons.schedule_rounded, text: shop.openingHours),
+          Divider(color: p.divider, height: 1),
+          _InfoRow(icon: Icons.place_outlined, text: shop.address),
+        ],
+      ),
+    );
+  }
+}
+
+/// One practical line inside the about card: tinted icon chip + value.
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.icon, required this.text});
 
   final IconData icon;
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    return Row(
-      children: [
-        Icon(icon, size: 15, color: p.textTertiary),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTypography.bodySmall(context),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 11),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(icon, size: 20, color: AppColors.accent),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.h4(context),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -745,40 +706,10 @@ class _StickyBookBar extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: GestureDetector(
-              onTap: onBook,
-              child: Container(
-                height: 54,
-                decoration: BoxDecoration(
-                  color: AppColors.accent,
-                  borderRadius: BorderRadius.circular(999),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.35),
-                      blurRadius: 14,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        L.bookNow,
-                        style: GoogleFonts.nunito(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Icon(Icons.arrow_forward_rounded,
-                          size: 18, color: Colors.white),
-                    ],
-                  ),
-                ),
-              ),
+            child: PrimaryButton(
+              label: L.bookNow,
+              height: 54,
+              onPressed: onBook,
             ),
           ),
         ],
@@ -796,7 +727,6 @@ class _ScarcityChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
     final none = count <= 0;
     final low = count > 0 && count <= 4;
     final c = none
@@ -811,24 +741,24 @@ class _ScarcityChip extends StatelessWidget {
             ? 'Only $count slots left $d'
             : '$count slots open $d';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: clayDecoration(
-        p,
-        color: Color.alphaBlend(c.withValues(alpha: 0.12), p.card),
-        radius: 12,
-        borderColor: c.withValues(alpha: 0.40),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
           Icon(low ? Icons.bolt_rounded : Icons.event_available_rounded,
               size: 16, color: c),
           const SizedBox(width: 8),
-          Text(
-            txt,
-            style: GoogleFonts.nunito(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: c,
+          Expanded(
+            child: Text(
+              txt,
+              style: GoogleFonts.nunito(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: c,
+              ),
             ),
           ),
         ],
@@ -864,7 +794,7 @@ class _MyBarberToggle extends StatelessWidget {
           Icon(
             mine ? Icons.star_rounded : Icons.star_outline_rounded,
             size: 18,
-            color: mine ? AppColors.gold : p.panelTextDim,
+            color: mine ? AppColors.gold : p.textTertiary,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -875,7 +805,7 @@ class _MyBarberToggle extends StatelessWidget {
               style: GoogleFonts.nunito(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
-                color: p.panelText,
+                color: p.text,
               ),
             ),
           ),
@@ -908,7 +838,7 @@ class _MessageBarberButton extends StatelessWidget {
           return Row(
             children: [
               Icon(Icons.lock_outline_rounded,
-                  size: 16, color: p.panelTextDim),
+                  size: 16, color: p.textTertiary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -916,7 +846,7 @@ class _MessageBarberButton extends StatelessWidget {
                   style: GoogleFonts.nunito(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: p.panelTextDim,
+                    color: p.textTertiary,
                   ),
                 ),
               ),
@@ -941,12 +871,12 @@ class _MessageBarberButton extends StatelessWidget {
                   style: GoogleFonts.nunito(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    color: p.panelText,
+                    color: p.text,
                   ),
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded,
-                  size: 12, color: p.panelTextDim),
+              Icon(Icons.chevron_right_rounded,
+                  size: 16, color: p.textTertiary),
             ],
           ),
         );
@@ -1016,12 +946,12 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
         minLines: 1,
         maxLength: 200,
         style: GoogleFonts.nunito(
-            fontSize: 14, fontWeight: FontWeight.w600, color: p.panelText),
+            fontSize: 14, fontWeight: FontWeight.w600, color: p.text),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.nunito(color: p.panelTextDim),
+          hintStyle: GoogleFonts.nunito(color: p.textTertiary),
           filled: true,
-          fillColor: p.panelField,
+          fillColor: p.cardAlt,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -1043,8 +973,8 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
         decoration: BoxDecoration(
-          color: p.panel,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          color: p.bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1055,7 +985,7 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
                 width: 44,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: p.panelField,
+                  color: p.border,
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
@@ -1065,11 +995,7 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
               '${L.rateYourBarber} · ${barber.name}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.nunito(
-                fontSize: 17,
-                fontWeight: FontWeight.w900,
-                color: p.panelText,
-              ),
+              style: AppTypography.h3(context),
             ),
             const SizedBox(height: 10),
             StarInput(
@@ -1080,14 +1006,7 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
             const SizedBox(height: 10),
             _reviewField(p, _barberText, L.barberReviewHint),
             const SizedBox(height: 18),
-            Text(
-              L.rateTheShop,
-              style: GoogleFonts.nunito(
-                fontSize: 17,
-                fontWeight: FontWeight.w900,
-                color: p.panelText,
-              ),
-            ),
+            Text(L.rateTheShop, style: AppTypography.h3(context)),
             const SizedBox(height: 10),
             StarInput(
               value: _shopStars,
@@ -1125,7 +1044,7 @@ class _ReviewsBlock extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(L.reviewsWord, style: AppTypography.h2(context)),
+            Text(L.reviewsWord, style: AppTypography.h3(context)),
             const Spacer(),
             GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -1178,10 +1097,10 @@ class _ReviewsBlock extends StatelessWidget {
           shopStars: s.shopRating(shop),
           shopCount: s.shopReviewCount(shop),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         for (final r in reviews) ...[
           PaperCard(
-            radius: 24,
+            radius: 20,
             padding: const EdgeInsets.all(16),
             child: _ReviewCardBody(review: r),
           ),
@@ -1226,7 +1145,7 @@ class _ReviewsBlock extends StatelessWidget {
             maxHeight: MediaQuery.of(context).size.height * 0.8),
         decoration: BoxDecoration(
           color: p.bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         padding: EdgeInsets.fromLTRB(
             20, 12, 20, 12 + MediaQuery.of(context).padding.bottom),
@@ -1236,10 +1155,10 @@ class _ReviewsBlock extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 40,
-                height: 4,
+                width: 44,
+                height: 5,
                 decoration: BoxDecoration(
-                    color: p.border, borderRadius: BorderRadius.circular(2)),
+                    color: p.border, borderRadius: BorderRadius.circular(99)),
               ),
             ),
             const SizedBox(height: 18),
@@ -1251,7 +1170,7 @@ class _ReviewsBlock extends StatelessWidget {
                 children: [
                   for (final r in all) ...[
                     PaperCard(
-                      radius: 24,
+                      radius: 20,
                       padding: const EdgeInsets.all(16),
                       child: _ReviewCardBody(review: r),
                     ),
@@ -1289,7 +1208,7 @@ class _ReviewCardBody extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.14),
+                color: color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(tag,
@@ -1308,15 +1227,10 @@ class _ReviewCardBody extends StatelessWidget {
         ),
         if (comment.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text('"$comment"', style: AppTypography.scribble(context, size: 22)),
+          Text(comment, style: AppTypography.body(context)),
         ],
         const SizedBox(height: 8),
-        Text(review.author,
-            style: GoogleFonts.nunito(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
-              color: p.textSecondary,
-            )),
+        Text(review.author, style: AppTypography.caption(context)),
       ],
     );
   }

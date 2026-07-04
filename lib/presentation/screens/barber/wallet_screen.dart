@@ -573,28 +573,17 @@ class _TierTileState extends State<_TierTile> {
         child: AnimatedScale(
           scale: _down ? 0.98 : 1,
           duration: const Duration(milliseconds: 120),
-          child: GlassPanel(
-            radius: 20,
-            blur: 14,
-            fillAlpha: 0.5,
+          child: Container(
             padding: const EdgeInsets.all(14),
+            decoration: clayDecoration(p, radius: 20),
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        t.tint.withValues(alpha: 0.22),
-                        t.tint.withValues(alpha: 0.10),
-                      ],
-                    ),
+                    color: t.tint.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(13),
-                    border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.4), width: 1),
                   ),
                   child: Icon(t.icon, size: 22, color: t.tint),
                 ),
@@ -618,10 +607,8 @@ class _TierTileState extends State<_TierTile> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
                   decoration: BoxDecoration(
-                    color: t.tint.withValues(alpha: 0.16),
+                    color: t.tint.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.5), width: 1),
                   ),
                   child: Text(t.badge,
                       style: GoogleFonts.nunito(
@@ -649,7 +636,7 @@ class _LinkCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassPanel(
+    return PaperCard(
       radius: 22,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -10,8 +10,9 @@ import '../../data/models/service.dart';
 import 'paper_kit.dart';
 
 // ============================================================
-// Booking kit — the checklist rows, swatch pickers and the dark
-// control panel shared by the detail screen and the booking flow.
+// Booking kit — the checklist rows, swatch pickers and the light
+// booking cockpit shared by the detail screen and the booking flow.
+// One clean card language (Yandex-style), same as the rest of the app.
 // ============================================================
 
 /// A service as a checklist row — circle check in ballpoint blue.
@@ -81,8 +82,10 @@ class BarberSwatchRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    final labelColor = dark ? p.panelTextDim : p.textSecondary;
-    final activeLabel = dark ? p.panelText : p.text;
+    // One light language everywhere now — the [dark] flag is kept for API
+    // compatibility but no longer switches palettes.
+    final labelColor = p.textSecondary;
+    final activeLabel = p.text;
 
     Widget swatch({
       required Widget circle,
@@ -106,9 +109,7 @@ class BarberSwatchRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: active
-                            ? AppColors.accent
-                            : (dark ? Colors.transparent : p.border),
+                        color: active ? AppColors.accent : p.border,
                         width: active ? 2.4 : 1,
                       ),
                     ),
@@ -124,15 +125,12 @@ class BarberSwatchRow extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: AppColors.accent,
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: dark ? p.panel : p.card,
-                            width: 2,
-                          ),
+                          border: Border.all(color: p.card, width: 2),
                         ),
                         child: const Icon(
                           Icons.check_rounded,
                           size: 12,
-                          color: AppColors.ink,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -194,7 +192,7 @@ class BarberSwatchRow extends StatelessWidget {
   }
 }
 
-/// Horizontal strip of day pills — lives inside the dark panel.
+/// Horizontal strip of day pills — Yandex-style segmented chips.
 class DatePillRow extends StatelessWidget {
   const DatePillRow({
     super.key,
@@ -224,7 +222,7 @@ class DatePillRow extends StatelessWidget {
               margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               decoration: BoxDecoration(
-                color: active ? AppColors.accent : p.panelField,
+                color: active ? AppColors.accent : p.cardAlt,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Column(
@@ -237,8 +235,8 @@ class DatePillRow extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.1,
                       color: active
-                          ? AppColors.ink.withValues(alpha: 0.65)
-                          : p.panelTextDim,
+                          ? Colors.white.withValues(alpha: 0.8)
+                          : p.textTertiary,
                     ),
                   ),
                   Text(
@@ -246,7 +244,7 @@ class DatePillRow extends StatelessWidget {
                     style: GoogleFonts.nunito(
                       fontSize: 17,
                       fontWeight: FontWeight.w900,
-                      color: active ? AppColors.ink : p.panelText,
+                      color: active ? Colors.white : p.text,
                     ),
                   ),
                 ],
@@ -259,7 +257,7 @@ class DatePillRow extends StatelessWidget {
   }
 }
 
-/// Wrap-grid of time chips for the dark panel. Booked slots are shown
+/// Wrap-grid of time chips. Booked slots are shown
 /// (greyed + struck through + a lock) so the user can see what's taken.
 class TimeGrid extends StatelessWidget {
   const TimeGrid({
@@ -286,7 +284,7 @@ class TimeGrid extends StatelessWidget {
           style: GoogleFonts.nunito(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: p.panelTextDim,
+            color: p.textTertiary,
           ),
         ),
       );
@@ -308,12 +306,12 @@ class TimeGrid extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
                   color: isBooked
-                      ? p.panelField.withValues(alpha: 0.4)
-                      : (active ? AppColors.accent : p.panelField),
+                      ? p.cardAlt.withValues(alpha: 0.6)
+                      : (active ? AppColors.accent : p.cardAlt),
                   borderRadius: BorderRadius.circular(12),
                   border: isBooked
                       ? Border.all(
-                          color: p.panelTextDim.withValues(alpha: 0.35))
+                          color: p.textTertiary.withValues(alpha: 0.30))
                       : null,
                 ),
                 child: Row(
@@ -325,17 +323,17 @@ class TimeGrid extends StatelessWidget {
                         fontSize: 13.5,
                         fontWeight: FontWeight.w800,
                         color: isBooked
-                            ? p.panelTextDim
-                            : (active ? AppColors.ink : p.panelText),
+                            ? p.textTertiary
+                            : (active ? Colors.white : p.text),
                         decoration:
                             isBooked ? TextDecoration.lineThrough : null,
-                        decorationColor: p.panelTextDim,
+                        decorationColor: p.textTertiary,
                       ),
                     ),
                     if (isBooked) ...[
                       const SizedBox(width: 4),
                       Icon(Icons.lock_rounded,
-                          size: 11, color: p.panelTextDim),
+                          size: 11, color: p.textTertiary),
                     ],
                   ],
                 ),
@@ -347,14 +345,14 @@ class TimeGrid extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              Icon(Icons.lock_rounded, size: 12, color: p.panelTextDim),
+              Icon(Icons.lock_rounded, size: 12, color: p.textTertiary),
               const SizedBox(width: 5),
               Text(
                 L.bookedLegend,
                 style: GoogleFonts.nunito(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
-                  color: p.panelTextDim,
+                  color: p.textTertiary,
                 ),
               ),
             ],
@@ -365,7 +363,8 @@ class TimeGrid extends StatelessWidget {
   }
 }
 
-/// The dark control panel — the booking cockpit.
+/// The booking cockpit — now a clean light section card like every other
+/// surface in the app (title row + content on white).
 class InkPanel extends StatelessWidget {
   const InkPanel({
     super.key,
@@ -383,10 +382,7 @@ class InkPanel extends StatelessWidget {
     final p = Paper.of(context);
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: p.panel,
-        borderRadius: BorderRadius.circular(28),
-      ),
+      decoration: clayDecoration(p, radius: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -398,7 +394,7 @@ class InkPanel extends StatelessWidget {
                   style: GoogleFonts.nunito(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
-                    color: p.panelText,
+                    color: p.text,
                   ),
                 ),
               ),
@@ -413,7 +409,7 @@ class InkPanel extends StatelessWidget {
   }
 }
 
-/// Dropdown-look field inside the dark panel ("Nunito ▾" style).
+/// Dropdown-look field inside the cockpit ("Nunito ▾" style).
 class PanelField extends StatelessWidget {
   const PanelField({
     super.key,
@@ -434,7 +430,7 @@ class PanelField extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: p.panelField,
+          color: p.cardAlt,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
@@ -448,7 +444,7 @@ class PanelField extends StatelessWidget {
                   style: GoogleFonts.nunito(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: p.panelText,
+                    color: p.text,
                   ),
                 ),
               )
@@ -458,14 +454,14 @@ class PanelField extends StatelessWidget {
                 style: GoogleFonts.nunito(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: p.panelText,
+                  color: p.text,
                 ),
               ),
             const SizedBox(width: 6),
             Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 18,
-              color: p.panelTextDim,
+              color: p.textTertiary,
             ),
           ],
         ),
@@ -475,7 +471,7 @@ class PanelField extends StatelessWidget {
   }
 }
 
-/// Label above a panel section, dim and tiny.
+/// Label above a cockpit section, dim and tiny.
 class PanelLabel extends StatelessWidget {
   const PanelLabel(this.text, {super.key});
 
@@ -492,7 +488,7 @@ class PanelLabel extends StatelessWidget {
           fontSize: 10.5,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.4,
-          color: p.panelTextDim,
+          color: p.textTertiary,
         ),
       ),
     );

@@ -25,47 +25,25 @@ class BarberRequestsScreen extends StatelessWidget {
         animation: AppState.instance,
         builder: (context, _) {
           final requests = AppState.instance.incomingRequests;
-          return Stack(
-            children: [
-              // Soft accent glow behind the header.
-              Positioned(
-                top: -90,
-                right: -60,
-                child: IgnorePointer(
-                  child: Container(
-                    width: 240,
-                    height: 240,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(colors: [
-                        AppColors.accent.withValues(alpha: 0.16),
-                        AppColors.accent.withValues(alpha: 0),
-                      ]),
-                    ),
+          return SafeArea(
+            bottom: false,
+            child: requests.isEmpty
+                ? const _EmptyRequests()
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 140),
+                    children: [
+                      _Header(count: requests.length),
+                      const SizedBox(height: 18),
+                      for (var i = 0; i < requests.length; i++) ...[
+                        FadeSlideIn(
+                          delay: Duration(milliseconds: 70 * i),
+                          offset: const Offset(0, 0.12),
+                          child: _RequestCard(booking: requests[i]),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    ],
                   ),
-                ),
-              ),
-              SafeArea(
-                bottom: false,
-                child: requests.isEmpty
-                    ? const _EmptyRequests()
-                    : ListView(
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 140),
-                        children: [
-                          _Header(count: requests.length),
-                          const SizedBox(height: 18),
-                          for (var i = 0; i < requests.length; i++) ...[
-                            FadeSlideIn(
-                              delay: Duration(milliseconds: 70 * i),
-                              offset: const Offset(0, 0.12),
-                              child: _RequestCard(booking: requests[i]),
-                            ),
-                            const SizedBox(height: 14),
-                          ],
-                        ],
-                      ),
-              ),
-            ],
           );
         },
       ),
@@ -88,27 +66,18 @@ class _Header extends StatelessWidget {
           children: [
             Text(L.requestsTitle, style: AppTypography.h1(context)),
             const SizedBox(width: 10),
-            // Pulsing count badge.
+            // Count badge — flat accent pill.
             ScaleIn(
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.accent, AppColors.accentDeep],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.4),
-                      blurRadius: 14,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
+                    const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
+                decoration: const BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.all(Radius.circular(999)),
                 ),
                 child: Text('$count',
                     style: GoogleFonts.nunito(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w900,
                         color: Colors.white)),
               ),
@@ -216,119 +185,96 @@ class _CardBody extends StatelessWidget {
     final p = Paper.of(context);
     final b = booking;
     return Container(
-      decoration: BoxDecoration(
-        color: p.card,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: p.border),
-        boxShadow: [
-          BoxShadow(color: p.shadow, blurRadius: 16, offset: const Offset(0, 7)),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Gold edge = a request waiting for your decision.
-            Container(width: 5, color: AppColors.gold),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(15),
+      decoration: clayDecoration(p, radius: 22),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // WHO + WHEN + status.
+          Row(
+            children: [
+              InitialAvatar(
+                  name: b.clientName ?? L.youWord, size: 44, index: 3),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // WHO + WHEN + status.
+                    Text(b.clientName ?? L.youWord,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.h4(context)),
+                    const SizedBox(height: 2),
                     Row(
                       children: [
-                        InitialAvatar(
-                            name: b.clientName ?? L.youWord,
-                            size: 44,
-                            index: 3),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(b.clientName ?? L.youWord,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.h3(context)),
-                              const SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  const Icon(Icons.schedule_rounded,
-                                      size: 13, color: AppColors.accent),
-                                  const SizedBox(width: 4),
-                                  Text(whenLabel,
-                                      style: AppTypography.bodySmall(context)),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        MiniPill(L.tagPending, style: MiniPillStyle.gold),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // WHAT + price — one clean line.
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: p.cardAlt,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(b.service.icon, size: 16, color: AppColors.accent),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${b.service.name} · ${b.service.formattedDuration}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.nunito(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: p.textSecondary),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(b.service.formattedPrice,
-                              style: AppTypography.h4(context)
-                                  .copyWith(color: AppColors.accent)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _ActionBtn(
-                            label: L.decline,
-                            icon: Icons.close_rounded,
-                            filled: false,
-                            onTap: onDecline,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          flex: 2,
-                          child: _ActionBtn(
-                            label: L.confirmBooking,
-                            icon: Icons.check_rounded,
-                            filled: true,
-                            onTap: onConfirm,
-                          ),
-                        ),
+                        const Icon(Icons.schedule_rounded,
+                            size: 13, color: AppColors.accent),
+                        const SizedBox(width: 4),
+                        Text(whenLabel,
+                            style: AppTypography.bodySmall(context)),
                       ],
                     ),
                   ],
                 ),
               ),
+              MiniPill(L.tagPending, style: MiniPillStyle.gold),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // WHAT + price — one clean line.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: p.cardAlt,
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
-        ),
+            child: Row(
+              children: [
+                Icon(b.service.icon, size: 16, color: AppColors.accent),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${b.service.name} · ${b.service.formattedDuration}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.nunito(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: p.textSecondary),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(b.service.formattedPrice,
+                    style: AppTypography.h4(context)
+                        .copyWith(color: AppColors.accent)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          // Accept / decline pills.
+          Row(
+            children: [
+              Expanded(
+                child: _ActionBtn(
+                  label: L.decline,
+                  icon: Icons.close_rounded,
+                  filled: false,
+                  onTap: onDecline,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: _ActionBtn(
+                  label: L.confirmBooking,
+                  icon: Icons.check_rounded,
+                  filled: true,
+                  onTap: onConfirm,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -350,9 +296,8 @@ class _SwipeBg extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(22),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 26),
       alignment: alignLeft ? Alignment.centerLeft : Alignment.centerRight,
@@ -402,16 +347,15 @@ class _ActionBtnState extends State<_ActionBtn> {
         scale: _down ? 0.95 : 1,
         duration: const Duration(milliseconds: 110),
         child: Container(
-          height: 50,
+          height: 48,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: filled ? AppColors.accent : Colors.transparent,
-            borderRadius: BorderRadius.circular(15),
-            border: filled ? null : Border.all(color: p.border, width: 1.4),
+            color: filled ? AppColors.accent : p.cardAlt,
+            borderRadius: BorderRadius.circular(999),
             boxShadow: filled
                 ? [
                     BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.32),
+                      color: AppColors.accent.withValues(alpha: 0.30),
                       blurRadius: 14,
                       offset: const Offset(0, 6),
                     ),
@@ -422,8 +366,7 @@ class _ActionBtnState extends State<_ActionBtn> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(widget.icon,
-                  size: 17,
-                  color: filled ? Colors.white : p.textSecondary),
+                  size: 17, color: filled ? Colors.white : p.textSecondary),
               const SizedBox(width: 6),
               Text(
                 widget.label,

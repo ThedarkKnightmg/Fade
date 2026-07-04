@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,8 +17,9 @@ import '../../widgets/primary_button.dart';
 import 'barber_avatar.dart';
 import 'barber_history_screen.dart';
 
-/// Barber "Today" — a polished, animated home: who you are, whether you're
-/// online, the next booking front-and-centre, history, and today's earnings.
+/// Barber "Today" — a calm, flat home: who you are, whether you're online,
+/// the next booking as the single blue hero, weekly goal, earnings chart and
+/// history — all on clean white cards over the plain canvas.
 class BarberDashboardScreen extends StatelessWidget {
   const BarberDashboardScreen({
     super.key,
@@ -84,7 +83,7 @@ class BarberDashboardScreen extends StatelessWidget {
                   delay: const Duration(milliseconds: 70),
                   child: _AvailabilityCard(accepting: s.acceptingBookings),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 110),
                   child: _NextBookingCard(
@@ -95,23 +94,23 @@ class BarberDashboardScreen extends StatelessWidget {
                     onGoToSchedule: onGoToSchedule,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 160),
-                  child: _GoalCard(
+                  child: _GoalSection(
                     earnedSom: s.barberEarnedThisWeekSom,
                     goalSom: s.weeklyGoalSom,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 210),
-                  child: _EarningsChartCard(
+                  child: _EarningsSection(
                     earned: s.earnedThisWeekByDay(),
                     expected: s.expectedThisWeekByDay(),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 260),
                   child: _HistoryCard(
@@ -135,6 +134,34 @@ bool _reduced(BuildContext context) =>
     MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
 // ─────────────────────────────────────────────────────────────────────────
+//  Section title — sits OUTSIDE the card, Yandex-style.
+// ─────────────────────────────────────────────────────────────────────────
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.title, {this.trailing});
+  final String title;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.h3(context)),
+          ),
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 //  Header
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -156,7 +183,7 @@ class _Header extends StatelessWidget {
     final s = AppState.instance;
     return Row(
       children: [
-        const _BlobAvatar(),
+        const _HeaderAvatar(),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
@@ -188,8 +215,8 @@ class _Header extends StatelessWidget {
             s.setLanguage(next);
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-            decoration: _chipDeco(p),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: clayDecoration(p, radius: 999),
             child: Row(
               children: [
                 const Icon(Icons.language_rounded,
@@ -206,126 +233,85 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         // Requests / inbox button with badge.
-        _Pressable(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            onGoToRequests?.call();
-          },
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: _chipDeco(p),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.chat_bubble_outline_rounded,
-                    size: 20, color: AppColors.accent),
-                if (pending > 0)
-                  Positioned(
-                    right: -7,
-                    top: -8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      constraints:
-                          const BoxConstraints(minWidth: 18, minHeight: 18),
-                      decoration: const BoxDecoration(
-                          color: AppColors.red, shape: BoxShape.circle),
-                      child: Text('$pending',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.nunito(
-                              fontSize: 10,
-                              height: 1,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white)),
-                    ),
-                  ),
-              ],
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            CircleBtn(
+              icon: Icons.chat_bubble_outline_rounded,
+              size: 44,
+              iconSize: 20,
+              iconColor: AppColors.accent,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onGoToRequests?.call();
+              },
             ),
-          ),
+            if (pending > 0)
+              Positioned(
+                right: -3,
+                top: -4,
+                child: IgnorePointer(
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    constraints:
+                        const BoxConstraints(minWidth: 18, minHeight: 18),
+                    decoration: const BoxDecoration(
+                        color: AppColors.red, shape: BoxShape.circle),
+                    child: Text('$pending',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.nunito(
+                            fontSize: 10,
+                            height: 1,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white)),
+                  ),
+                ),
+              ),
+          ],
         ),
       ],
     );
   }
-
-  BoxDecoration _chipDeco(PaperPalette p) => BoxDecoration(
-        color: p.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.border),
-        boxShadow: [
-          BoxShadow(
-              color: p.shadow, blurRadius: 12, offset: const Offset(0, 5)),
-        ],
-      );
 }
 
-/// Avatar with a slowly-morphing blue blob halo and a pulsing online dot.
-class _BlobAvatar extends StatefulWidget {
-  const _BlobAvatar();
-
-  @override
-  State<_BlobAvatar> createState() => _BlobAvatarState();
-}
-
-class _BlobAvatarState extends State<_BlobAvatar>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 8),
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_reduced(context)) {
-      _c.stop();
-    } else if (!_c.isAnimating) {
-      _c.repeat();
-    }
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
+/// Avatar in a quiet white ring, with a pulsing online dot.
+class _HeaderAvatar extends StatelessWidget {
+  const _HeaderAvatar();
 
   @override
   Widget build(BuildContext context) {
+    final p = Paper.of(context);
     final online = AppState.instance.acceptingBookings;
     return SizedBox(
-      width: 60,
-      height: 60,
+      width: 56,
+      height: 56,
       child: Stack(
         alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
-          // Morphing blob halo.
-          AnimatedBuilder(
-            animation: _c,
-            builder: (_, __) => Transform.rotate(
-              angle: _c.value * 2 * math.pi,
-              child: Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF4F9CFF), AppColors.accentDeep],
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.elliptical(30, 22),
-                    topRight: Radius.elliptical(22, 30),
-                    bottomLeft: Radius.elliptical(22, 30),
-                    bottomRight: Radius.elliptical(30, 22),
-                  ),
-                ),
-              ),
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: p.card,
+              border: Border.all(color: p.border),
+              boxShadow: [
+                BoxShadow(
+                    color: p.shadow,
+                    blurRadius: 18,
+                    spreadRadius: -4,
+                    offset: const Offset(0, 8)),
+              ],
             ),
+            alignment: Alignment.center,
+            child: const BarberAvatar(size: 48),
           ),
-          const BarberAvatar(size: 46),
           // Online dot.
           if (online)
             const Positioned(
-              right: 1,
-              bottom: 1,
+              right: 0,
+              bottom: 0,
               child: _PulseDot(),
             ),
         ],
@@ -410,42 +396,22 @@ class _AvailabilityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = Paper.of(context);
     const green = AppColors.green;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 280),
-      curve: AppCurves.easeOutQuart,
+    return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
-      decoration: BoxDecoration(
-        color: accepting
-            ? green.withValues(alpha: 0.12)
-            : p.cardAlt,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: accepting
-              ? green.withValues(alpha: 0.4)
-              : p.border,
-        ),
-      ),
+      decoration: clayDecoration(p, radius: 20),
       child: Row(
         children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 280),
-            width: 22,
-            height: 22,
+            curve: AppCurves.easeOutQuart,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: accepting
-                  ? green.withValues(alpha: 0.25)
-                  : p.border,
-              shape: BoxShape.circle,
+              color: accepting ? green.withValues(alpha: 0.12) : p.cardAlt,
+              borderRadius: BorderRadius.circular(13),
             ),
-            alignment: Alignment.center,
-            child: Container(
-              width: 9,
-              height: 9,
-              decoration: BoxDecoration(
-                color: accepting ? green : p.textTertiary,
-                shape: BoxShape.circle,
-              ),
-            ),
+            child: Icon(Icons.power_settings_new_rounded,
+                size: 21, color: accepting ? green : p.textTertiary),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -454,12 +420,7 @@ class _AvailabilityCard extends StatelessWidget {
               children: [
                 Text(
                   accepting ? L.receivingBookings : L.youreOffline,
-                  style: GoogleFonts.nunito(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: accepting
-                          ? (p.isDark ? green : const Color(0xFF177A48))
-                          : p.text),
+                  style: AppTypography.h4(context),
                 ),
                 const SizedBox(height: 2),
                 Text(accepting ? L.receivingSub : L.offlineSub,
@@ -484,7 +445,7 @@ class _AvailabilityCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-//  Next booking card
+//  Next booking — the ONE blue hero on this screen
 // ─────────────────────────────────────────────────────────────────────────
 
 class _NextBookingCard extends StatelessWidget {
@@ -503,40 +464,59 @@ class _NextBookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassPanel(
-      radius: 26,
+    if (booking == null) return _empty(context);
+    return Container(
       padding: const EdgeInsets.all(18),
-      child: booking == null ? _empty(context) : _content(context, booking!),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF4AA3FF), Color(0xFF1E6FE0)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+              color: AppColors.accent.withValues(alpha: 0.35),
+              blurRadius: 22,
+              spreadRadius: -6,
+              offset: const Offset(0, 12)),
+        ],
+      ),
+      child: _content(context, booking!),
     );
   }
 
   Widget _empty(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 8),
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: AppColors.accent.withValues(alpha: 0.12),
-            shape: BoxShape.circle,
+    final p = Paper.of(context);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: clayDecoration(p, radius: 24),
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.event_available_rounded,
+                size: 28, color: AppColors.accent),
           ),
-          child: const Icon(Icons.event_available_rounded,
-              size: 30, color: AppColors.accent),
-        ),
-        const SizedBox(height: 14),
-        Text(L.noUpcomingBookings, style: AppTypography.h3(context)),
-        const SizedBox(height: 4),
-        Text(L.chairOpen,
-            textAlign: TextAlign.center,
-            style: AppTypography.bodySmall(context)),
-        const SizedBox(height: 8),
-      ],
+          const SizedBox(height: 14),
+          Text(L.noUpcomingBookings, style: AppTypography.h3(context)),
+          const SizedBox(height: 4),
+          Text(L.chairOpen,
+              textAlign: TextAlign.center,
+              style: AppTypography.bodySmall(context)),
+          const SizedBox(height: 8),
+        ],
+      ),
     );
   }
 
   Widget _content(BuildContext context, Booking b) {
-    final p = Paper.of(context);
     final diff = b.dateTime.difference(now);
     final countdown = diff.inMinutes <= 0
         ? L.startingNow
@@ -546,15 +526,17 @@ class _NextBookingCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(L.nextBookingCap,
-                style: GoogleFonts.nunito(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                    color: p.textTertiary)),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right_rounded, size: 18, color: p.textTertiary),
-            const Spacer(),
+            Expanded(
+              child: Text(L.nextBookingCap,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.nunito(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: Colors.white.withValues(alpha: 0.8))),
+            ),
+            const SizedBox(width: 8),
             _CountdownPill(text: countdown),
           ],
         ),
@@ -562,7 +544,7 @@ class _NextBookingCard extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SquircleAvatar(name: b.clientName ?? L.youWord),
+            _FrostAvatar(name: b.clientName ?? L.youWord),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -575,7 +557,7 @@ class _NextBookingCard extends StatelessWidget {
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
                           height: 1.15,
-                          color: p.text)),
+                          color: Colors.white)),
                   const SizedBox(height: 3),
                   Text(b.service.name,
                       maxLines: 1,
@@ -583,18 +565,22 @@ class _NextBookingCard extends StatelessWidget {
                       style: GoogleFonts.nunito(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.accent)),
+                          color: Colors.white.withValues(alpha: 0.9))),
                   const SizedBox(height: 5),
                   Row(
                     children: [
                       Icon(Icons.location_on_rounded,
-                          size: 14, color: p.textTertiary),
+                          size: 14,
+                          color: Colors.white.withValues(alpha: 0.7)),
                       const SizedBox(width: 3),
                       Flexible(
                         child: Text(b.barbershop.address,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTypography.bodySmall(context)),
+                            style: GoogleFonts.nunito(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withValues(alpha: 0.7))),
                       ),
                     ],
                   ),
@@ -608,42 +594,41 @@ class _NextBookingCard extends StatelessWidget {
         _CountUpMoney(
           value: b.service.price,
           style: GoogleFonts.nunito(
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
-              color: AppColors.green),
+              fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white),
         ),
         const SizedBox(height: 16),
-        _ActionButton(
+        _HeroButton(
           label: L.viewDetails,
-          icon: Icons.arrow_forward_rounded,
-          iconTrailing: true,
-          filled: true,
           onTap: () => onGoToSchedule?.call(),
         ),
         const SizedBox(height: 16),
-        Divider(color: p.divider, height: 1),
+        Container(height: 1, color: Colors.white.withValues(alpha: 0.25)),
         const SizedBox(height: 14),
         Row(
           children: [
             Expanded(
-              child: _StatCol(
+              child: _HeroStat(
                 value: '$bookingsToday',
                 label: L.bookingsTodayCap,
-                color: AppColors.accent,
               ),
             ),
-            Container(width: 1, height: 36, color: p.divider),
+            Container(
+                width: 1,
+                height: 36,
+                color: Colors.white.withValues(alpha: 0.25)),
             Expanded(
-              child: _StatCol(
-                valueWidget: _CountUpMoney(
-                  value: expected,
-                  style: GoogleFonts.nunito(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.green),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 14),
+                child: _HeroStat(
+                  valueWidget: _CountUpMoney(
+                    value: expected,
+                    style: GoogleFonts.nunito(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white),
+                  ),
+                  label: L.expectedCap,
                 ),
-                label: L.expectedCap,
-                color: AppColors.green,
               ),
             ),
           ],
@@ -653,6 +638,7 @@ class _NextBookingCard extends StatelessWidget {
   }
 }
 
+/// Frosted-glass countdown chip on the hero — keeps its gentle pulse.
 class _CountdownPill extends StatefulWidget {
   const _CountdownPill({required this.text});
   final String text;
@@ -693,28 +679,21 @@ class _CountdownPillState extends State<_CountdownPill>
         child: child,
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF3D97FF), AppColors.accentDeep],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-                color: AppColors.accent.withValues(alpha: 0.35),
-                blurRadius: 12,
-                offset: const Offset(0, 4)),
-          ],
+          color: Colors.white.withValues(alpha: 0.20),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.schedule_rounded, size: 15, color: Colors.white),
+            const Icon(Icons.schedule_rounded, size: 14, color: Colors.white),
             const SizedBox(width: 5),
             Text(widget.text,
                 style: GoogleFonts.nunito(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
                     color: Colors.white)),
           ],
         ),
@@ -723,67 +702,96 @@ class _CountdownPillState extends State<_CountdownPill>
   }
 }
 
-class _SquircleAvatar extends StatelessWidget {
-  const _SquircleAvatar({required this.name});
+/// Frosted-glass initial avatar on the hero.
+class _FrostAvatar extends StatelessWidget {
+  const _FrostAvatar({required this.name});
   final String name;
 
   @override
   Widget build(BuildContext context) {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
     return Container(
-      width: 56,
-      height: 56,
+      width: 54,
+      height: 54,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF4F9CFF), AppColors.accentDeep],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-              color: AppColors.accent.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 5)),
-        ],
+        color: Colors.white.withValues(alpha: 0.20),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
       ),
       alignment: Alignment.center,
       child: Text(initial,
           style: GoogleFonts.nunito(
-              fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
+              fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white)),
     );
   }
 }
 
-class _StatCol extends StatelessWidget {
-  const _StatCol({
+/// White pill CTA on the blue hero.
+class _HeroButton extends StatelessWidget {
+  const _HeroButton({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Pressable(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Container(
+        height: 50,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(label,
+                style: GoogleFonts.nunito(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.accentDeep)),
+            const SizedBox(width: 7),
+            const Icon(Icons.arrow_forward_rounded,
+                size: 18, color: AppColors.accentDeep),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroStat extends StatelessWidget {
+  const _HeroStat({
     this.value,
     this.valueWidget,
     required this.label,
-    required this.color,
   });
   final String? value;
   final Widget? valueWidget;
   final String label;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         valueWidget ??
             Text(value!,
                 style: GoogleFonts.nunito(
-                    fontSize: 22, fontWeight: FontWeight.w900, color: color)),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white)),
         const SizedBox(height: 2),
         Text(label,
             style: GoogleFonts.nunito(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
-                color: p.textTertiary)),
+                color: Colors.white.withValues(alpha: 0.7))),
       ],
     );
   }
@@ -804,52 +812,43 @@ class _HistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    return _Pressable(
+    return PaperCard(
+      radius: 20,
+      padding: const EdgeInsets.all(14),
       onTap: () {
         HapticFeedback.selectionClick();
         Navigator.of(context).push(
           FadeThroughPageRoute(child: const BarberHistoryScreen()),
         );
       },
-      child: GlassPanel(
-        radius: 20,
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.green,
-                    AppColors.green.withValues(alpha: 0.7)
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: const Icon(Icons.history_rounded,
-                  size: 24, color: Colors.white),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.green.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(13),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(L.cutHistory, style: AppTypography.h4(context)),
-                  const SizedBox(height: 2),
-                  Text(L.completedEarned(count, Money.som(earned)),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodySmall(context)),
-                ],
-              ),
+            child: const Icon(Icons.history_rounded,
+                size: 21, color: AppColors.green),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(L.cutHistory, style: AppTypography.h4(context)),
+                const SizedBox(height: 2),
+                Text(L.completedEarned(count, Money.som(earned)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.bodySmall(context)),
+              ],
             ),
-            Icon(Icons.chevron_right_rounded, color: p.textTertiary),
-          ],
-        ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: p.textTertiary),
+        ],
       ),
     );
   }
@@ -866,6 +865,35 @@ void _editGoal(BuildContext context, int current) {
   );
 }
 
+/// Title outside the card (Yandex pattern) with the edit affordance beside it.
+class _GoalSection extends StatelessWidget {
+  const _GoalSection({required this.earnedSom, required this.goalSom});
+  final int earnedSom;
+  final int goalSom;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(
+          L.setWeeklyGoalTitle,
+          trailing: GestureDetector(
+            onTap: () => _editGoal(context, goalSom),
+            behavior: HitTestBehavior.opaque,
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child:
+                  Icon(Icons.edit_rounded, size: 16, color: AppColors.accent),
+            ),
+          ),
+        ),
+        _GoalCard(earnedSom: earnedSom, goalSom: goalSom),
+      ],
+    );
+  }
+}
+
 class _GoalCard extends StatelessWidget {
   const _GoalCard({required this.earnedSom, required this.goalSom});
   final int earnedSom;
@@ -877,59 +905,43 @@ class _GoalCard extends StatelessWidget {
     final pct = goalSom <= 0 ? 0.0 : (earnedSom / goalSom).clamp(0.0, 1.0);
     final reached = goalSom > 0 && earnedSom >= goalSom;
     final toGo = goalSom - earnedSom;
-    return GlassPanel(
-      radius: 22,
+    return Container(
       padding: const EdgeInsets.all(18),
+      decoration: clayDecoration(p, radius: 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Flexible(
-                child: Text(L.weeklyGoalCap,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.nunito(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.6,
-                        color: p.textTertiary)),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(Money.group(earnedSom),
+                          style: GoogleFonts.nunito(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: p.text)),
+                      Text('  /  ${Money.group(goalSom)}',
+                          style: GoogleFonts.nunito(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: p.textTertiary)),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: () => _editGoal(context, goalSom),
-                behavior: HitTestBehavior.opaque,
-                child: const Icon(Icons.edit_rounded,
-                    size: 15, color: AppColors.accent),
-              ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text('${(pct * 100).round()}%',
                   style: GoogleFonts.nunito(
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.w900,
                       color: AppColors.accent)),
             ],
-          ),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(Money.group(earnedSom),
-                    style: GoogleFonts.nunito(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: p.text)),
-                Text('  /  ${Money.group(goalSom)}',
-                    style: GoogleFonts.nunito(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: p.textTertiary)),
-              ],
-            ),
           ),
           const SizedBox(height: 12),
           ClipRRect(
@@ -953,8 +965,8 @@ class _GoalCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: AppColors.green.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.green.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -973,7 +985,9 @@ class _GoalCard extends StatelessWidget {
                       style: GoogleFonts.nunito(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF177A48)),
+                          color: p.isDark
+                              ? AppColors.green
+                              : const Color(0xFF177A48)),
                     ),
                   ],
                 ),
@@ -1088,6 +1102,24 @@ class _GoalEditSheetState extends State<_GoalEditSheet> {
   }
 }
 
+/// Title outside the card + the interactive 7-day earnings chart.
+class _EarningsSection extends StatelessWidget {
+  const _EarningsSection({required this.earned, required this.expected});
+  final List<int> earned;
+  final List<int> expected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(L.tabThisWeekCap),
+        _EarningsChartCard(earned: earned, expected: expected),
+      ],
+    );
+  }
+}
+
 /// Interactive 7-day earnings bar chart with a tap-to-reveal tooltip.
 class _EarningsChartCard extends StatefulWidget {
   const _EarningsChartCard({required this.earned, required this.expected});
@@ -1120,36 +1152,23 @@ class _EarningsChartCardState extends State<_EarningsChartCard> {
     final reduced = _reduced(context);
     final selTotal = totals[_selected];
 
-    return GlassPanel(
-      radius: 22,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+      decoration: clayDecoration(p, radius: 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(L.tabThisWeekCap.toUpperCase(),
-                  style: GoogleFonts.nunito(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.6,
-                      color: p.textTertiary)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(Money.somValue(weekTotal),
-                      maxLines: 1,
-                      style: GoogleFonts.nunito(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.accent)),
-                ),
-              ),
-            ],
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(Money.somValue(weekTotal),
+                maxLines: 1,
+                style: GoogleFonts.nunito(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.accent)),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           SizedBox(
             height: 150,
             child: LayoutBuilder(
@@ -1250,12 +1269,6 @@ class _BarTooltip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.ink,
         borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
-        ],
       ),
       child: Text(text,
           maxLines: 1,
@@ -1354,7 +1367,7 @@ class _DayBar extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-//  Shared: count-up money, action button, pressable
+//  Shared: count-up money, pressable
 // ─────────────────────────────────────────────────────────────────────────
 
 class _CountUpMoney extends StatelessWidget {
@@ -1377,61 +1390,6 @@ class _CountUpMoney extends StatelessWidget {
     // Scale-to-fit so long so'm amounts never wrap mid-number in any language.
     return FittedBox(
         fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: child);
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.label,
-    required this.icon,
-    required this.filled,
-    required this.onTap,
-    this.iconTrailing = false,
-  });
-  final String label;
-  final IconData icon;
-  final bool filled;
-  final VoidCallback onTap;
-  final bool iconTrailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    final fg = filled ? Colors.white : AppColors.accent;
-    final children = <Widget>[
-      Icon(icon, size: 18, color: fg),
-      const SizedBox(width: 7),
-      Text(label,
-          style: GoogleFonts.nunito(
-              fontSize: 15, fontWeight: FontWeight.w800, color: fg)),
-    ];
-    return _Pressable(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: Container(
-        height: 54,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: filled ? AppColors.accent : p.card,
-          borderRadius: BorderRadius.circular(16),
-          border: filled ? null : Border.all(color: p.border, width: 1.4),
-          boxShadow: filled
-              ? [
-                  BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.32),
-                      blurRadius: 14,
-                      offset: const Offset(0, 6)),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: iconTrailing ? children.reversed.toList() : children,
-        ),
-      ),
-    );
   }
 }
 

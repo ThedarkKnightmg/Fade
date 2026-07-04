@@ -150,7 +150,7 @@ class ProfileScreen extends StatelessWidget {
         return SafeArea(
           bottom: false,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 150),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 150),
             children: [
               // Header — the rust circle says hi.
               FadeSlideIn(
@@ -195,37 +195,46 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-              // VIP progress — dark panel with a lime bar.
+              const SizedBox(height: 22),
+              // VIP progress — flat card, gold goal-gradient bar (VIP = gold).
               FadeSlideIn(
                 delay: const Duration(milliseconds: 60),
-                child: Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: p.panel,
-                    borderRadius: BorderRadius.circular(28),
-                  ),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 10),
+                  child: Text(L.vipClub, style: AppTypography.h3(context)),
+                ),
+              ),
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 60),
+                child: PaperCard(
+                  radius: 24,
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Text(
-                            L.vipClub,
-                            style: GoogleFonts.nunito(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: p.panelText,
-                              height: 1.1,
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color:
+                                  AppColors.gold.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                            child: const Icon(
+                              Icons.workspace_premium_rounded,
+                              size: 21,
+                              color: AppColors.gold,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 12),
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: const Color(0xFFE0683C)
-                                  .withValues(alpha: 0.20),
+                                  .withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
@@ -251,9 +260,9 @@ class ProfileScreen extends StatelessWidget {
                           builder: (_, t, __) => LinearProgressIndicator(
                             value: t,
                             minHeight: 10,
-                            backgroundColor: p.panelField,
+                            backgroundColor: p.cardAlt,
                             valueColor: const AlwaysStoppedAnimation(
-                                AppColors.accent),
+                                AppColors.gold),
                           ),
                         ),
                       ),
@@ -262,11 +271,7 @@ class ProfileScreen extends StatelessWidget {
                         cuts >= 16
                             ? 'VIP unlocked — priority booking & top-of-list slots 🎉'
                             : '${16 - cuts} cuts to VIP — priority booking & recognition',
-                        style: GoogleFonts.nunito(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: p.panelTextDim,
-                        ),
+                        style: AppTypography.bodySmall(context),
                       ),
                     ],
                   ),
@@ -289,13 +294,13 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 22),
               // My barber note.
               FadeSlideIn(
                 delay: const Duration(milliseconds: 180),
                 child: my == null
                     ? PaperCard(
-                        radius: 26,
+                        radius: 24,
                         padding: const EdgeInsets.all(16),
                         onTap: () => Navigator.of(context).push(
                           FadeThroughPageRoute(
@@ -303,19 +308,34 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: AppColors.accent
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(13),
+                              ),
+                              child: const Icon(
+                                Icons.person_search_rounded,
+                                size: 21,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 L.noBarberPinned,
-                                style:
-                                    AppTypography.scribble(context, size: 21),
+                                style: AppTypography.h4(context),
                               ),
                             ),
-                            const ArrowCircle(size: 40),
+                            Icon(Icons.chevron_right_rounded,
+                                size: 22, color: p.textTertiary),
                           ],
                         ),
                       )
                     : PaperCard(
-                        radius: 26,
+                        radius: 24,
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
@@ -411,11 +431,11 @@ class ProfileScreen extends StatelessWidget {
                   onTap: () => state.setRole(AppRole.barber),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 24),
               FadeSlideIn(
                 delay: const Duration(milliseconds: 240),
                 child: PaperCard(
-                  radius: 26,
+                  radius: 24,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 6),
                   child: Column(
@@ -423,32 +443,36 @@ class ProfileScreen extends StatelessWidget {
                       _SettingRow(
                         icon: Icons.dark_mode_rounded,
                         label: L.darkMode,
-                        trailing: _LimeSwitch(
+                        tint: AppColors.accent,
+                        trailing: _PillSwitch(
                           value: state.isDarkMode,
                           onChanged: (_) => state.toggleDarkMode(),
                         ),
                       ),
-                      Divider(color: p.divider),
+                      Divider(color: p.divider, height: 1),
                       _SettingRow(
                         icon: Icons.notifications_rounded,
                         label: L.reminders,
-                        trailing: _LimeSwitch(
+                        tint: AppColors.accent,
+                        trailing: _PillSwitch(
                           value: state.remindersOn,
                           onChanged: state.setReminders,
                         ),
                       ),
-                      Divider(color: p.divider),
+                      Divider(color: p.divider, height: 1),
                       _SettingRow(
                         icon: Icons.language_rounded,
                         label: L.language,
+                        tint: AppColors.accent,
                         trailing: MiniPill(state.language.code,
                             style: MiniPillStyle.ghost),
                         onTap: () => _pickLanguage(context),
                       ),
-                      Divider(color: p.divider),
+                      Divider(color: p.divider, height: 1),
                       _SettingRow(
                         icon: Icons.logout_rounded,
                         label: L.signOut,
+                        tint: AppColors.red,
                         labelColor: AppColors.red,
                         onTap: () => _signOut(context),
                       ),
@@ -462,7 +486,8 @@ class ProfileScreen extends StatelessWidget {
                 child: Center(
                   child: Text(
                     '${L.memberSincePrefix} ${DateFormat('MMMM yyyy').format(state.memberSince)} · ${L.madeWith}',
-                    style: AppTypography.scribble(context, size: 19)
+                    textAlign: TextAlign.center,
+                    style: AppTypography.caption(context)
                         .copyWith(color: p.textTertiary),
                   ),
                 ),
@@ -603,6 +628,7 @@ class _SettingRow extends StatelessWidget {
     this.trailing,
     this.onTap,
     this.labelColor,
+    this.tint,
   });
 
   final IconData icon;
@@ -611,9 +637,13 @@ class _SettingRow extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? labelColor;
 
+  /// Icon-chip tint (the system language: tinted fill + tinted glyph).
+  final Color? tint;
+
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
+    final chip = tint ?? AppColors.accent;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -624,12 +654,10 @@ class _SettingRow extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: p.cardAlt,
+                color: chip.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: p.border),
               ),
-              child: Icon(icon,
-                  size: 18, color: labelColor ?? p.textSecondary),
+              child: Icon(icon, size: 19, color: chip),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -649,9 +677,9 @@ class _SettingRow extends StatelessWidget {
   }
 }
 
-/// Pill switch with a lime thumb — ink track when on.
-class _LimeSwitch extends StatelessWidget {
-  const _LimeSwitch({required this.value, required this.onChanged});
+/// Pill switch — accent thumb on an action track when on.
+class _PillSwitch extends StatelessWidget {
+  const _PillSwitch({required this.value, required this.onChanged});
 
   final bool value;
   final ValueChanged<bool> onChanged;
