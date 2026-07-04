@@ -1242,6 +1242,8 @@ class L {
       "O'rindig'ingizni oching, yozuvlar oling, daromad qiling");
   static String get becomeBarberCta =>
       _t('Start', 'Начать', 'Boshlash');
+  static String get searchBarbers => _t('Search barbershops, styles…',
+      'Барбершопы, стрижки…', 'Barbershoplar, soch turmagi…');
   static String get vipClub => _t('VIP Club', 'VIP-клуб', 'VIP klub');
   static String get noBarberPinned => _t(
       'no barber pinned yet — find your person',

@@ -370,41 +370,8 @@ class HomeScreen extends StatelessWidget {
 
         return Stack(
           children: [
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    // Soft blue airy canvas from the palette in both modes —
-                    // cards float bright-white on top of it.
-                    colors: [p.bgGradientTop, p.bg],
-                    stops: const [0, 0.5],
-                  ),
-                ),
-              ),
-            ),
-            // Soft electric-blue glow behind the header for depth.
-            Positioned(
-              top: -140,
-              left: -60,
-              right: -60,
-              child: IgnorePointer(
-                child: Container(
-                  height: 360,
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      colors: [
-                        // Subtle in light mode for a clean Yandex-white header.
-                        AppColors.accent
-                            .withValues(alpha: p.isDark ? 0.22 : 0.07),
-                        AppColors.accent.withValues(alpha: 0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // Flat, calm canvas — Yandex-clean, no busy gradient/glow.
+            Positioned.fill(child: ColoredBox(color: p.bg)),
             SafeArea(
               bottom: false,
               child: _RevealScrollView(
@@ -434,7 +401,12 @@ class HomeScreen extends StatelessWidget {
                     _PointsPill(onTap: () => _showBonus(context)),
                   ],
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
+                // Yandex-style search bar — the front door to discovery.
+                FadeSlideIn(
+                  child: _SearchBar(onTap: () => onSearchTap?.call()),
+                ),
+                const SizedBox(height: 18),
                 // Find shops near you — placed ABOVE the quick tiles so it sits
                 // at the top until the user sets a location.
                 if (state.address == null) ...[
@@ -742,6 +714,70 @@ class _HomeFilterChip extends StatelessWidget {
 
 /// Yandex-style quick-action grid — four big, soft-tinted tiles for the app's
 /// main jobs (book, AI try-on, map, bookings), each colour-coded.
+/// A big rounded Yandex-style search pill: search glyph, hint, and a filter
+/// chip. Taps into the explore/search flow.
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: 56,
+        padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+        decoration: BoxDecoration(
+          color: p.card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: p.border),
+          boxShadow: [
+            BoxShadow(
+              color: p.shadow,
+              blurRadius: 16,
+              spreadRadius: -4,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.search_rounded, size: 22, color: p.textTertiary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                L.searchBarbers,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.nunito(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: p.textTertiary,
+                ),
+              ),
+            ),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.tune_rounded,
+                  size: 19, color: AppColors.accent),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _QuickActions extends StatelessWidget {
   const _QuickActions({
     required this.onBook,
