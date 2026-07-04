@@ -784,7 +784,6 @@ class _QuickActions extends StatelessWidget {
                   sub: L.quickAiSub,
                   asset: 'assets/tiles/ai_star.png',
                   onTap: onAi,
-                  spin: true, // the AI sticker flips around the X axis
                 ),
               ),
             ],
@@ -829,7 +828,6 @@ class _QuickTile extends StatelessWidget {
     required this.sub,
     required this.onTap,
     this.asset,
-    this.spin = false,
   });
 
   final IconData icon;
@@ -840,9 +838,6 @@ class _QuickTile extends StatelessWidget {
 
   /// Optional 3D sticker PNG (assets/tiles/…). Falls back to [icon] if missing.
   final String? asset;
-
-  /// When true, the sticker continuously flips around the X axis (the AI tile).
-  final bool spin;
 
   Widget _iconChip(PaperPalette p, double size) => Container(
         width: size,
@@ -882,6 +877,9 @@ class _QuickTile extends StatelessWidget {
               );
 
     // Sticker is 0.6× bigger (×1.6) than before and pops higher above the box.
+    // A per-tile phase (from the label) desyncs the hover so they don't bob in
+    // lockstep.
+    final phase = (label.hashCode.abs() % 100) / 100.0;
     final Widget stickerBox = SizedBox(
       width: 125,
       height: 147,
@@ -924,11 +922,12 @@ class _QuickTile extends StatelessWidget {
                 ),
               ),
             ),
-            // The big 3D sticker stands OUTSIDE the box, popping above its top.
+            // The big 3D sticker stands OUTSIDE the box, popping above its top,
+            // gently hovering.
             Positioned(
               left: -6,
               bottom: 6,
-              child: spin ? _SpinX(child: stickerBox) : stickerBox,
+              child: _Hover(phase: phase, child: stickerBox),
             ),
           ],
         ),
@@ -937,20 +936,21 @@ class _QuickTile extends StatelessWidget {
   }
 }
 
-/// Continuously flips its child around the X axis (a 3D coin-flip) with a
-/// touch of perspective — used for the AI sticker so it feels alive.
-class _SpinX extends StatefulWidget {
-  const _SpinX({required this.child});
+/// Gently hovers its child up and down (a soft float). [phase] offsets the
+/// cycle so several hovering stickers don't bob in unison.
+class _Hover extends StatefulWidget {
+  const _Hover({required this.child, this.phase = 0});
   final Widget child;
+  final double phase;
 
   @override
-  State<_SpinX> createState() => _SpinXState();
+  State<_Hover> createState() => _HoverState();
 }
 
-class _SpinXState extends State<_SpinX> with SingleTickerProviderStateMixin {
+class _HoverState extends State<_Hover> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 3200),
+    duration: const Duration(milliseconds: 2800),
   )..repeat();
 
   @override
@@ -963,13 +963,12 @@ class _SpinXState extends State<_SpinX> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _c,
-      builder: (_, child) => Transform(
-        alignment: Alignment.center,
-        transform: Matrix4.identity()
-          ..setEntry(3, 2, 0.0012) // perspective
-          ..rotateX(_c.value * 2 * math.pi),
-        child: child,
-      ),
+      builder: (_, child) {
+        // Smooth sine bob — only ~4px, so it reads as a subtle float.
+        final v = (_c.value + widget.phase) % 1.0;
+        final dy = math.sin(v * 2 * math.pi) * 4.0;
+        return Transform.translate(offset: Offset(0, dy), child: child);
+      },
       child: widget.child,
     );
   }
