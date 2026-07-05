@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,6 +18,7 @@ import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import 'barber_avatar.dart';
 import 'barber_history_screen.dart';
+import 'scan_client_sheet.dart';
 
 /// Barber "Today" — a calm, flat home: who you are, whether you're online,
 /// the next booking as the single blue hero, weekly goal, earnings chart and
@@ -52,12 +55,17 @@ class BarberDashboardScreen extends StatelessWidget {
           final now = DateTime.now();
 
           final todayUpcoming = s.barberToday;
-          final doneToday = s.barberHistory
+          final doneTodayList = s.barberHistory
               .where((b) =>
                   b.status == BookingStatus.completed &&
                   _sameDay(b.dateTime, now))
-              .length;
+              .toList();
+          final doneToday = doneTodayList.length;
           final bookingsToday = todayUpcoming.length + doneToday;
+          // Today at a glance (the Homies-style stat grid).
+          final todayMinutes = [...todayUpcoming, ...doneTodayList]
+              .fold(0, (sum, b) => sum + b.service.durationMinutes);
+          final myRating = s.barberTalentRating(me.barber);
 
           final agenda = s.barberAgenda
               .where((b) => b.dateTime
@@ -88,10 +96,19 @@ class BarberDashboardScreen extends StatelessWidget {
                   delay: const Duration(milliseconds: 110),
                   child: _NextBookingCard(
                     booking: upNext,
-                    now: now,
                     bookingsToday: bookingsToday,
                     expected: s.barberEarningsToday,
                     onGoToSchedule: onGoToSchedule,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Today at a glance — cuts · hours · rating · response.
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 140),
+                  child: _StatsGrid(
+                    cuts: doneToday,
+                    hours: todayMinutes / 60,
+                    rating: myRating,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -448,23 +465,46 @@ class _AvailabilityCard extends StatelessWidget {
 //  Next booking — the ONE blue hero on this screen
 // ─────────────────────────────────────────────────────────────────────────
 
-class _NextBookingCard extends StatelessWidget {
+class _NextBookingCard extends StatefulWidget {
   const _NextBookingCard({
     required this.booking,
-    required this.now,
     required this.bookingsToday,
     required this.expected,
     required this.onGoToSchedule,
   });
   final Booking? booking;
-  final DateTime now;
   final int bookingsToday;
   final double expected;
   final VoidCallback? onGoToSchedule;
 
   @override
+  State<_NextBookingCard> createState() => _NextBookingCardState();
+}
+
+class _NextBookingCardState extends State<_NextBookingCard> {
+  // Live countdown — reticks every 30s so "in 39m" stays true (Homies-style).
+  Timer? _tick;
+
+  int get bookingsToday => widget.bookingsToday;
+  double get expected => widget.expected;
+  VoidCallback? get onGoToSchedule => widget.onGoToSchedule;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(
+        const Duration(seconds: 30), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (booking == null) return _empty(context);
+    if (widget.booking == null) return _empty(context);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -482,7 +522,7 @@ class _NextBookingCard extends StatelessWidget {
               offset: const Offset(0, 12)),
         ],
       ),
-      child: _content(context, booking!),
+      child: _content(context, widget.booking!),
     );
   }
 
@@ -517,7 +557,7 @@ class _NextBookingCard extends StatelessWidget {
   }
 
   Widget _content(BuildContext context, Booking b) {
-    final diff = b.dateTime.difference(now);
+    final diff = b.dateTime.difference(DateTime.now());
     final countdown = diff.inMinutes <= 0
         ? L.startingNow
         : L.inHm(diff.inHours, diff.inMinutes % 60);
@@ -597,9 +637,25 @@ class _NextBookingCard extends StatelessWidget {
               fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white),
         ),
         const SizedBox(height: 16),
-        _HeroButton(
-          label: L.viewDetails,
-          onTap: () => onGoToSchedule?.call(),
+        // Two clear actions (Homies pattern): check the client in, or open
+        // the full schedule.
+        Row(
+          children: [
+            Expanded(
+              child: _FrostButton(
+                icon: Icons.qr_code_scanner_rounded,
+                label: L.scanClient,
+                onTap: () => showScanClientSheet(context),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _HeroButton(
+                label: L.viewDetails,
+                onTap: () => onGoToSchedule?.call(),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Container(height: 1, color: Colors.white.withValues(alpha: 0.25)),
@@ -742,24 +798,153 @@ class _HeroButton extends StatelessWidget {
       child: Container(
         height: 50,
         alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(999),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(label,
-                style: GoogleFonts.nunito(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.accentDeep)),
-            const SizedBox(width: 7),
-            const Icon(Icons.arrow_forward_rounded,
-                size: 18, color: AppColors.accentDeep),
-          ],
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(label,
+                  style: GoogleFonts.nunito(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.accentDeep)),
+              const SizedBox(width: 7),
+              const Icon(Icons.arrow_forward_rounded,
+                  size: 18, color: AppColors.accentDeep),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// Frosted secondary action on the blue hero (e.g. "Scan client").
+class _FrostButton extends StatelessWidget {
+  const _FrostButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Pressable(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Container(
+        height: 50,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 17, color: Colors.white),
+              const SizedBox(width: 6),
+              Text(label,
+                  style: GoogleFonts.nunito(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Today at a glance" — the Homies-style 2×2 stat grid: cuts, hours on the
+/// chair, rating, response time.
+class _StatsGrid extends StatelessWidget {
+  const _StatsGrid({
+    required this.cuts,
+    required this.hours,
+    required this.rating,
+  });
+  final int cuts;
+  final double hours;
+  final double rating;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget tile(IconData icon, Color tint, String value, String label) {
+      final p = Paper.of(context);
+      return Expanded(
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: clayDecoration(p, radius: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: tint.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(icon, size: 15, color: tint),
+              ),
+              const SizedBox(height: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(value,
+                    maxLines: 1,
+                    style: GoogleFonts.nunito(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: p.text)),
+              ),
+              Text(label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption(context)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            tile(Icons.content_cut_rounded, AppColors.accent, '$cuts',
+                L.statCuts),
+            const SizedBox(width: 10),
+            tile(Icons.schedule_rounded, AppColors.green,
+                '${hours.toStringAsFixed(1)}h', L.statHours),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            tile(Icons.star_rounded, AppColors.gold,
+                rating.toStringAsFixed(2), L.statRating),
+            const SizedBox(width: 10),
+            tile(Icons.bolt_rounded, const Color(0xFFE0683C), '~2m',
+                L.statResponse),
+          ],
+        ),
+      ],
     );
   }
 }

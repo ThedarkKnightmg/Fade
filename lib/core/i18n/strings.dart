@@ -1252,6 +1252,10 @@ class L {
   static String lastVisitShort(String d) =>
       _t('last $d', 'посл. $d', 'oxirgi $d');
   static String get regularWord => _t('Regular', 'Постоянный', 'Doimiy');
+  static String get statCuts => _t('Cuts', 'Стрижки', 'Soch olish');
+  static String get statHours => _t('Hours', 'Часы', 'Soatlar');
+  static String get statRating => _t('Rating', 'Рейтинг', 'Reyting');
+  static String get statResponse => _t('Response', 'Ответ', 'Javob');
   static String get vipClub => _t('VIP Club', 'VIP-клуб', 'VIP klub');
   static String get noBarberPinned => _t(
       'no barber pinned yet — find your person',
