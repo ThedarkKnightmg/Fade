@@ -7,10 +7,10 @@ import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/format/money.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
 import '../../widgets/paper_kit.dart';
-import 'incoming_request_sheet.dart';
 
 /// Incoming booking requests — confirm or decline. Swipe a card right to
 /// confirm, left to decline, or use the buttons. Cards cascade in.
@@ -159,16 +159,13 @@ class _RequestCard extends StatelessWidget {
           _decline(context);
         }
       },
-      // Tap → the same rich sheet as the live "registering" pop-up: full
-      // client context + big Accept/Decline. Swipe stays as the fast path.
-      child: GestureDetector(
-        onTap: () => showBookingRequestSheet(context, b),
-        child: _CardBody(
-          booking: b,
-          whenLabel: _whenLabel(b.dateTime),
-          onConfirm: () => _confirm(context),
-          onDecline: () => _decline(context),
-        ),
+      // Each request IS the full "registering" card — the same rich layout
+      // as the live pop-up, inline. Swipe stays as the fast path.
+      child: _CardBody(
+        booking: b,
+        whenLabel: _whenLabel(b.dateTime),
+        onConfirm: () => _confirm(context),
+        onDecline: () => _decline(context),
       ),
     );
   }
@@ -190,74 +187,175 @@ class _CardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = Paper.of(context);
     final b = booking;
+    final name = b.clientName ?? L.youWord;
+    // Deterministic mock trust meta (rating · jobs · distance) — same as the
+    // live pop-up, stable per client until real profiles sync.
+    final h = name.hashCode.abs();
+    final rating = 4.5 + (h % 5) / 10.0;
+    final jobs = 3 + h % 37;
+    final km = 0.8 + (h % 50) / 10.0;
+
     return Container(
       decoration: clayDecoration(p, radius: 22),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // WHO + WHEN + status.
+          // Client hero — big squircle, name, trust line (like the pop-up).
           Row(
             children: [
-              InitialAvatar(
-                  name: b.clientName ?? L.youWord, size: 44, index: 3),
-              const SizedBox(width: 12),
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF4F9CFF), AppColors.accentDeep],
+                  ),
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  style: GoogleFonts.nunito(
+                      fontSize: 23,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: 13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(b.clientName ?? L.youWord,
+                    Text(name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTypography.h4(context)),
+                        style: GoogleFonts.nunito(
+                            fontSize: 18.5,
+                            fontWeight: FontWeight.w900,
+                            color: p.text)),
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(Icons.schedule_rounded,
-                            size: 13, color: AppColors.accent),
-                        const SizedBox(width: 4),
-                        Text(whenLabel,
-                            style: AppTypography.bodySmall(context)),
+                        const Icon(Icons.star_rounded,
+                            size: 14, color: AppColors.gold),
+                        const SizedBox(width: 3),
+                        Flexible(
+                          child: Text(
+                            L.ratingJobs(rating.toStringAsFixed(1), jobs),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.bodySmall(context),
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
-              MiniPill(L.tagPending, style: MiniPillStyle.gold),
+              const SizedBox(width: 8),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(b.service.icon,
+                    color: AppColors.accent, size: 21),
+              ),
+            ],
+          ),
+          // Client note, when they left one.
+          if ((b.note ?? '').isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: p.cardAlt,
+                borderRadius: BorderRadius.circular(12),
+                border: const Border(
+                    left: BorderSide(color: AppColors.accent, width: 3)),
+              ),
+              child: Text(b.note!,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      AppTypography.bodySmall(context).copyWith(height: 1.35)),
+            ),
+          ],
+          const SizedBox(height: 12),
+          // Meta chips: when · service · distance.
+          Row(
+            children: [
+              Flexible(child: _MetaChip(icon: Icons.schedule_rounded, text: whenLabel)),
+              const SizedBox(width: 8),
+              Flexible(
+                child: _MetaChip(
+                    icon: Icons.timer_outlined,
+                    text: b.service.formattedDuration),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: _MetaChip(
+                    icon: Icons.near_me_rounded,
+                    text: L.kmAway(km.toStringAsFixed(1))),
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          // WHAT + price — one clean line.
+          // Estimated pay — the green block from the pop-up, compact.
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: p.cardAlt,
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.green.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
               children: [
-                Icon(b.service.icon, size: 16, color: AppColors.accent),
-                const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    '${b.service.name} · ${b.service.formattedDuration}',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(L.estimatedPay,
+                          style: GoogleFonts.nunito(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.6,
+                              color: const Color(0xFF177A48))),
+                      const SizedBox(height: 2),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          Money.som(b.service.price),
+                          maxLines: 1,
+                          softWrap: false,
+                          style: GoogleFonts.nunito(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF137A45)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text('${b.service.name} · ${b.service.formattedDuration}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.nunito(
-                        fontSize: 13.5,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: p.textSecondary),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(b.service.formattedPrice,
-                    style: AppTypography.h4(context)
-                        .copyWith(color: AppColors.accent)),
+                        color: const Color(0xFF177A48))),
               ],
             ),
           ),
           const SizedBox(height: 14),
-          // Accept / decline pills.
+          // Big accept / decline — the pop-up's action pair.
           Row(
             children: [
               Expanded(
@@ -279,6 +377,41 @@ class _CardBody extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small meta chip on the request card (time · duration · distance).
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: p.cardAlt,
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: AppColors.accent),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.nunito(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: p.textSecondary)),
           ),
         ],
       ),
