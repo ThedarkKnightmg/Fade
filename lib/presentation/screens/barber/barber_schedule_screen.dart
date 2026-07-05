@@ -9,10 +9,12 @@ import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
+import '../../../data/mock_data.dart';
 import '../../../data/models/barber_break.dart';
 import '../../../data/models/booking.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
+import 'incoming_request_sheet.dart';
 import 'scan_client_sheet.dart';
 import 'walk_in_sheet.dart';
 
@@ -199,6 +201,31 @@ class _BarberScheduleScreenState extends State<BarberScheduleScreen> {
                         style: AppTypography.bodySmall(context),
                       ),
                       const Spacer(),
+                      // Timeline ⇄ booking-style slots — the barber keeps
+                      // whichever view he likes (persisted).
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          s.setScheduleSlotsView(!s.scheduleSlotsView);
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.14),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            s.scheduleSlotsView
+                                ? Icons.view_agenda_rounded
+                                : Icons.grid_view_rounded,
+                            size: 17,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       // Scan a client's ticket → verified check-in + commission.
                       GestureDetector(
                         onTap: () => showScanClientSheet(context),
@@ -238,20 +265,28 @@ class _BarberScheduleScreenState extends State<BarberScheduleScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                // ── Time grid ──
+                // ── Body: timeline grid, or booking-style slot chips ──
                 Expanded(
-                  child: _DayGrid(
-                    controller: _grid,
-                    day: dayBookings,
-                    breaks: dayBreaks,
-                    selectedDay: _selected,
-                    hours: _hours(dayBookings, dayBreaks),
-                    isToday: _isToday(_selected),
-                    end: _end,
-                    topFor: _topFor,
-                    onTapBooking: (b) => _openBooking(context, b),
-                    onTapBreak: (br) => _confirmRemoveBreak(context, br),
-                  ),
+                  child: s.scheduleSlotsView
+                      ? _SlotsView(
+                          day: _selected,
+                          bookings: dayBookings,
+                          breaks: dayBreaks,
+                          end: _end,
+                          onTapBooking: (b) => _openBooking(context, b),
+                        )
+                      : _DayGrid(
+                          controller: _grid,
+                          day: dayBookings,
+                          breaks: dayBreaks,
+                          selectedDay: _selected,
+                          hours: _hours(dayBookings, dayBreaks),
+                          isToday: _isToday(_selected),
+                          end: _end,
+                          topFor: _topFor,
+                          onTapBooking: (b) => _openBooking(context, b),
+                          onTapBreak: (br) => _confirmRemoveBreak(context, br),
+                        ),
                 ),
               ],
             ),
@@ -1341,6 +1376,205 @@ class _Pill extends StatelessWidget {
             fontSize: 12.5,
             fontWeight: FontWeight.w800,
             color: AppColors.accentDeep),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  Slots view — the day as booking-style time chips (like the client
+//  calendar), with pending requests accept-able right here.
+// ─────────────────────────────────────────────────────────────────────────
+
+class _SlotsView extends StatelessWidget {
+  const _SlotsView({
+    required this.day,
+    required this.bookings,
+    required this.breaks,
+    required this.end,
+    required this.onTapBooking,
+  });
+
+  final DateTime day;
+  final List<Booking> bookings;
+  final List<BarberBreak> breaks;
+  final DateTime Function(Booking) end;
+  final ValueChanged<Booking> onTapBooking;
+
+  /// The booking (if any) covering a slot. Cancelled/declined/no-show don't
+  /// block the chip.
+  Booking? _bookingAt(DateTime slot) {
+    for (final b in bookings) {
+      if (b.status == BookingStatus.cancelled ||
+          b.status == BookingStatus.declined ||
+          b.status == BookingStatus.noShow) {
+        continue;
+      }
+      if (!slot.isBefore(b.dateTime) && slot.isBefore(end(b))) return b;
+    }
+    return null;
+  }
+
+  bool _breakAt(DateTime slot) {
+    final m = slot.hour * 60 + slot.minute;
+    return breaks.any((br) => m >= br.startMinutes && m < br.endMinutes);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppState.instance;
+    final slots = MockData.timeSlotsFor(day,
+        startHour: s.workStartHour, endHour: s.workEndHour);
+    final pending = bookings
+        .where((b) => b.status == BookingStatus.requested)
+        .toList();
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 140),
+      children: [
+        // Bulk-accept every pending request on this day.
+        if (pending.isNotEmpty) ...[
+          PrimaryButton(
+            label: L.acceptAllN(pending.length),
+            icon: Icons.done_all_rounded,
+            height: 50,
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              for (final b in pending) {
+                s.confirmBooking(b.id);
+              }
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(SnackBar(
+                  content: Text(L.acceptAllN(pending.length)),
+                  behavior: SnackBarBehavior.floating,
+                ));
+            },
+          ),
+          const SizedBox(height: 14),
+        ],
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final t in slots) _chip(context, t),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _chip(BuildContext context, DateTime t) {
+    final p = Paper.of(context);
+    final b = _bookingAt(t);
+    final isBreak = b == null && _breakAt(t);
+    final time = DateFormat('HH:mm').format(t);
+
+    // Free slot — plain chip, like an open slot on the client calendar.
+    if (b == null && !isBreak) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+        decoration: BoxDecoration(
+          color: p.cardAlt,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(time,
+            style: GoogleFonts.nunito(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: p.textSecondary)),
+      );
+    }
+
+    if (isBreak) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+        decoration: BoxDecoration(
+          color: p.textTertiary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.coffee_rounded, size: 13, color: p.textTertiary),
+            const SizedBox(width: 4),
+            Text(time,
+                style: GoogleFonts.nunito(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: p.textTertiary)),
+          ],
+        ),
+      );
+    }
+
+    // Booked chip: pending = gold (tap → accept sheet), confirmed = blue,
+    // walk-in = green, completed = faded with a check.
+    final requested = b!.status == BookingStatus.requested;
+    final completed = b.status == BookingStatus.completed;
+    final name = (b.clientName ?? L.youWord).split(' ').first;
+    final (bg, fg) = requested
+        ? (AppColors.gold.withValues(alpha: 0.18), const Color(0xFF8A6100))
+        : completed
+            ? (AppColors.green.withValues(alpha: 0.10), AppColors.green)
+            : b.isWalkIn
+                ? (AppColors.green, Colors.white)
+                : (AppColors.accent, Colors.white);
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        if (requested) {
+          showBookingRequestSheet(context, b);
+        } else {
+          onTapBooking(b);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(12),
+          border: requested
+              ? Border.all(color: AppColors.gold.withValues(alpha: 0.6))
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (requested)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 3),
+                    child: Icon(Icons.hourglass_top_rounded,
+                        size: 12, color: Color(0xFF8A6100)),
+                  ),
+                if (completed)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 3),
+                    child: Icon(Icons.check_rounded,
+                        size: 12, color: AppColors.green),
+                  ),
+                Text(time,
+                    style: GoogleFonts.nunito(
+                        fontSize: 13, fontWeight: FontWeight.w900, color: fg)),
+              ],
+            ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 76),
+              child: Text(name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.nunito(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      color: fg.withValues(alpha: 0.85))),
+            ),
+          ],
+        ),
       ),
     );
   }

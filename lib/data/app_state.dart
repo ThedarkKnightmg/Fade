@@ -1482,6 +1482,17 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // === Schedule view: timeline ⇄ booking-style slots (persisted — the
+  // barber keeps whichever he likes) ===
+  bool _scheduleSlotsView = false;
+  bool get scheduleSlotsView => _scheduleSlotsView;
+  void setScheduleSlotsView(bool v) {
+    if (_scheduleSlotsView == v) return;
+    _scheduleSlotsView = v;
+    notifyListeners();
+    _save();
+  }
+
   // === Feedback / bug reports ===
   // Stored locally (and kept across restarts) so nothing a user writes is
   // lost; when the Supabase backend lands these sync to a `feedback` table.
@@ -1709,6 +1720,7 @@ class AppState extends ChangeNotifier {
     _feedback
       ..clear()
       ..addAll(sp.getStringList('feedback') ?? const []);
+    _scheduleSlotsView = sp.getBool('schedSlots') ?? _scheduleSlotsView;
     _address = sp.getString('address');
     _remindersOn = sp.getBool('reminders') ?? _remindersOn;
     _perks
@@ -1798,6 +1810,7 @@ class AppState extends ChangeNotifier {
     await sp.setString('role', _activeRole.name);
     await sp.setString('lang', _language.name);
     await sp.setBool('dark', _isDarkMode);
+    await sp.setBool('schedSlots', _scheduleSlotsView);
     await sp.setInt('workStart', _workStart);
     await sp.setInt('workEnd', _workEnd);
     await sp.setInt('goal', _weeklyGoalSom);

@@ -1256,6 +1256,8 @@ class L {
   static String get statHours => _t('Hours', 'Часы', 'Soatlar');
   static String get statRating => _t('Rating', 'Рейтинг', 'Reyting');
   static String get statResponse => _t('Response', 'Ответ', 'Javob');
+  static String acceptAllN(int n) => _t(
+      'Accept all ($n)', 'Принять все ($n)', 'Hammasini qabul qilish ($n)');
   static String get vipClub => _t('VIP Club', 'VIP-клуб', 'VIP klub');
   static String get noBarberPinned => _t(
       'no barber pinned yet — find your person',
