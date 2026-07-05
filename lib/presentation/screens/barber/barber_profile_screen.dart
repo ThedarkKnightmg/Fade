@@ -18,6 +18,7 @@ import '../../../data/models/service.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import 'barber_avatar.dart';
+import 'barber_history_screen.dart';
 import 'shop_location_picker_screen.dart';
 import 'wallet_screen.dart';
 import 'vip_boost_screen.dart';
@@ -141,6 +142,21 @@ class BarberProfileScreen extends StatelessWidget {
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 170),
                   child: const _GrowBookingsCard(),
+                ),
+                const SizedBox(height: 12),
+
+                // ── The client book: every person who's used your service. ──
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 200),
+                  child: _NavTile(
+                    icon: Icons.group_rounded,
+                    title: L.clientsWord,
+                    subtitle: L.cutHistory,
+                    onTap: () => Navigator.of(context).push(
+                      FadeThroughPageRoute(
+                          child: const BarberHistoryScreen()),
+                    ),
+                  ),
                 ),
 
                 // ── Leader: roster join requests (owner only) ──

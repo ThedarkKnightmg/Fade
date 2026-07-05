@@ -38,6 +38,28 @@ class _BarberHistoryScreenState extends State<BarberHistoryScreen> {
   /// Deterministic per-cut rating (4.0–5.0) so totals stay stable.
   double _rating(Booking b) => 4.0 + (b.id.hashCode.abs() % 11) / 10.0;
 
+  /// The client book: one entry per person, most loyal first.
+  List<_ClientAgg> _clientsOf(List<Booking> list) {
+    final map = <String, _ClientAgg>{};
+    for (final b in list) {
+      final name = b.clientName ?? L.youWord;
+      final c = map.putIfAbsent(name, () => _ClientAgg(name));
+      c.visits++;
+      c.totalSom += Money.toSom(b.service.price);
+      if (c.last == null || b.dateTime.isAfter(c.last!)) {
+        c.last = b.dateTime;
+        c.lastService = b.service.name;
+      }
+    }
+    final out = map.values.toList()
+      ..sort((a, b) {
+        final byVisits = b.visits.compareTo(a.visits);
+        if (byVisits != 0) return byVisits;
+        return (b.last ?? DateTime(0)).compareTo(a.last ?? DateTime(0));
+      });
+    return out;
+  }
+
   String _whenLabel(DateTime dt) {
     final now = DateTime.now();
     final d = DateTime(dt.year, dt.month, dt.day);
@@ -116,7 +138,7 @@ class _BarberHistoryScreenState extends State<BarberHistoryScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // List.
+                // The client book + the visit log, one scroll.
                 Expanded(
                   child: list.isEmpty
                       ? Center(
@@ -131,19 +153,36 @@ class _BarberHistoryScreenState extends State<BarberHistoryScreen> {
                             ],
                           ),
                         )
-                      : ListView.separated(
+                      : ListView(
                           padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-                          itemCount: list.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (_, i) => FadeSlideIn(
-                            delay: Duration(milliseconds: 40 * i),
-                            child: _HistoryRow(
-                              booking: list[i],
-                              rating: _rating(list[i]),
-                              when: _whenLabel(list[i].dateTime),
-                            ),
-                          ),
+                          children: [
+                            // ── Every person who has sat in this chair. ──
+                            _SectionHead(
+                                title: L.clientsWord,
+                                count: _clientsOf(list).length),
+                            for (final (i, c)
+                                in _clientsOf(list).indexed) ...[
+                              FadeSlideIn(
+                                delay: Duration(milliseconds: 30 * i),
+                                child: _ClientRow(client: c),
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                            const SizedBox(height: 12),
+                            // ── The chronological visit log. ──
+                            _SectionHead(
+                                title: L.allVisitsWord, count: list.length),
+                            for (final (i, b) in list.indexed) ...[
+                              FadeSlideIn(
+                                delay: Duration(milliseconds: 25 * i),
+                                child: _HistoryRow(
+                                  booking: b,
+                                  when: _whenLabel(b.dateTime),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                          ],
                         ),
                 ),
               ],
@@ -309,19 +348,59 @@ class _Metric extends StatelessWidget {
   }
 }
 
-class _HistoryRow extends StatelessWidget {
-  const _HistoryRow(
-      {required this.booking, required this.rating, required this.when});
-  final Booking booking;
-  final double rating;
-  final String when;
+/// One person in the client book: visits, total spent, last visit.
+class _ClientAgg {
+  _ClientAgg(this.name);
+  final String name;
+  int visits = 0;
+  int totalSom = 0;
+  DateTime? last;
+  String lastService = '';
+}
+
+/// Section header inside the scroll: title + count chip.
+class _SectionHead extends StatelessWidget {
+  const _SectionHead({required this.title, required this.count});
+  final String title;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+      child: Row(
+        children: [
+          Text(title, style: AppTypography.h3(context)),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text('$count',
+                style: GoogleFonts.nunito(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.accent,
+                )),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One client — name-first: avatar, name (+ Regular pill from 2 visits),
+/// visits · last date, and their lifetime total on the right.
+class _ClientRow extends StatelessWidget {
+  const _ClientRow({required this.client});
+  final _ClientAgg client;
 
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    final b = booking;
-    final som = Money.toSom(b.service.price);
-    final stars = rating.round();
+    final c = client;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -330,46 +409,122 @@ class _HistoryRow extends StatelessWidget {
         border: Border.all(color: p.border),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Icon(b.service.icon, size: 22, color: AppColors.accent),
-          ),
+          InitialAvatar(name: c.name, size: 46, index: c.name.length),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(b.service.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.h4(context)),
-                const SizedBox(height: 3),
                 Row(
                   children: [
-                    for (var i = 0; i < 5; i++)
-                      Icon(Icons.star_rounded,
-                          size: 13,
-                          color: i < stars
-                              ? AppColors.gold
-                              : p.border),
-                    const SizedBox(width: 6),
                     Flexible(
-                      child: Text('· ${b.clientName ?? L.youWord}',
+                      child: Text(c.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodySmall(context)),
+                          style: AppTypography.h4(context)),
                     ),
+                    if (c.visits >= 2) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(L.regularWord,
+                            style: GoogleFonts.nunito(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF8A6100),
+                            )),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 3),
-                Text(when, style: AppTypography.caption(context)),
+                Text(
+                  '${L.visitsCount(c.visits)} · '
+                  '${c.last == null ? '' : L.lastVisitShort(DateFormat('d MMM').format(c.last!))}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodySmall(context),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(Money.group(c.totalSom),
+                  style: GoogleFonts.nunito(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.green)),
+              Text("SO'M",
+                  style: GoogleFonts.nunito(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                      color: p.textTertiary)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One visit — person-first: the client's name leads, the service and time
+/// sit under it, the price on the right (✓ when QR-verified).
+class _HistoryRow extends StatelessWidget {
+  const _HistoryRow({required this.booking, required this.when});
+  final Booking booking;
+  final String when;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final b = booking;
+    final som = Money.toSom(b.service.price);
+    final name = b.clientName ?? L.youWord;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: p.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: p.border),
+      ),
+      child: Row(
+        children: [
+          InitialAvatar(name: name, size: 46, index: name.length),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.h4(context)),
+                    ),
+                    if (b.isVerified) ...[
+                      const SizedBox(width: 5),
+                      const Icon(Icons.verified_rounded,
+                          size: 14, color: AppColors.green),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text('${b.service.name} · $when',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.bodySmall(context)),
               ],
             ),
           ),
@@ -379,7 +534,7 @@ class _HistoryRow extends StatelessWidget {
             children: [
               Text('+${Money.group(som)}',
                   style: GoogleFonts.nunito(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w900,
                       color: AppColors.green)),
               Text("SO'M",

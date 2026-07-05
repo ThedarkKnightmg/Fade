@@ -1244,6 +1244,14 @@ class L {
       _t('Start', 'Начать', 'Boshlash');
   static String get searchBarbers => _t('Search barbershops, styles…',
       'Барбершопы, стрижки…', 'Barbershoplar, soch turmagi…');
+  static String get clientsWord => _t('Clients', 'Клиенты', 'Mijozlar');
+  static String get allVisitsWord =>
+      _t('All visits', 'Все визиты', 'Barcha tashriflar');
+  static String visitsCount(int n) =>
+      _t('$n visits', '$n визитов', '$n tashrif');
+  static String lastVisitShort(String d) =>
+      _t('last $d', 'посл. $d', 'oxirgi $d');
+  static String get regularWord => _t('Regular', 'Постоянный', 'Doimiy');
   static String get vipClub => _t('VIP Club', 'VIP-клуб', 'VIP klub');
   static String get noBarberPinned => _t(
       'no barber pinned yet — find your person',
