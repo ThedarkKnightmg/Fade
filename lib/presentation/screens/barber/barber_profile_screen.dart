@@ -24,9 +24,9 @@ import 'vip_boost_screen.dart';
 import '../settings/settings_screen.dart';
 import '../settings/support_sheet.dart';
 
-/// The barber's own profile — now a lean, conversion-focused surface: identity,
-/// live stats, the wallet bank-card, a gold Turbo-Boost sell card, and a
-/// "grow your bookings" share card. All the config (services, hours, shop, app
+/// The barber's own profile — Yandex-clean: a plain header (avatar · name ·
+/// gear), white stat cards, the wallet bank-card as the ONE hero, then Boost
+/// and share-QR as clean rows. All config (services, hours, shop, app
 /// settings, role switch) lives one tap away in [BarberSettingsScreen].
 class BarberProfileScreen extends StatelessWidget {
   const BarberProfileScreen({super.key});
@@ -51,29 +51,56 @@ class BarberProfileScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 140),
               children: [
-                // Gear → all the config now lives in BarberSettingsScreen.
+                // ── Plain header: avatar · name + shop · gear (Yandex-clean,
+                // no gradient hero — the wallet below is the ONE hero). ──
                 FadeSlideIn(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: CircleBtn(
-                      icon: Icons.settings_rounded,
-                      size: 44,
-                      onTap: () => Navigator.of(context).push(
-                        FadeThroughPageRoute(
-                            child: const BarberSettingsScreen()),
+                  child: Row(
+                    children: [
+                      const BarberAvatar(size: 56),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(me.barber.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.h2(context)),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Icon(Icons.store_mall_directory_rounded,
+                                    size: 13, color: p.textTertiary),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(me.shop.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style:
+                                          AppTypography.bodySmall(context)),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 10),
+                      CircleBtn(
+                        icon: Icons.settings_rounded,
+                        size: 44,
+                        onTap: () => Navigator.of(context).push(
+                          FadeThroughPageRoute(
+                              child: const BarberSettingsScreen()),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 18),
+
+                // ── Live stats: clean white cards, tinted icon chips. ──
                 FadeSlideIn(
-                  delay: const Duration(milliseconds: 40),
-                  child: _ProfileHero(
-                      name: me.barber.name, shop: me.shop.name),
-                ),
-                const SizedBox(height: 14),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 80),
+                  delay: const Duration(milliseconds: 60),
                   child: Row(
                     children: [
                       _ColorStat(
@@ -96,46 +123,31 @@ class BarberProfileScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 22),
 
-                // ── Wallet bank-card (the prepaid "vending machine") ──
+                // ── Wallet bank-card — the single gradient hero. ──
                 FadeSlideIn(
-                  delay: const Duration(milliseconds: 110),
+                  delay: const Duration(milliseconds: 100),
                   child: const _WalletTile(),
                 ),
                 const SizedBox(height: 12),
 
-                // ── SELL: Turbo Boost / VIP — fill the chair right now ──
+                // ── Grow: Turbo Boost / VIP + the share QR, as clean rows. ──
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 140),
                   child: const _BoostSellCard(),
                 ),
                 const SizedBox(height: 12),
-
-                // ── DRIVE BOOKINGS: white-label share link / QR ──
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 170),
                   child: const _GrowBookingsCard(),
                 ),
-                const SizedBox(height: 16),
 
                 // ── Leader: roster join requests (owner only) ──
-                if (s.isShopOwner)
+                if (s.isShopOwner) ...[
+                  const SizedBox(height: 20),
                   _RosterRequestsCard(requests: s.rosterRequestsForMyShop()),
-
-                // ── Manage: services, hours, shop, app settings, role switch ──
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 200),
-                  child: _NavTile(
-                    icon: Icons.tune_rounded,
-                    title: L.settingsTitle,
-                    subtitle: L.manageShopSettings,
-                    onTap: () => Navigator.of(context).push(
-                      FadeThroughPageRoute(
-                          child: const BarberSettingsScreen()),
-                    ),
-                  ),
-                ),
+                ],
               ],
             ),
           );
@@ -313,13 +325,15 @@ class _NavTile extends StatelessWidget {
   }
 }
 
-/// The gold "sell" card on the profile — Turbo Boost / VIP. Shows live Ups and
-/// current boost/VIP status; taps into the full Boost hub.
+/// Turbo Boost / VIP — a clean white row with gold accents (the wallet above
+/// is the screen's one hero). Shows live Ups + VIP/Live status; taps into the
+/// Boost hub.
 class _BoostSellCard extends StatelessWidget {
   const _BoostSellCard();
 
   @override
   Widget build(BuildContext context) {
+    final p = Paper.of(context);
     final s = AppState.instance;
     final boosted = s.barberBoosted;
     return GestureDetector(
@@ -329,130 +343,86 @@ class _BoostSellCard extends StatelessWidget {
             .push(FadeThroughPageRoute(child: const VipBoostScreen()));
       },
       behavior: HitTestBehavior.opaque,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFFD778), Color(0xFFE7A11B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: clayDecoration(p, radius: 20),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(Icons.rocket_launch_rounded,
+                  size: 23, color: AppColors.gold),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFE7A11B).withValues(alpha: 0.38),
-                blurRadius: 20,
-                spreadRadius: -6,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Breathe(
-                  builder: (context, t) => DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: Alignment(-0.9 + 1.8 * t, -0.8),
-                        radius: 1.0,
-                        colors: [
-                          Colors.white.withValues(alpha: 0.30),
-                          Colors.white.withValues(alpha: 0.0),
-                        ],
-                        stops: const [0.0, 0.6],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(L.boostSellTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.h4(context)),
                       ),
-                    ),
+                      if (s.barberVip) ...[
+                        const SizedBox(width: 6),
+                        const _GoldPill(label: 'VIP'),
+                      ] else if (boosted) ...[
+                        const SizedBox(width: 6),
+                        _GoldPill(label: L.boostedNowChip),
+                      ],
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 2),
+                  Text(L.boostSellSub,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySmall(context)),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.30),
-                        borderRadius: BorderRadius.circular(13),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.5)),
-                      ),
-                      child: const Icon(Icons.rocket_launch_rounded,
-                          size: 24, color: Color(0xFF6B4400)),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(L.boostSellTitle,
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w900,
-                                    color: const Color(0xFF4A3200),
-                                  )),
-                              if (s.barberVip) ...[
-                                const SizedBox(width: 6),
-                                const _GoldPill(label: 'VIP'),
-                              ] else if (boosted) ...[
-                                const SizedBox(width: 6),
-                                _GoldPill(label: L.boostedNowChip),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(L.boostSellSub,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.nunito(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF6B4E12),
-                              )),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    // Live Ups balance chip.
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 11, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.bolt_rounded,
-                              size: 15, color: Color(0xFFE7A11B)),
-                          const SizedBox(width: 3),
-                          Text('${s.boosts}',
-                              style: GoogleFonts.nunito(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w900,
-                                color: const Color(0xFF4A3200),
-                              )),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+            const SizedBox(width: 10),
+            // Live Ups balance chip.
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(999),
               ),
-            ],
-          ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.bolt_rounded,
+                      size: 14, color: AppColors.gold),
+                  const SizedBox(width: 3),
+                  Text('${s.boosts}',
+                      style: GoogleFonts.nunito(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF8A6100),
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right_rounded,
+                size: 20, color: p.textTertiary),
+          ],
         ),
       ),
     );
   }
 }
 
-/// A small dark pill used on the gold boost card (VIP / Live).
+/// A small gold status pill on the boost row (VIP / Live).
 class _GoldPill extends StatelessWidget {
   const _GoldPill({required this.label});
   final String label;
@@ -462,7 +432,7 @@ class _GoldPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: const Color(0xFF4A3200),
+        color: AppColors.gold.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(label,
@@ -470,7 +440,7 @@ class _GoldPill extends StatelessWidget {
             fontSize: 10,
             fontWeight: FontWeight.w900,
             letterSpacing: 0.5,
-            color: const Color(0xFFFFD778),
+            color: const Color(0xFF8A6100),
           )),
     );
   }
@@ -878,113 +848,7 @@ class _SheetField extends StatelessWidget {
   }
 }
 
-/// A bold blue gradient identity header.
-class _ProfileHero extends StatelessWidget {
-  const _ProfileHero({required this.name, required this.shop});
-  final String name;
-  final String shop;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF3D97FF), AppColors.accentDeep],
-        ),
-        boxShadow: [
-          BoxShadow(
-              color: AppColors.accent.withValues(alpha: 0.4),
-              blurRadius: 24,
-              offset: const Offset(0, 12)),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -16,
-            bottom: -22,
-            child: Transform.rotate(
-              angle: -0.35,
-              child: Icon(Icons.content_cut_rounded,
-                  size: 140, color: Colors.white.withValues(alpha: 0.10)),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.5), width: 2),
-                  ),
-                  child: const BarberAvatar(size: 56),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.nunito(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white)),
-                      const SizedBox(height: 3),
-                      Row(
-                        children: [
-                          Icon(Icons.store_mall_directory_rounded,
-                              size: 14,
-                              color: Colors.white.withValues(alpha: 0.85)),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(shop,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.nunito(
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        Colors.white.withValues(alpha: 0.9))),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(L.barberTag,
-                      style: GoogleFonts.nunito(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
-                          color: AppColors.accentDeep)),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A colour-tinted stat tile (green / blue / gold).
+/// A stat tile — clean white card with a tinted icon chip (green/blue/gold).
 class _ColorStat extends StatelessWidget {
   const _ColorStat({
     required this.label,
@@ -1003,19 +867,14 @@ class _ColorStat extends StatelessWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(13),
-        decoration: clayDecoration(
-          p,
-          color: tint.withValues(alpha: 0.10),
-          radius: 18,
-          borderColor: tint.withValues(alpha: 0.25),
-        ),
+        decoration: clayDecoration(p, radius: 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: tint.withValues(alpha: 0.18),
+                color: tint.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(9),
               ),
               child: Icon(icon, size: 15, color: tint),
