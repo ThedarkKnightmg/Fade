@@ -10,6 +10,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
 import '../../widgets/paper_kit.dart';
+import 'incoming_request_sheet.dart';
 
 /// Incoming booking requests — confirm or decline. Swipe a card right to
 /// confirm, left to decline, or use the buttons. Cards cascade in.
@@ -158,11 +159,16 @@ class _RequestCard extends StatelessWidget {
           _decline(context);
         }
       },
-      child: _CardBody(
-        booking: b,
-        whenLabel: _whenLabel(b.dateTime),
-        onConfirm: () => _confirm(context),
-        onDecline: () => _decline(context),
+      // Tap → the same rich sheet as the live "registering" pop-up: full
+      // client context + big Accept/Decline. Swipe stays as the fast path.
+      child: GestureDetector(
+        onTap: () => showBookingRequestSheet(context, b),
+        child: _CardBody(
+          booking: b,
+          whenLabel: _whenLabel(b.dateTime),
+          onConfirm: () => _confirm(context),
+          onDecline: () => _decline(context),
+        ),
       ),
     );
   }

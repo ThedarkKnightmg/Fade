@@ -8,6 +8,7 @@ import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
+import '../../../data/models/booking.dart';
 
 /// How long the barber has to respond before it auto-declines.
 const int _respondSeconds = 20;
@@ -23,6 +24,255 @@ Future<void> showIncomingRequestSheet(
     isDismissible: true,
     builder: (_) => _IncomingRequestSheet(req: req),
   );
+}
+
+/// Open a waiting inbox request in the SAME rich sheet as the live pop-up —
+/// client hero, note, meta chips, estimated pay, big Accept/Decline. No
+/// countdown: it's already sitting in the inbox.
+Future<void> showBookingRequestSheet(BuildContext context, Booking b) {
+  HapticFeedback.selectionClick();
+  return showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (_) => _RequestDetailSheet(booking: b),
+  );
+}
+
+class _RequestDetailSheet extends StatelessWidget {
+  const _RequestDetailSheet({required this.booking});
+  final Booking booking;
+
+  void _finish(BuildContext context, bool accept) {
+    final b = booking;
+    final name = b.clientName ?? L.youWord;
+    final messenger = ScaffoldMessenger.of(context);
+    if (accept) {
+      HapticFeedback.mediumImpact();
+      AppState.instance.confirmBooking(b.id);
+    } else {
+      HapticFeedback.lightImpact();
+      AppState.instance.declineBooking(b.id);
+    }
+    Navigator.of(context).maybePop();
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(accept ? L.confirmedToast(name) : L.declinedToast),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final b = booking;
+    final name = b.clientName ?? L.youWord;
+    // Deterministic mock trust meta (rating · jobs · distance), stable per
+    // client — mirrors the live pop-up until real profiles sync.
+    final h = name.hashCode.abs();
+    final rating = 4.5 + (h % 5) / 10.0;
+    final jobs = 3 + h % 37;
+    final km = 0.8 + (h % 50) / 10.0;
+
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: BoxDecoration(
+          color: p.card,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 30,
+                offset: const Offset(0, -8)),
+          ],
+        ),
+        padding: EdgeInsets.fromLTRB(
+            20, 16, 20, 18 + MediaQuery.of(context).padding.bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: p.border, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Header.
+            Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('!',
+                      style: TextStyle(
+                          color: AppColors.accent,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(L.newBookingRequest,
+                      style: AppTypography.h3(context)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            // Client.
+            Row(
+              children: [
+                _Squircle(
+                    initial: name.isNotEmpty ? name[0].toUpperCase() : '?'),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.nunito(
+                              fontSize: 21,
+                              fontWeight: FontWeight.w900,
+                              color: p.text)),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.star_rounded,
+                              size: 15, color: AppColors.gold),
+                          const SizedBox(width: 3),
+                          Text(
+                            L.ratingJobs(rating.toStringAsFixed(1), jobs),
+                            style: AppTypography.bodySmall(context),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child:
+                      Icon(b.service.icon, color: AppColors.accent, size: 22),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            if ((b.note ?? '').isNotEmpty) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: p.cardAlt,
+                  borderRadius: BorderRadius.circular(14),
+                  border: const Border(
+                      left: BorderSide(color: AppColors.accent, width: 3)),
+                ),
+                child: Text(b.note!,
+                    style:
+                        AppTypography.body(context).copyWith(height: 1.35)),
+              ),
+              const SizedBox(height: 14),
+            ],
+            // Meta chips: when · service length · distance.
+            Row(
+              children: [
+                _Chip(
+                  icon: Icons.schedule_rounded,
+                  text: DateFormat('EEE d MMM · HH:mm').format(b.dateTime),
+                ),
+                const SizedBox(width: 8),
+                _Chip(
+                  icon: Icons.timer_outlined,
+                  text: b.service.formattedDuration,
+                ),
+                const SizedBox(width: 8),
+                _Chip(
+                  icon: Icons.near_me_rounded,
+                  text: L.kmAway(km.toStringAsFixed(1)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Estimated pay.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.green.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(L.estimatedPay,
+                      style: GoogleFonts.nunito(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.6,
+                          color: const Color(0xFF177A48))),
+                  const SizedBox(height: 4),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      Money.som(b.service.price),
+                      maxLines: 1,
+                      softWrap: false,
+                      style: GoogleFonts.nunito(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF137A45)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            // Actions.
+            Row(
+              children: [
+                Expanded(
+                  child: _Btn(
+                    label: L.decline,
+                    filled: false,
+                    onTap: () => _finish(context, false),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: _Btn(
+                    label: L.acceptBooking,
+                    icon: Icons.arrow_forward_rounded,
+                    filled: true,
+                    onTap: () => _finish(context, true),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _IncomingRequestSheet extends StatefulWidget {
