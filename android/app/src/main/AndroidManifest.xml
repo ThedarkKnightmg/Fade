@@ -2,6 +2,8 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- Real notifications (booking confirmed/declined, new requests). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Hardening: no ADB/cloud backup of app data (SharedPreferences holds
          the user's AI key), and never allow cleartext HTTP. -->
     <application

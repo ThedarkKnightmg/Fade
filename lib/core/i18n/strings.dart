@@ -1258,6 +1258,27 @@ class L {
   static String get statResponse => _t('Response', 'Ответ', 'Javob');
   static String acceptAllN(int n) => _t(
       'Accept all ($n)', 'Принять все ($n)', 'Hammasini qabul qilish ($n)');
+
+  // ── Device notifications ──
+  static String get notifConfirmedTitle =>
+      _t('Booking confirmed ✂️', 'Запись подтверждена ✂️',
+          'Yozuv tasdiqlandi ✂️');
+  static String notifConfirmedBody(String time, String shop) => _t(
+      '$time at $shop — see you there!',
+      '$time в $shop — до встречи!',
+      '$time, $shop — ko\'rishguncha!');
+  static String get notifDeclinedTitle => _t('Booking declined',
+      'Запись отклонена', 'Yozuv rad etildi');
+  static String notifDeclinedBody(String shop) => _t(
+      '$shop can\'t take this one — pick another time.',
+      '$shop не может принять — выберите другое время.',
+      '$shop qabul qila olmaydi — boshqa vaqt tanlang.');
+  static String get notifNewRequestTitle => _t('New booking request 💈',
+      'Новая заявка 💈', 'Yangi so\'rov 💈');
+  static String notifNewRequestBody(String name, String time) => _t(
+      '$name wants $time — accept or decline.',
+      '$name хочет на $time — примите или отклоните.',
+      '$name $time ga yozilmoqchi — qabul qiling yoki rad eting.');
   static String get vipClub => _t('VIP Club', 'VIP-клуб', 'VIP klub');
   static String get noBarberPinned => _t(
       'no barber pinned yet — find your person',

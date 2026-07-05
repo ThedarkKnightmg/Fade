@@ -15,7 +15,6 @@ import '../../../data/models/booking.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import 'incoming_request_sheet.dart';
-import 'scan_client_sheet.dart';
 import 'walk_in_sheet.dart';
 
 /// The barber's calendar — a real time-grid day view. Pick a day on the strip,
@@ -223,39 +222,6 @@ class _BarberScheduleScreenState extends State<BarberScheduleScreen> {
                             size: 17,
                             color: AppColors.accent,
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Scan a client's ticket → verified check-in + commission.
-                      GestureDetector(
-                        onTap: () => showScanClientSheet(context),
-                        behavior: HitTestBehavior.opaque,
-                        child: Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: AppColors.accent.withValues(alpha: 0.14),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.qr_code_scanner_rounded,
-                              size: 18, color: AppColors.accent),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Log an offline walk-in (free, 0 commission) — locks the
-                      // slot so clients can't double-book it.
-                      GestureDetector(
-                        onTap: () => showWalkInSheet(context, day: _selected),
-                        behavior: HitTestBehavior.opaque,
-                        child: Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: AppColors.green.withValues(alpha: 0.14),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.person_add_alt_1_rounded,
-                              size: 18, color: AppColors.green),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1471,18 +1437,26 @@ class _SlotsView extends StatelessWidget {
     final time = DateFormat('HH:mm').format(t);
 
     // Free slot — plain chip, like an open slot on the client calendar.
+    // Tapping it logs a walk-in for this day (the old "Navbatsiz qo'shish"
+    // button now lives here, where the empty slot actually is).
     if (b == null && !isBreak) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-        decoration: BoxDecoration(
-          color: p.cardAlt,
-          borderRadius: BorderRadius.circular(12),
+      return GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          showWalkInSheet(context, day: day);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+          decoration: BoxDecoration(
+            color: p.cardAlt,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(time,
+              style: GoogleFonts.nunito(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: p.textSecondary)),
         ),
-        child: Text(time,
-            style: GoogleFonts.nunito(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: p.textSecondary)),
       );
     }
 

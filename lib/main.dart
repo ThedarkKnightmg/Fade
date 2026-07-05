@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'core/notifications/notify.dart';
 import 'core/supabase/supabase_service.dart';
 import 'core/theme/app_theme.dart';
 import 'data/app_state.dart';
@@ -15,6 +16,8 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('Supabase init failed: $e');
   }
+  // Real device notifications (asks Android 13+ for permission once).
+  await Notify.init();
   // Restore the saved profile + prefs so signed-in users skip onboarding.
   await AppState.instance.load();
   SystemChrome.setSystemUIOverlayStyle(

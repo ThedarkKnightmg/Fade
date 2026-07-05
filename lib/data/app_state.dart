@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/format/money.dart';
 import '../core/i18n/app_language.dart';
+import '../core/i18n/strings.dart';
+import '../core/notifications/notify.dart';
 import 'models/barber.dart';
 import 'models/barber_break.dart';
 import 'models/barbershop.dart';
@@ -680,6 +682,12 @@ class AppState extends ChangeNotifier {
       distanceKm: (3 + _rng.nextInt(47)) / 10, // 0.3–4.9 km
       urgent: _rng.nextInt(3) == 0,
     );
+    // Ping the barber's phone too — the request shouldn't rely on the app
+    // being open on the Requests tab.
+    if (_remindersOn) {
+      Notify.show(L.notifNewRequestTitle,
+          L.notifNewRequestBody(booking.clientName ?? '', _hhmm(when)));
+    }
     notifyListeners();
   }
 
@@ -727,10 +735,27 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void confirmBooking(String id) =>
-      _setBookingStatus(id, BookingStatus.upcoming);
-  void declineBooking(String id) =>
-      _setBookingStatus(id, BookingStatus.declined);
+  String _hhmm(DateTime d) =>
+      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+  void confirmBooking(String id) {
+    final b = _bookingById(id);
+    _setBookingStatus(id, BookingStatus.upcoming);
+    // The promised "we'll ping you" — a real device notification.
+    if (_remindersOn && b != null) {
+      Notify.show(L.notifConfirmedTitle,
+          L.notifConfirmedBody(_hhmm(b.dateTime), b.barbershop.name));
+    }
+  }
+
+  void declineBooking(String id) {
+    final b = _bookingById(id);
+    _setBookingStatus(id, BookingStatus.declined);
+    if (_remindersOn && b != null) {
+      Notify.show(
+          L.notifDeclinedTitle, L.notifDeclinedBody(b.barbershop.name));
+    }
+  }
   void completeBooking(String id) {
     _setBookingStatus(id, BookingStatus.completed);
     _chargeCommission(id); // the app delivered this client → small fee
