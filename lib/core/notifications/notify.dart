@@ -47,8 +47,8 @@ class Notify {
   static Future<void> welcomeOnce(String title, String body) async {
     if (!_ready) return;
     final sp = await SharedPreferences.getInstance();
-    if (sp.getBool('notifHelloV2') ?? false) return;
-    await sp.setBool('notifHelloV2', true);
+    if (sp.getBool('notifHelloV3') ?? false) return;
+    await sp.setBool('notifHelloV3', true);
     await show(title, body);
   }
 
@@ -65,12 +65,11 @@ class Notify {
           channelDescription: 'Booking updates and requests',
           importance: Importance.high,
           priority: Priority.high,
-          // Branded: a white scissors silhouette tinted Fade-blue, the full
-          // navy badge as the large icon, and a "FADE" ribbon.
+          // Branded: a white scissors silhouette tinted Fade-blue + a "FADE"
+          // ribbon. (No largeIcon — the adaptive ic_launcher is an XML drawable
+          // that can't be decoded as a bitmap and would throw.)
           icon: 'ic_stat_fade',
           color: _brand,
-          colorized: false,
-          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           subText: 'FADE',
           ticker: title,
           styleInformation: BigTextStyleInformation(
