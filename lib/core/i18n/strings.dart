@@ -1293,6 +1293,62 @@ class L {
   static String get biNext => _t('Continue', 'Далее', 'Davom etish');
   static String get biSkip => _t('Skip', 'Пропустить', "O'tkazib yuborish");
 
+  // ── QR scanner ──
+  static String get scanOpenCamera => _t('Scan a QR code',
+      'Сканировать QR-код', 'QR-kodni skanerlash');
+  static String get scanPointHint => _t(
+      "Point at the client's Fade ticket",
+      'Наведите на билет клиента Fade',
+      "Mijozning Fade chiptasiga qarating");
+  static String get scanNotTicket => _t(
+      'Not a Fade ticket — try again',
+      'Это не билет Fade — попробуйте снова',
+      'Bu Fade chiptasi emas — qayta urining');
+
+  // ── Choose / create workplace ──
+  static String get wpTitle => _t('Where will you work?',
+      'Где вы будете работать?', 'Qayerda ishlaysiz?');
+  static String get wpSub => _t(
+      'Pick your barbershop on the map, or add a new one.',
+      'Выберите барбершоп на карте или добавьте новый.',
+      'Xaritadan barbershop tanlang yoki yangisini qo\'shing.');
+  static String get wpWorkHere => _t('Work here', 'Работать здесь', 'Shu yerda');
+  static String get wpCreateNew => _t('Create a new barbershop',
+      'Создать новый барбершоп', 'Yangi barbershop yaratish');
+  static String get wpNoneHere => _t("Can't find yours?",
+      'Не нашли свой?', 'O\'zingiznikini topmadingizmi?');
+  static String get csTitle => _t('New barbershop',
+      'Новый барбершоп', 'Yangi barbershop');
+  static String get csLocation =>
+      _t('Location', 'Локация', 'Manzil');
+  static String get csSetOnMap =>
+      _t('Set on map', 'Указать на карте', 'Xaritada belgilash');
+  static String get csName =>
+      _t('Barbershop name', 'Название', 'Nomi');
+  static String get csInfo => _t('About the shop',
+      'О барбершопе', 'Barbershop haqida');
+  static String get csInfoHint => _t(
+      'Tell clients what makes your shop great…',
+      'Расскажите клиентам о вашем барбершопе…',
+      'Mijozlarga barbershopingiz haqida ayting…');
+  static String get csPhotos => _t('Photos', 'Фото', 'Suratlar');
+  static String get csHours => _t('Working hours', 'Часы работы', 'Ish vaqti');
+  static String get csFrom => _t('From', 'С', 'Dan');
+  static String get csTill => _t('Till', 'До', 'Gacha');
+  static String get csOffDays => _t('Days off', 'Выходные', 'Dam olish kunlari');
+  static String get csCreate => _t('Create & start working',
+      'Создать и начать', 'Yaratish va boshlash');
+  static String get csNeedName => _t('Add a name and a location first',
+      'Сначала укажите название и локацию',
+      'Avval nom va manzil kiriting');
+  static String weekdayShort(int d) {
+    const en = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const ru = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const uz = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'];
+    final i = (d - 1).clamp(0, 6);
+    return _t(en[i], ru[i], uz[i]);
+  }
+
   // ── Device notifications ──
   static String get notifConfirmedTitle =>
       _t('Booking confirmed ✂️', 'Запись подтверждена ✂️',

@@ -1373,6 +1373,37 @@ class AppState extends ChangeNotifier {
     _workStart = start;
     _workEnd = end;
     notifyListeners();
+    _save();
+  }
+
+  // Days off (weekday 1=Mon … 7=Sun). Shown on the shop profile + blocks
+  // bookings on those days.
+  final Set<int> _offDays = {};
+  Set<int> get offDays => Set.unmodifiable(_offDays);
+  void toggleOffDay(int weekday) {
+    if (_offDays.contains(weekday)) {
+      _offDays.remove(weekday);
+    } else {
+      _offDays.add(weekday);
+    }
+    notifyListeners();
+    _save();
+  }
+
+  /// Set the signed-in user up to work AT an existing shop (not as owner) and
+  /// flip into barber mode — used by the "choose your barbershop" step.
+  void workAtExistingShop(String shopId) {
+    final parts = _user.fullName.trim().split(' ');
+    registerBarber(RegisteredBarber(
+      firstName: parts.isNotEmpty ? parts.first : 'Barber',
+      surname: parts.length > 1 ? parts.sublist(1).join(' ') : '',
+      age: 25,
+      phone: _user.phone,
+      shopId: shopId,
+      isOwner: false,
+      photo: _userPhoto,
+    ));
+    _save();
   }
 
   // === The barber's shop: photos + description ===
@@ -1831,6 +1862,11 @@ class AppState extends ChangeNotifier {
     final sp = await SharedPreferences.getInstance();
     _hasCompletedOnboarding = sp.getBool('onboarded') ?? _hasCompletedOnboarding;
     _barberOnboarded = sp.getBool('barberOnboarded') ?? _barberOnboarded;
+    _offDays
+      ..clear()
+      ..addAll((sp.getStringList('offDays') ?? const [])
+          .map(int.tryParse)
+          .whereType<int>());
     _isAuthenticated = sp.getBool('authed') ?? _isAuthenticated;
     final role = sp.getString('role');
     if (role != null) {
@@ -1926,6 +1962,8 @@ class AppState extends ChangeNotifier {
     final sp = await SharedPreferences.getInstance();
     await sp.setBool('onboarded', _hasCompletedOnboarding);
     await sp.setBool('barberOnboarded', _barberOnboarded);
+    await sp.setStringList(
+        'offDays', _offDays.map((d) => d.toString()).toList());
     await sp.setBool('authed', _isAuthenticated);
     await sp.setString('role', _activeRole.name);
     await sp.setString('lang', _language.name);

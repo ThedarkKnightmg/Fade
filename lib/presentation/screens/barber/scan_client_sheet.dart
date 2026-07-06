@@ -6,9 +6,12 @@ import 'package:intl/intl.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/animations/app_animations.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
 import '../../widgets/paper_kit.dart';
+import '../../widgets/primary_button.dart';
+import 'qr_scanner_screen.dart';
 
 /// Barber "Scan Client": the verified handshake. Picking today's client
 /// simulates scanning their QR → completes the booking and locks the commission
@@ -47,6 +50,41 @@ class _ScanClientSheetState extends State<_ScanClientSheet> {
         content: Text('${L.verifiedCheckedIn} · ${L.commissionCharged}'),
         behavior: SnackBarBehavior.floating,
       ));
+  }
+
+  /// Open the real camera scanner. A decoded QR of the form
+  /// `fade:ticket:<bookingId>:<slice>` verifies that booking; any other code is
+  /// rejected with a hint.
+  Future<void> _openCamera() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final raw = await Navigator.of(context).push<String>(
+      FadeThroughPageRoute(child: const QrScannerScreen()),
+    );
+    if (raw == null || !mounted) return;
+    // Extract a booking id from `fade:ticket:<id>:<slice>`.
+    String? bookingId;
+    final parts = raw.split(':');
+    if (parts.length >= 3 && parts[0] == 'fade' && parts[1] == 'ticket') {
+      bookingId = parts[2];
+    }
+    final scannable = AppState.instance.todayScannable;
+    Booking? match;
+    for (final b in scannable) {
+      if (b.id == bookingId) {
+        match = b;
+        break;
+      }
+    }
+    if (match != null) {
+      await _verify(match);
+    } else {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(bookingId == null ? L.scanNotTicket : L.scanEmpty),
+          behavior: SnackBarBehavior.floating,
+        ));
+    }
   }
 
   void _noShow(Booking b) {
@@ -104,6 +142,14 @@ class _ScanClientSheetState extends State<_ScanClientSheet> {
                 ],
               ),
               const SizedBox(height: 16),
+              // Open the REAL camera scanner.
+              PrimaryButton(
+                label: L.scanOpenCamera,
+                icon: Icons.qr_code_scanner_rounded,
+                height: 54,
+                onPressed: _openCamera,
+              ),
+              const SizedBox(height: 18),
               Flexible(
                 child: ListView(
                   shrinkWrap: true,

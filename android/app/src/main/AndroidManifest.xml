@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- Real notifications (booking confirmed/declined, new requests). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Real QR scanner (client check-in handshake). -->
+    <uses-permission android:name="android.permission.CAMERA"/>
     <!-- Hardening: no ADB/cloud backup of app data (SharedPreferences holds
          the user's AI key), and never allow cleartext HTTP. -->
     <application

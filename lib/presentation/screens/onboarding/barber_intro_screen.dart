@@ -8,8 +8,10 @@ import '../../../core/photo/photo_source.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
+import '../../../core/animations/app_animations.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
+import 'barber_workplace_screen.dart';
 
 /// First-run barber setup — welcome → weekly earning goal → photos → ready,
 /// then it flips the account into barber mode. Shown once (guarded by
@@ -24,7 +26,7 @@ class BarberIntroScreen extends StatefulWidget {
 class _BarberIntroScreenState extends State<BarberIntroScreen> {
   final PageController _pc = PageController();
   int _page = 0;
-  static const int _last = 3;
+  static const int _last = 2;
 
   int _goal = AppState.instance.weeklyGoalSom;
 
@@ -42,19 +44,16 @@ class _BarberIntroScreenState extends State<BarberIntroScreen> {
   }
 
   void _finish() {
-    final s = AppState.instance;
-    s.setWeeklyGoal(_goal);
-    s.markBarberOnboarded();
-    HapticFeedback.mediumImpact();
-    s.setRole(AppRole.barber); // RootShell swaps to the barber side
-    Navigator.of(context).maybePop();
+    // Save the goal, then choose the workplace — that step attaches the barber
+    // to a shop (or creates one) and flips into barber mode.
+    AppState.instance.setWeeklyGoal(_goal);
+    HapticFeedback.selectionClick();
+    Navigator.of(context).push(
+      FadeThroughPageRoute(child: const BarberWorkplaceScreen()),
+    );
   }
 
-  String get _cta => switch (_page) {
-        0 => L.biStart,
-        _last => L.biEnter,
-        _ => L.biNext,
-      };
+  String get _cta => _page == 0 ? L.biStart : L.biNext;
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +114,6 @@ class _BarberIntroScreenState extends State<BarberIntroScreen> {
                     onChanged: (v) => setState(() => _goal = v),
                   ),
                   const _PhotosPage(),
-                  _ReadyPage(goal: _goal),
                 ],
               ),
             ),
@@ -519,75 +517,3 @@ class _PhotosPage extends StatelessWidget {
   }
 }
 
-class _ReadyPage extends StatelessWidget {
-  const _ReadyPage({required this.goal});
-  final int goal;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 30, 24, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 20),
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              color: AppColors.green.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.check_rounded,
-                size: 52, color: AppColors.green),
-          ),
-          const SizedBox(height: 22),
-          Text(L.biReadyTitle,
-              textAlign: TextAlign.center, style: AppTypography.h1(context)),
-          const SizedBox(height: 8),
-          Text(L.biReadySub,
-              textAlign: TextAlign.center,
-              style: AppTypography.body(context).copyWith(height: 1.4)),
-          const SizedBox(height: 26),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: clayDecoration(p, radius: 18),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.gold.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: const Icon(Icons.savings_rounded,
-                      size: 22, color: AppColors.gold),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(L.biGoalTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodySmall(context)),
-                      Text("${Money.group(goal)} so'm",
-                          style: GoogleFonts.nunito(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              color: p.text)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
