@@ -16,6 +16,7 @@ import '../../widgets/referral_card.dart';
 import '../atelier/atelier_screen.dart';
 import '../auth/login_screen.dart';
 import '../booking/booking_flow_screen.dart';
+import '../onboarding/barber_intro_screen.dart';
 import '../settings/settings_screen.dart';
 
 /// Profile — your card in the shop's notebook.
@@ -425,7 +426,18 @@ class ProfileScreen extends StatelessWidget {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 220),
                 child: _BecomeBarberCard(
-                  onTap: () => state.setRole(AppRole.barber),
+                  // First time → the setup intro (goal + photos); after that,
+                  // switching is instant.
+                  onTap: () {
+                    if (state.barberOnboarded) {
+                      state.setRole(AppRole.barber);
+                    } else {
+                      Navigator.of(context).push(
+                        FadeThroughPageRoute(
+                            child: const BarberIntroScreen()),
+                      );
+                    }
+                  },
                 ),
               ),
               const SizedBox(height: 24),

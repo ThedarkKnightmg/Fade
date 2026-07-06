@@ -1259,6 +1259,40 @@ class L {
   static String acceptAllN(int n) => _t(
       'Accept all ($n)', 'Принять все ($n)', 'Hammasini qabul qilish ($n)');
 
+  // ── Barber intro / first-run setup ──
+  static String get biWelcomeTitle => _t('Set up your chair',
+      'Настройте своё кресло', "O'rindig'ingizni sozlang");
+  static String get biWelcomeSub => _t(
+      "Three quick steps and you're taking bookings.",
+      'Три быстрых шага — и вы принимаете записи.',
+      "Uch qadam — va yozuvlar qabul qilasiz.");
+  static String get biStart => _t("Let's go", 'Начать', 'Boshlaymiz');
+  static String get biGoalTitle => _t("What's your weekly goal?",
+      'Ваша цель на неделю?', 'Haftalik maqsadingiz?');
+  static String get biGoalSub => _t(
+      "We'll track your earnings toward it.",
+      'Мы будем отслеживать ваш заработок.',
+      'Daromadingizni shu tomon kuzatamiz.');
+  static String get biPhotoTitle =>
+      _t('Add your photos', 'Добавьте фото', "Suratlaringizni qo'shing");
+  static String get biPhotoSub => _t(
+      'A clear profile photo and a few of your best cuts win clients.',
+      'Чёткое фото профиля и пара лучших работ привлекут клиентов.',
+      "Aniq profil surati va bir nechta ishingiz mijoz jalb qiladi.");
+  static String get biYourPhoto => _t('Your photo', 'Ваше фото', 'Suratingiz');
+  static String get biYourWork =>
+      _t('Your work', 'Ваши работы', 'Ishlaringiz');
+  static String get biReadyTitle =>
+      _t("You're all set! ✂️", 'Всё готово! ✂️', 'Hammasi tayyor! ✂️');
+  static String get biReadySub => _t(
+      'Your chair is live. New requests will land right here.',
+      'Ваше кресло активно. Новые заявки будут приходить сюда.',
+      "O'rindiq faol. Yangi so'rovlar shu yerga keladi.");
+  static String get biEnter => _t('Enter barber mode',
+      'Войти в режим барбера', 'Barber rejimiga kirish');
+  static String get biNext => _t('Continue', 'Далее', 'Davom etish');
+  static String get biSkip => _t('Skip', 'Пропустить', "O'tkazib yuborish");
+
   // ── Device notifications ──
   static String get notifConfirmedTitle =>
       _t('Booking confirmed ✂️', 'Запись подтверждена ✂️',

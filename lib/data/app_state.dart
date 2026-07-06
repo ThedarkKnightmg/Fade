@@ -499,6 +499,20 @@ class AppState extends ChangeNotifier {
 
   Uint8List? _userPhoto;
   Uint8List? get userPhoto => _userPhoto;
+  void setUserPhoto(Uint8List bytes) {
+    _userPhoto = bytes;
+    notifyListeners();
+    _save();
+  }
+
+  // First-run barber setup (goal + photos) — shown once, then remembered.
+  bool _barberOnboarded = false;
+  bool get barberOnboarded => _barberOnboarded;
+  void markBarberOnboarded() {
+    _barberOnboarded = true;
+    notifyListeners();
+    _save();
+  }
 
   /// Sign up as a client from the intro — capture their name (and optional
   /// photo), then drop into the client app.
@@ -1816,6 +1830,7 @@ class AppState extends ChangeNotifier {
   Future<void> load() async {
     final sp = await SharedPreferences.getInstance();
     _hasCompletedOnboarding = sp.getBool('onboarded') ?? _hasCompletedOnboarding;
+    _barberOnboarded = sp.getBool('barberOnboarded') ?? _barberOnboarded;
     _isAuthenticated = sp.getBool('authed') ?? _isAuthenticated;
     final role = sp.getString('role');
     if (role != null) {
@@ -1910,6 +1925,7 @@ class AppState extends ChangeNotifier {
   Future<void> _save() async {
     final sp = await SharedPreferences.getInstance();
     await sp.setBool('onboarded', _hasCompletedOnboarding);
+    await sp.setBool('barberOnboarded', _barberOnboarded);
     await sp.setBool('authed', _isAuthenticated);
     await sp.setString('role', _activeRole.name);
     await sp.setString('lang', _language.name);

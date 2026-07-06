@@ -1,0 +1,593 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../../core/format/money.dart';
+import '../../../core/i18n/strings.dart';
+import '../../../core/photo/photo_source.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../data/app_state.dart';
+import '../../widgets/paper_kit.dart';
+import '../../widgets/primary_button.dart';
+
+/// First-run barber setup — welcome → weekly earning goal → photos → ready,
+/// then it flips the account into barber mode. Shown once (guarded by
+/// [AppState.barberOnboarded]); the "Become a barber" card opens it.
+class BarberIntroScreen extends StatefulWidget {
+  const BarberIntroScreen({super.key});
+
+  @override
+  State<BarberIntroScreen> createState() => _BarberIntroScreenState();
+}
+
+class _BarberIntroScreenState extends State<BarberIntroScreen> {
+  final PageController _pc = PageController();
+  int _page = 0;
+  static const int _last = 3;
+
+  int _goal = AppState.instance.weeklyGoalSom;
+
+  @override
+  void dispose() {
+    _pc.dispose();
+    super.dispose();
+  }
+
+  void _next() {
+    HapticFeedback.selectionClick();
+    if (_page >= _last) return _finish();
+    _pc.nextPage(
+        duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
+  }
+
+  void _finish() {
+    final s = AppState.instance;
+    s.setWeeklyGoal(_goal);
+    s.markBarberOnboarded();
+    HapticFeedback.mediumImpact();
+    s.setRole(AppRole.barber); // RootShell swaps to the barber side
+    Navigator.of(context).maybePop();
+  }
+
+  String get _cta => switch (_page) {
+        0 => L.biStart,
+        _last => L.biEnter,
+        _ => L.biNext,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Scaffold(
+      backgroundColor: p.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top bar: back + progress dots + skip (on the photos step).
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                children: [
+                  CircleBtn(
+                    icon: _page == 0
+                        ? Icons.close_rounded
+                        : Icons.arrow_back_rounded,
+                    size: 42,
+                    onTap: () {
+                      if (_page == 0) {
+                        Navigator.of(context).maybePop();
+                      } else {
+                        _pc.previousPage(
+                            duration: const Duration(milliseconds: 280),
+                            curve: Curves.easeOutCubic);
+                      }
+                    },
+                  ),
+                  const Spacer(),
+                  _Dots(count: _last + 1, index: _page),
+                  const Spacer(),
+                  SizedBox(
+                    width: 42,
+                    child: _page == 2
+                        ? TextButton(
+                            onPressed: _next,
+                            child: Text(L.biSkip,
+                                style: GoogleFonts.nunito(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    color: p.textSecondary)),
+                          )
+                        : null,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: PageView(
+                controller: _pc,
+                onPageChanged: (i) => setState(() => _page = i),
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _WelcomePage(),
+                  _GoalPage(
+                    goal: _goal,
+                    onChanged: (v) => setState(() => _goal = v),
+                  ),
+                  const _PhotosPage(),
+                  _ReadyPage(goal: _goal),
+                ],
+              ),
+            ),
+            // Bottom CTA.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              child: PrimaryButton(
+                label: _cta,
+                icon: _page == _last
+                    ? Icons.arrow_forward_rounded
+                    : Icons.arrow_forward_rounded,
+                height: 56,
+                onPressed: _next,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+
+class _Dots extends StatelessWidget {
+  const _Dots({required this.count, required this.index});
+  final int count;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < count; i++)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 240),
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            width: i == index ? 22 : 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: i == index ? AppColors.accent : p.border,
+              borderRadius: BorderRadius.circular(99),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _Hero extends StatelessWidget {
+  const _Hero({required this.icon, required this.title, required this.sub});
+  final IconData icon;
+  final String title;
+  final String sub;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF4AA3FF), Color(0xFF1E6FE0)],
+            ),
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.accent.withValues(alpha: 0.35),
+                blurRadius: 20,
+                spreadRadius: -4,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Icon(icon, size: 36, color: Colors.white),
+        ),
+        const SizedBox(height: 22),
+        Text(title, style: AppTypography.h1(context)),
+        const SizedBox(height: 8),
+        Text(sub,
+            style:
+                AppTypography.body(context).copyWith(height: 1.4)),
+      ],
+    );
+  }
+}
+
+class _WelcomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 30, 24, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Hero(
+            icon: Icons.content_cut_rounded,
+            title: L.biWelcomeTitle,
+            sub: L.biWelcomeSub,
+          ),
+          const SizedBox(height: 30),
+          _Perk(icon: Icons.event_available_rounded, text: L.becomeBarberSub),
+          const SizedBox(height: 12),
+          _Perk(
+              icon: Icons.notifications_active_rounded,
+              text: L.notifHelloBody),
+          const SizedBox(height: 12),
+          _Perk(icon: Icons.trending_up_rounded, text: L.biGoalSub),
+        ],
+      ),
+    );
+  }
+}
+
+class _Perk extends StatelessWidget {
+  const _Perk({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.check_rounded,
+              size: 20, color: AppColors.accent),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(text,
+              style: AppTypography.bodySmall(context).copyWith(color: p.text)),
+        ),
+      ],
+    );
+  }
+}
+
+class _GoalPage extends StatelessWidget {
+  const _GoalPage({required this.goal, required this.onChanged});
+  final int goal;
+  final ValueChanged<int> onChanged;
+
+  static const List<int> _chips = [
+    1500000,
+    2000000,
+    2800000,
+    3500000,
+    5000000,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 30, 24, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Hero(
+            icon: Icons.savings_rounded,
+            title: L.biGoalTitle,
+            sub: L.biGoalSub,
+          ),
+          const SizedBox(height: 30),
+          // Big live figure.
+          Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: Money.group(goal),
+                      style: GoogleFonts.nunito(
+                          fontSize: 44,
+                          fontWeight: FontWeight.w900,
+                          color: p.text),
+                    ),
+                    TextSpan(
+                      text: "  so'm",
+                      style: GoogleFonts.nunito(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: p.textTertiary),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Center(
+            child: Text(L.biGoalSub, style: AppTypography.caption(context)),
+          ),
+          const SizedBox(height: 24),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final c in _chips)
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onChanged(c);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: goal == c
+                          ? AppColors.accent
+                          : p.card,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: goal == c ? AppColors.accent : p.border,
+                      ),
+                    ),
+                    child: Text(
+                      '${(c / 1000000).toStringAsFixed(c % 1000000 == 0 ? 0 : 1)}M',
+                      style: GoogleFonts.nunito(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: goal == c ? Colors.white : p.text,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Fine stepper (± 100k).
+          Row(
+            children: [
+              _StepBtn(
+                  icon: Icons.remove_rounded,
+                  onTap: goal > 500000
+                      ? () {
+                          HapticFeedback.selectionClick();
+                          onChanged(goal - 100000);
+                        }
+                      : null),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text('± 100 000',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodySmall(context)),
+              ),
+              const SizedBox(width: 10),
+              _StepBtn(
+                  icon: Icons.add_rounded,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onChanged(goal + 100000);
+                  }),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepBtn extends StatelessWidget {
+  const _StepBtn({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final on = onTap != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 52,
+        height: 46,
+        decoration: BoxDecoration(
+          color: on ? AppColors.accent.withValues(alpha: 0.12) : p.cardAlt,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(icon,
+            size: 22, color: on ? AppColors.accent : p.textTertiary),
+      ),
+    );
+  }
+}
+
+class _PhotosPage extends StatelessWidget {
+  const _PhotosPage();
+
+  Future<void> _profile() async {
+    final bytes = await capturePhoto();
+    if (bytes != null) AppState.instance.setUserPhoto(bytes);
+  }
+
+  Future<void> _work() async {
+    final bytes = await capturePhoto();
+    if (bytes != null) AppState.instance.addShopPhoto(bytes);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return AnimatedBuilder(
+      animation: AppState.instance,
+      builder: (context, _) {
+        final s = AppState.instance;
+        final photo = s.userPhoto;
+        final work = s.shopPhotos;
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 30, 24, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Hero(
+                icon: Icons.photo_camera_rounded,
+                title: L.biPhotoTitle,
+                sub: L.biPhotoSub,
+              ),
+              const SizedBox(height: 26),
+              Text(L.biYourPhoto, style: AppTypography.h4(context)),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: _profile,
+                child: Container(
+                  width: 92,
+                  height: 92,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: p.card,
+                    border: Border.all(
+                        color: photo == null ? p.border : AppColors.accent,
+                        width: photo == null ? 1 : 2),
+                    image: photo == null
+                        ? null
+                        : DecorationImage(
+                            image: MemoryImage(photo), fit: BoxFit.cover),
+                  ),
+                  child: photo == null
+                      ? const Icon(Icons.add_a_photo_rounded,
+                          size: 26, color: AppColors.accent)
+                      : null,
+                ),
+              ),
+              const SizedBox(height: 26),
+              Text(L.biYourWork, style: AppTypography.h4(context)),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 92,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (var i = 0; i < work.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.memory(work[i],
+                              width: 92, height: 92, fit: BoxFit.cover),
+                        ),
+                      ),
+                    GestureDetector(
+                      onTap: _work,
+                      child: Container(
+                        width: 92,
+                        height: 92,
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color:
+                                  AppColors.accent.withValues(alpha: 0.4)),
+                        ),
+                        child: const Icon(Icons.add_rounded,
+                            size: 28, color: AppColors.accent),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ReadyPage extends StatelessWidget {
+  const _ReadyPage({required this.goal});
+  final int goal;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 30, 24, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 20),
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: AppColors.green.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.check_rounded,
+                size: 52, color: AppColors.green),
+          ),
+          const SizedBox(height: 22),
+          Text(L.biReadyTitle,
+              textAlign: TextAlign.center, style: AppTypography.h1(context)),
+          const SizedBox(height: 8),
+          Text(L.biReadySub,
+              textAlign: TextAlign.center,
+              style: AppTypography.body(context).copyWith(height: 1.4)),
+          const SizedBox(height: 26),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: clayDecoration(p, radius: 18),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: const Icon(Icons.savings_rounded,
+                      size: 22, color: AppColors.gold),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(L.biGoalTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.bodySmall(context)),
+                      Text("${Money.group(goal)} so'm",
+                          style: GoogleFonts.nunito(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: p.text)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
