@@ -20,7 +20,8 @@ class Notify {
   static Future<void> init() async {
     if (kIsWeb) return;
     try {
-      const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+      // The branded scissors vector is the default small icon everywhere.
+      const android = AndroidInitializationSettings('ic_stat_fade');
       const ios = DarwinInitializationSettings();
       await _plugin.initialize(
         const InitializationSettings(android: android, iOS: ios),
@@ -47,8 +48,8 @@ class Notify {
   static Future<void> welcomeOnce(String title, String body) async {
     if (!_ready) return;
     final sp = await SharedPreferences.getInstance();
-    if (sp.getBool('notifHelloV4') ?? false) return;
-    await sp.setBool('notifHelloV4', true);
+    if (sp.getBool('notifHelloV5') ?? false) return;
+    await sp.setBool('notifHelloV5', true);
     await show(title, body);
   }
 
@@ -57,35 +58,53 @@ class Notify {
 
   static Future<void> show(String title, String body) async {
     if (!_ready) return;
-    try {
-      final details = NotificationDetails(
-        android: AndroidNotificationDetails(
-          'fade_events',
-          'Fade',
-          channelDescription: 'Booking updates and requests',
-          importance: Importance.high,
-          priority: Priority.high,
-          // Branded: a white scissors silhouette tinted Fade-blue + a "FADE"
-          // ribbon. (No largeIcon — the adaptive ic_launcher is an XML drawable
-          // that can't be decoded as a bitmap and would throw.)
-          icon: 'ic_stat_fade',
-          color: _brand,
-          subText: 'FADE',
-          ticker: title,
-          styleInformation: BigTextStyleInformation(
-            body,
-            contentTitle: '<b>$title</b>',
-            summaryText: 'FADE',
-            htmlFormatContentTitle: true,
-            htmlFormatSummaryText: true,
-          ),
+    final id = _id++;
+    // Branded: scissors small icon (from init) tinted Fade-blue, a "FADE"
+    // ribbon, and an expandable big-text body.
+    final branded = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'fade_events',
+        'Fade',
+        channelDescription: 'Booking updates and requests',
+        importance: Importance.high,
+        priority: Priority.high,
+        color: _brand,
+        subText: 'FADE',
+        ticker: title,
+        styleInformation: BigTextStyleInformation(
+          body,
+          contentTitle: '<b>$title</b>',
+          summaryText: 'FADE',
+          htmlFormatContentTitle: true,
+          htmlFormatSummaryText: true,
         ),
-        iOS: const DarwinNotificationDetails(),
-      );
-      await _plugin.show(_id++, title, body, details);
+      ),
+      iOS: const DarwinNotificationDetails(),
+    );
+    try {
+      await _plugin.show(id, title, body, branded);
     } catch (e) {
-      // Swallow — a failed toast must never crash a booking action.
-      debugPrint('Notify.show failed: $e');
+      // Safety net: never let a styling issue swallow the notification —
+      // fall back to the plainest possible details (icon still from init).
+      debugPrint('Notify.show branded failed, retrying plain: $e');
+      try {
+        await _plugin.show(
+          id,
+          title,
+          body,
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'fade_events',
+              'Fade',
+              importance: Importance.high,
+              priority: Priority.high,
+            ),
+            iOS: DarwinNotificationDetails(),
+          ),
+        );
+      } catch (e2) {
+        debugPrint('Notify.show plain also failed: $e2');
+      }
     }
   }
 }
