@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/animations/app_animations.dart';
+import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/validators.dart';
@@ -104,10 +105,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: 'Grab your\n',
+                        text: L.authGrabYour,
                         style: AppTypography.display(context),
                       ),
-                      markerBoxSpan('own chair', AppTypography.display(context)),
+                      markerBoxSpan(
+                          L.authOwnChair, AppTypography.display(context)),
                     ],
                   ),
                 ),
@@ -116,7 +118,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 80),
                 child: Text(
-                  'One minute now, zero waiting later.',
+                  L.authOneMinute,
                   style: AppTypography.bodySmall(context),
                 ),
               ),
@@ -124,7 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 140),
                 child: AppTextField(
-                  label: 'Full name',
+                  label: L.authFullName,
                   hint: 'Alex Johnson',
                   controller: _name,
                   prefixIcon: Icons.badge_outlined,
@@ -140,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 200),
                 child: AppTextField(
-                  label: 'Email',
+                  label: L.emailWord,
                   hint: 'you@example.com',
                   controller: _email,
                   keyboardType: TextInputType.emailAddress,
@@ -156,7 +158,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 260),
                 child: AppTextField(
-                  label: 'Phone',
+                  label: L.phoneWord,
                   hint: '+1 (555) 000-0000',
                   controller: _phone,
                   keyboardType: TextInputType.phone,
@@ -176,8 +178,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 320),
                 child: AppTextField(
-                  label: 'Password',
-                  hint: 'min. 8 characters',
+                  label: L.authPassword,
+                  hint: L.authMin8Chars,
                   controller: _password,
                   obscureText: _obscure,
                   prefixIcon: Icons.lock_outline_rounded,
@@ -204,7 +206,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 380),
                 child: PrimaryButton(
-                  label: 'Create account',
+                  label: L.authCreateAccount,
                   height: 62,
                   onPressed: _create,
                 ),
@@ -219,11 +221,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: 'Already have an account?  ',
+                            text: L.authAlreadyHaveAcct,
                             style: AppTypography.body(context),
                           ),
                           markerBoxSpan(
-                            'Sign in',
+                            L.authSignIn,
                             AppTypography.body(context)
                                 .copyWith(fontWeight: FontWeight.w800),
                           ),

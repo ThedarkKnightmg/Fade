@@ -86,7 +86,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text('Every shop in town',
+                      Text(L.pfEveryShop,
                           style: AppTypography.h2(context)),
                     ],
                   ),

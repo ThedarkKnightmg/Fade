@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/animations/app_animations.dart';
+import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
@@ -84,11 +85,11 @@ class _AtelierScreenState extends State<AtelierScreen> {
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: 'The ',
+                          text: L.stTheWord,
                           style: AppTypography.display(context),
                         ),
                         markerBoxSpan(
-                            'barbers', AppTypography.display(context)),
+                            L.stBarbersWord, AppTypography.display(context)),
                       ],
                     ),
                   ),
@@ -97,7 +98,7 @@ class _AtelierScreenState extends State<AtelierScreen> {
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 50),
                   child: Text(
-                    'pick a master, keep them forever',
+                    L.stPickAMaster,
                     style: AppTypography.scribble(context, size: 21)
                         .copyWith(color: p.textSecondary),
                   ),
@@ -124,10 +125,10 @@ class _AtelierScreenState extends State<AtelierScreen> {
                 ),
                 const SizedBox(height: 16),
                 if (pairs.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 48),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 48),
                     child: Center(
-                      child: ScribbleNote('no one cuts that here… yet'),
+                      child: ScribbleNote(L.stNoOneCutsThat),
                     ),
                   )
                 else

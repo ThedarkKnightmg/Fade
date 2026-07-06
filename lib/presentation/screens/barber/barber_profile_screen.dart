@@ -1171,7 +1171,7 @@ class _WalletTile extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text('WALLET',
+                        Text(L.walletWord,
                             style: GoogleFonts.nunito(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,

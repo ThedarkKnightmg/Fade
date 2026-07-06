@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/i18n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 
@@ -90,7 +91,7 @@ void showDirectionsSheet(
             ),
           ),
           const SizedBox(height: 16),
-          Text('Get there', style: AppTypography.h2(ctx)),
+          Text(L.wdGetThere, style: AppTypography.h2(ctx)),
           const SizedBox(height: 2),
           Text(name,
               maxLines: 1,

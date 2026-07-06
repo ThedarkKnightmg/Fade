@@ -1,3 +1,5 @@
+import 'dart:ui' show Color;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,18 +52,36 @@ class Notify {
     await show(title, body);
   }
 
+  // Fade brand blue — tints the small icon + app name in the shade.
+  static const Color _brand = Color(0xFF2E8BFF);
+
   static Future<void> show(String title, String body) async {
     if (!_ready) return;
     try {
-      const details = NotificationDetails(
+      final details = NotificationDetails(
         android: AndroidNotificationDetails(
           'fade_events',
           'Fade',
           channelDescription: 'Booking updates and requests',
           importance: Importance.high,
           priority: Priority.high,
+          // Branded: a white scissors silhouette tinted Fade-blue, the full
+          // navy badge as the large icon, and a "FADE" ribbon.
+          icon: 'ic_stat_fade',
+          color: _brand,
+          colorized: false,
+          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          subText: 'FADE',
+          ticker: title,
+          styleInformation: BigTextStyleInformation(
+            body,
+            contentTitle: '<b>$title</b>',
+            summaryText: 'FADE',
+            htmlFormatContentTitle: true,
+            htmlFormatSummaryText: true,
+          ),
         ),
-        iOS: DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(),
       );
       await _plugin.show(_id++, title, body, details);
     } catch (e) {

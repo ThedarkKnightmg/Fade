@@ -182,7 +182,7 @@ class BarberSwatchRow extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            label: 'Anyone',
+            label: L.wdAnyone,
             active: selectedId == null,
             onTap: () => onSelect(null),
           ),

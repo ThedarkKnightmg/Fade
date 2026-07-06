@@ -211,6 +211,66 @@ class AppState extends ChangeNotifier {
     });
   }
 
+  // === Barber-side messaging (barber ⇄ client) ===
+  // Keyed by client name, since clients are just names on a [Booking] in the
+  // mock. `mine == true` means the signed-in barber sent it (right-aligned,
+  // accent bubble), matching the client-side chat convention.
+  final Map<String, List<ChatMessage>> _barberChats = {};
+  int _clientReplyIx = 0;
+
+  List<ChatMessage> barberChatWith(String client) =>
+      _barberChats[client] ?? const <ChatMessage>[];
+
+  /// Client threads whose latest message came from the client (barber hasn't
+  /// replied yet) — drives the unread badge on the dashboard Messages icon.
+  int get barberUnreadCount {
+    var n = 0;
+    for (final b in barberClients) {
+      final name = b.clientName;
+      if (name == null) continue;
+      final msgs = _barberChats[name];
+      if (msgs != null && msgs.isNotEmpty && !msgs.last.mine) n++;
+    }
+    return n;
+  }
+
+  /// Distinct clients the signed-in barber has any relationship with (a pending
+  /// request, a confirmed booking, or past history), most-recent booking first.
+  /// One [Booking] per client — the latest — for the tile's subtitle/avatar.
+  List<Booking> get barberClients {
+    final mine = _mine()..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    final seen = <String>{};
+    final out = <Booking>[];
+    for (final b in mine) {
+      final name = b.clientName;
+      if (name != null && seen.add(name)) out.add(b);
+    }
+    return out;
+  }
+
+  void sendBarberChat(String client, String text) {
+    final t = text.trim();
+    if (t.isEmpty) return;
+    final list = _barberChats.putIfAbsent(client, () => <ChatMessage>[]);
+    list.add(ChatMessage(text: t, mine: true, at: DateTime.now()));
+    notifyListeners();
+    // A short, friendly canned reply from the client.
+    Future.delayed(const Duration(milliseconds: 900), () {
+      const replies = [
+        'Great, thank you! 🙏',
+        'See you then ✂️',
+        "Perfect, I'll be there.",
+        'Thanks for confirming 👍',
+      ];
+      list.add(ChatMessage(
+        text: replies[_clientReplyIx++ % replies.length],
+        mine: false,
+        at: DateTime.now(),
+      ));
+      notifyListeners();
+    });
+  }
+
   // === Role: client ⇄ barber (one app, two sides) ===
   AppRole _activeRole = AppRole.client;
   AppRole get activeRole => _activeRole;
@@ -1407,6 +1467,24 @@ class AppState extends ChangeNotifier {
     seedB('done_7', 'Dilshod U.', 2, -9, 17, BookingStatus.completed);
     seedB('done_8', 'Eldor N.', 4, -14, 13, BookingStatus.completed);
     seedB('done_9', 'Kamol B.', 1, -20, 12, BookingStatus.completed);
+
+    // Seed a few opening messages so the barber Messages screen isn't empty —
+    // a couple of clients reaching out (unread, since they spoke last).
+    _barberChats['Aziz Karimov'] = [
+      ChatMessage(
+        text: 'Salom! Just sent a booking request for today — '
+            'are you free around 3? ✂️',
+        mine: false,
+        at: at(0, 9),
+      ),
+    ];
+    _barberChats['Davron Saidov'] = [
+      ChatMessage(
+        text: 'See you later today, thanks for confirming 🙏',
+        mine: false,
+        at: at(0, 8),
+      ),
+    ];
   }
 
   /// After a barber registers (or is restored from disk), move their demo
@@ -1555,6 +1633,7 @@ class AppState extends ChangeNotifier {
   void setLanguage(AppLanguage value) {
     _language = value;
     notifyListeners();
+    _save();
   }
 
   // === AI engine (persisted so it survives a relaunch) ===
@@ -1973,7 +2052,9 @@ class AppState extends ChangeNotifier {
     _activeRole = AppRole.client;
     _bookings.clear();
     _chats.clear();
+    _barberChats.clear();
     _replyIx = 0;
+    _clientReplyIx = 0;
     _seedBookings();
     _seedChats();
     notifyListeners();

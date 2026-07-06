@@ -28,10 +28,12 @@ class BarberDashboardScreen extends StatelessWidget {
     super.key,
     this.onGoToRequests,
     this.onGoToSchedule,
+    this.onOpenMessages,
   });
 
   final VoidCallback? onGoToRequests;
   final VoidCallback? onGoToSchedule;
+  final VoidCallback? onOpenMessages;
 
   String _greeting() {
     final h = DateTime.now().hour;
@@ -51,7 +53,6 @@ class BarberDashboardScreen extends StatelessWidget {
           final s = AppState.instance;
           final me = s.meBarber;
           final name = me.barber.name;
-          final pending = s.incomingRequests.length;
           final now = DateTime.now();
 
           final todayUpcoming = s.barberToday;
@@ -82,8 +83,8 @@ class BarberDashboardScreen extends StatelessWidget {
                   child: _Header(
                     greeting: _greeting(),
                     name: name,
-                    pending: pending,
-                    onGoToRequests: onGoToRequests,
+                    unread: s.barberUnreadCount,
+                    onOpenMessages: onOpenMessages,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -186,13 +187,13 @@ class _Header extends StatelessWidget {
   const _Header({
     required this.greeting,
     required this.name,
-    required this.pending,
-    required this.onGoToRequests,
+    required this.unread,
+    required this.onOpenMessages,
   });
   final String greeting;
   final String name;
-  final int pending;
-  final VoidCallback? onGoToRequests;
+  final int unread;
+  final VoidCallback? onOpenMessages;
 
   @override
   Widget build(BuildContext context) {
@@ -249,7 +250,7 @@ class _Header extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        // Requests / inbox button with badge.
+        // Messages button with an unread badge.
         Stack(
           clipBehavior: Clip.none,
           children: [
@@ -260,10 +261,10 @@ class _Header extends StatelessWidget {
               iconColor: AppColors.accent,
               onTap: () {
                 HapticFeedback.selectionClick();
-                onGoToRequests?.call();
+                onOpenMessages?.call();
               },
             ),
-            if (pending > 0)
+            if (unread > 0)
               Positioned(
                 right: -3,
                 top: -4,
@@ -274,7 +275,7 @@ class _Header extends StatelessWidget {
                         const BoxConstraints(minWidth: 18, minHeight: 18),
                     decoration: const BoxDecoration(
                         color: AppColors.red, shape: BoxShape.circle),
-                    child: Text('$pending',
+                    child: Text('$unread',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.nunito(
                             fontSize: 10,

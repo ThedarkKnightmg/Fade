@@ -147,7 +147,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
             ),
             const SizedBox(height: 18),
             PanelLabel(
-              'free chairs · ${DateFormat('EEE d MMM').format(_days[_dateIndex])}',
+              '${L.bkFreeChairs} · ${DateFormat('EEE d MMM').format(_days[_dateIndex])}',
             ),
             const SizedBox(height: 4),
             TimeGrid(
@@ -181,9 +181,9 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
   }
 
   String _dayWord(int i) => i == 0
-      ? 'Today'
+      ? L.today
       : i == 1
-          ? 'Tomorrow'
+          ? L.tomorrow
           : DateFormat('EEE d').format(_days[i]);
 
   void _book() {
@@ -226,7 +226,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
     final booked = _bookedSlots;
     final freeCount = _slots.where((t) => !booked.contains(t)).length;
     final whenLabel = _time == null
-        ? 'Choose a time'
+        ? L.bkChooseATime
         : '${_dayWord(_dateIndex)} · ${DateFormat('HH:mm').format(_time!)}';
 
     return Scaffold(
@@ -319,7 +319,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                 _ScarcityChip(count: freeCount, day: _dayWord(_dateIndex)),
                 const SizedBox(height: 12),
                 InkPanel(
-                  title: 'Book your visit',
+                  title: L.bkBookYourVisit,
                   trailing: Text(
                     _minutes == 0 ? '—' : '$_minutes min',
                     style: GoogleFonts.nunito(
@@ -329,7 +329,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                     ),
                   ),
                   children: [
-                    const PanelLabel('with'),
+                    PanelLabel(L.withLabel),
                     BarberSwatchRow(
                       barbers: shop.barbers,
                       selectedId: _barberId,
@@ -361,7 +361,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const PanelLabel('day'),
+                    PanelLabel(L.dayLabel),
                     DatePillRow(
                       dates: _days,
                       selectedIndex: _dateIndex,
@@ -376,7 +376,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                         Expanded(
                           child: PanelField(
                             value: _time == null
-                                ? 'Pick a time'
+                                ? L.bkPickATime
                                 : DateFormat('HH:mm').format(_time!),
                             onTap: _pickTime,
                           ),
@@ -385,7 +385,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                         PanelField(
                           value: _picked.length == 1
                               ? _picked.first.name
-                              : '${_picked.length} services',
+                              : L.bkServicesCount(_picked.length),
                           expanded: false,
                         ),
                       ],
@@ -451,7 +451,7 @@ class _ShopHero extends StatelessWidget {
                       size: 13, color: AppColors.ink),
                   const SizedBox(width: 4),
                   Text(
-                    'PREMIUM',
+                    L.bkPremiumBadge,
                     style: GoogleFonts.nunito(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w900,
@@ -486,7 +486,7 @@ class _ShopHero extends StatelessWidget {
               ),
               _HeroChip(
                 icon: Icons.reviews_outlined,
-                label: '${shop.reviewCount} reviews',
+                label: L.reviewsCount(shop.reviewCount),
               ),
               _HeroChip(
                 icon: Icons.near_me_outlined,
@@ -695,7 +695,7 @@ class _StickyBookBar extends StatelessWidget {
               ),
               const SizedBox(height: 1),
               Text(
-                total == 0 ? 'Pick a service' : Money.som(total),
+                total == 0 ? L.bkPickAService : Money.som(total),
                 style: GoogleFonts.nunito(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
@@ -736,10 +736,10 @@ class _ScarcityChip extends StatelessWidget {
             : const Color(0xFF2FA24E);
     final d = day.toLowerCase();
     final txt = none
-        ? 'Fully booked $d — try another day'
+        ? L.bkFullyBooked(d)
         : low
-            ? 'Only $count slots left $d'
-            : '$count slots open $d';
+            ? L.bkOnlySlotsLeft(count, d)
+            : L.bkSlotsOpen(count, d);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
@@ -800,8 +800,8 @@ class _MyBarberToggle extends StatelessWidget {
           Expanded(
             child: Text(
               mine
-                  ? '$name is your barber — tap to unpin'
-                  : 'Make $name my barber',
+                  ? L.bkIsYourBarber(name)
+                  : L.bkMakeMyBarber(name),
               style: GoogleFonts.nunito(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
@@ -842,7 +842,7 @@ class _MessageBarberButton extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Message $name after you book',
+                  L.bkMessageAfterBook(name),
                   style: GoogleFonts.nunito(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -867,7 +867,7 @@ class _MessageBarberButton extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Message $name',
+                  L.bkMessageName(name),
                   style: GoogleFonts.nunito(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -1076,7 +1076,7 @@ class _ReviewsBlock extends StatelessWidget {
                         size: 15, color: Colors.white),
                     const SizedBox(width: 5),
                     Text(
-                      'Write',
+                      L.writeWord,
                       style: GoogleFonts.nunito(
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
@@ -1116,7 +1116,7 @@ class _ReviewsBlock extends StatelessWidget {
               child: Row(
                 children: [
                   Text(
-                    '+ ${total - reviews.length} more reviews',
+                    L.bkMoreReviews(total - reviews.length),
                     style: AppTypography.caption(context).copyWith(
                       color: AppColors.accent,
                       fontWeight: FontWeight.w800,

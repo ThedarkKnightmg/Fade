@@ -68,8 +68,7 @@ class ProfileScreen extends StatelessWidget {
     final code =
         'CUT-${(AppState.instance.user.hashCode.abs() % 9000) + 1000}';
     Clipboard.setData(ClipboardData(
-      text: 'Book your next cut on Fade with my code $code — '
-          'we both move up to VIP. ✂️',
+      text: L.pfInviteShare(code),
     ));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(L.inviteCopiedFriend)),
@@ -268,9 +267,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        cuts >= 16
-                            ? 'VIP unlocked — priority booking & top-of-list slots 🎉'
-                            : '${16 - cuts} cuts to VIP — priority booking & recognition',
+                        cuts >= 16 ? L.vipUnlocked : L.cutsToVip(16 - cuts),
                         style: AppTypography.bodySmall(context),
                       ),
                     ],
@@ -364,12 +361,12 @@ class ProfileScreen extends StatelessWidget {
                                             ),
                                           ),
                                           const SizedBox(width: 6),
-                                          const MiniPill('MY BARBER'),
+                                          MiniPill(L.pfMyBarber),
                                         ],
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'at ${my.shop.name}',
+                                        L.pfAtShop(my.shop.name),
                                         style: AppTypography.bodySmall(
                                             context),
                                       ),

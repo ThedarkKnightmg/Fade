@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/animations/app_animations.dart';
+import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/validators.dart';
@@ -74,10 +75,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: 'Welcome\n',
+                        text: L.authWelcome,
                         style: AppTypography.display(context),
                       ),
-                      markerBoxSpan('back!', AppTypography.display(context)),
+                      markerBoxSpan(
+                          L.authWelcomeBack, AppTypography.display(context)),
                     ],
                   ),
                 ),
@@ -86,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 140),
                 child: Text(
-                  'Your chair is exactly where you left it.',
+                  L.authWelcomeSub,
                   style: AppTypography.bodySmall(context),
                 ),
               ),
@@ -94,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 200),
                 child: AppTextField(
-                  label: 'Email',
+                  label: L.emailWord,
                   hint: 'you@example.com',
                   controller: _email,
                   keyboardType: TextInputType.emailAddress,
@@ -110,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 260),
                 child: AppTextField(
-                  label: 'Password',
+                  label: L.authPassword,
                   hint: '••••••••',
                   controller: _password,
                   obscureText: _obscure,
@@ -145,13 +147,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(err != null
-                              ? 'Enter your email first, then tap again.'
-                              : 'Reset link sent to ${_email.text.trim()}'),
+                              ? L.authEnterEmailFirst
+                              : L.authResetLinkSent(_email.text.trim())),
                         ),
                       );
                     },
                     child: Text(
-                      'Forgot password?',
+                      L.authForgotPw,
                       style: GoogleFonts.nunito(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -168,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 340),
                 child: PrimaryButton(
-                  label: 'Sign in',
+                  label: L.authSignIn,
                   height: 62,
                   onPressed: _signIn,
                 ),
@@ -181,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(child: Divider(color: p.divider, thickness: 1.4)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('or continue with',
+                      child: Text(L.authOrContinue,
                           style: AppTypography.caption(context)),
                     ),
                     Expanded(child: Divider(color: p.divider, thickness: 1.4)),
@@ -215,11 +217,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: 'New here?  ',
+                            text: L.authNewHere,
                             style: AppTypography.body(context),
                           ),
                           markerBoxSpan(
-                            'Create account',
+                            L.authCreateAccount,
                             AppTypography.body(context)
                                 .copyWith(fontWeight: FontWeight.w800),
                           ),

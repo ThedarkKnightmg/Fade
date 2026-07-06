@@ -3,7 +3,7 @@
     "short_name": "Fade",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#2E8BFF",
+    "background_color": "#16294B",
     "theme_color": "#2E8BFF",
     "description": "Book your barber in seconds.",
     "orientation": "portrait-primary",

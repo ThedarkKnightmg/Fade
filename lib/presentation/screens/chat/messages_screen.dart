@@ -105,8 +105,7 @@ class _EmptyMessages extends StatelessWidget {
             SizedBox(
               width: 250,
               child: Text(
-                'Book a cut at a shop, then message your barber here if you '
-                'need to.',
+                L.pfMessagesEmptyBody,
                 textAlign: TextAlign.center,
                 style: AppTypography.bodySmall(context),
               ),
@@ -137,7 +136,7 @@ class _ConvoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = Paper.of(context);
     final msg = last;
-    final preview = msg == null ? 'Tap to message ✍️' : msg.text;
+    final preview = msg == null ? L.tapToMessage : msg.text;
     // Barber spoke last and you haven't replied — surface it as "unread".
     final unread = msg != null && !msg.mine;
     return PaperCard(

@@ -486,9 +486,13 @@ class _Tile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Text(label,
-                          style: AppTypography.h4(context)
-                              .copyWith(color: labelColor)),
+                      Flexible(
+                        child: Text(label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.h4(context)
+                                .copyWith(color: labelColor)),
+                      ),
                       if (badge != null) ...[
                         const SizedBox(width: 8),
                         badge!,
@@ -532,7 +536,7 @@ class _VerifiedBadge extends StatelessWidget {
           const Icon(Icons.verified_rounded,
               size: 11, color: AppColors.green),
           const SizedBox(width: 3),
-          Text('verified',
+          Text(L.verifiedWord,
               style: GoogleFonts.nunito(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,

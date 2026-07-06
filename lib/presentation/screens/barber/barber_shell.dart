@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/app_state.dart';
 import 'barber_dashboard_screen.dart';
+import 'barber_messages_screen.dart';
 import 'barber_profile_screen.dart';
 import 'barber_requests_screen.dart';
 import 'barber_schedule_screen.dart';
@@ -72,6 +73,11 @@ class _BarberShellState extends State<BarberShell> {
         0 => BarberDashboardScreen(
             onGoToRequests: () => _go(1),
             onGoToSchedule: () => _go(2),
+            onOpenMessages: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const BarberMessagesScreen(),
+              ),
+            ),
           ),
         1 => const BarberRequestsScreen(),
         2 => const BarberScheduleScreen(),

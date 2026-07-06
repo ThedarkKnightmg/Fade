@@ -256,7 +256,7 @@ class _AiHairScreenState extends State<AiHairScreen> {
                     const Icon(Icons.bolt_rounded,
                         size: 16, color: AppColors.green),
                     const SizedBox(width: 6),
-                    Text('Free — AI worker URL',
+                    Text(L.stFreeWorkerUrl,
                         style: AppTypography.h4(context)),
                   ],
                 ),
@@ -270,8 +270,7 @@ class _AiHairScreenState extends State<AiHairScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Free Cloudflare worker (I give you the code + steps). '
-                  'Leave blank if unused.',
+                  L.stFreeWorkerHint,
                   style: AppTypography.caption(context),
                 ),
                 const SizedBox(height: 16),
@@ -280,7 +279,7 @@ class _AiHairScreenState extends State<AiHairScreen> {
                     Icon(Icons.workspace_premium_rounded,
                         size: 16, color: p.textSecondary),
                     const SizedBox(width: 6),
-                    Text('Premium — Gemini key',
+                    Text(L.stPremiumGeminiKey,
                         style: AppTypography.h4(context)),
                   ],
                 ),
@@ -290,14 +289,14 @@ class _AiHairScreenState extends State<AiHairScreen> {
                   maxLines: 1,
                   style: GoogleFonts.nunito(
                       fontWeight: FontWeight.w700, color: p.text),
-                  decoration: deco('AIza…  (needs billing)'),
+                  decoration: deco('AIza…  ${L.stNeedsBilling}'),
                 ),
                 const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
                       child: PrimaryButton(
-                        label: 'Cancel',
+                        label: L.cancel,
                         height: 48,
                         style: PrimaryButtonStyle.ghost,
                         onPressed: () => Navigator.pop(ctx),
@@ -306,7 +305,7 @@ class _AiHairScreenState extends State<AiHairScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: PrimaryButton(
-                        label: 'Save',
+                        label: L.stSave,
                         height: 48,
                         onPressed: () {
                           AppState.instance.setAiEndpoint(urlCtrl.text);
@@ -432,8 +431,7 @@ class _IntroView extends StatelessWidget {
         Text(L.aiHairStudio, style: AppTypography.display(context)),
         const SizedBox(height: 8),
         Text(
-          'Take a selfie and our AI re-renders your hair so you can see a new '
-          'cut on your real face before you book.',
+          L.stAiHairIntro,
           style: AppTypography.bodyLarge(context)
               .copyWith(color: p.textSecondary),
         ),
@@ -468,14 +466,14 @@ class _IntroView extends StatelessWidget {
 
         const SizedBox(height: 34),
         PrimaryButton(
-          label: 'Take a selfie',
+          label: L.takeSelfie,
           icon: Icons.photo_camera_rounded,
           height: 58,
           onPressed: onTakePhoto,
         ),
         const SizedBox(height: 12),
         PrimaryButton(
-          label: 'Upload a photo',
+          label: L.uploadPhoto,
           icon: Icons.image_outlined,
           height: 58,
           style: PrimaryButtonStyle.ghost,
@@ -490,7 +488,7 @@ class _IntroView extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
-                'try a demo face →',
+                L.stTryDemoFace,
                 style: GoogleFonts.nunito(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w800,
@@ -670,7 +668,7 @@ class _ResultView extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          realistic ? 'AI render' : 'Stylised preview',
+                          realistic ? L.stAiRender : L.stStylisedPreview,
                           style: GoogleFonts.nunito(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w800,
@@ -812,13 +810,9 @@ class _ConnectAiBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = Paper.of(context);
     final hasKey = AppState.instance.hasAiKey;
-    final title =
-        hasKey ? 'AI render didn\'t work' : 'Connect AI for photo-real hair';
+    final title = hasKey ? L.aiRenderFailed : L.connectAiForHair;
     final body = message ??
-        (hasKey
-            ? 'Tap to check your AI key and try again.'
-            : 'This is a stylised preview. Tap to add your Google AI key and '
-                're-render real hair on your photo.');
+        (hasKey ? L.stTapCheckKey : L.stStylisedPreviewTapAddKey);
     return GestureDetector(
       onTap: onConnect,
       behavior: HitTestBehavior.opaque,

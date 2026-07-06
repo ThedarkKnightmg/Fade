@@ -68,8 +68,8 @@ class _StyleStudioScreenState extends State<StyleStudioScreen> {
     if (bytes == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No photo selected — try "demo selfie" to preview.'),
+        SnackBar(
+          content: Text(L.stNoPhotoDemoSelfie),
         ),
       );
       return;
@@ -175,7 +175,7 @@ class _StyleStudioScreenState extends State<StyleStudioScreen> {
               onTap: () => Navigator.of(context).maybePop(),
             ),
             const Spacer(),
-            const MiniPill('TRY-ON'),
+            MiniPill(L.stTryOn),
           ],
         ),
         const SizedBox(height: 14),
@@ -183,8 +183,8 @@ class _StyleStudioScreenState extends State<StyleStudioScreen> {
           child: Text.rich(
             TextSpan(
               children: [
-                TextSpan(text: 'Try a new ', style: AppTypography.h1(context)),
-                markerBoxSpan('look', AppTypography.h1(context)),
+                TextSpan(text: L.stTryANew, style: AppTypography.h1(context)),
+                markerBoxSpan(L.stLookWord, AppTypography.h1(context)),
               ],
             ),
           ),
@@ -193,7 +193,7 @@ class _StyleStudioScreenState extends State<StyleStudioScreen> {
         FadeSlideIn(
           delay: const Duration(milliseconds: 50),
           child: Text(
-            'Add your photo and see each cut on your own face.',
+            L.stSeeEachCut,
             style: AppTypography.bodySmall(context),
           ),
         ),
@@ -215,7 +215,7 @@ class _StyleStudioScreenState extends State<StyleStudioScreen> {
               const SizedBox(width: 5),
               Expanded(
                 child: Text(
-                  'Your photo stays on your device — nothing is uploaded.',
+                  L.stPhotoStaysOnDevice,
                   style: AppTypography.caption(context),
                 ),
               ),
@@ -268,7 +268,7 @@ class _StyleStudioScreenState extends State<StyleStudioScreen> {
           color: color,
           offset: _hairOffset,
           scale: _hairScale,
-          faceLabel: '${analysis.shape.label} face',
+          faceLabel: L.stFaceLabel(analysis.shape.label),
           onPan: _onHairPan,
         ),
         const SizedBox(height: 12),
@@ -306,7 +306,7 @@ class _StyleStudioScreenState extends State<StyleStudioScreen> {
           TextSpan(
             children: [
               TextSpan(
-                text: 'We think ',
+                text: L.stWeThink,
                 style: AppTypography.body(context)
                     .copyWith(color: p.textSecondary),
               ),
@@ -316,8 +316,7 @@ class _StyleStudioScreenState extends State<StyleStudioScreen> {
                     .copyWith(fontWeight: FontWeight.w800),
               ),
               TextSpan(
-                text:
-                    ' suits your ${analysis.shape.label.toLowerCase()} face — but try them all:',
+                text: L.stSuitsYourFace(analysis.shape.label.toLowerCase()),
                 style: AppTypography.body(context)
                     .copyWith(color: p.textSecondary),
               ),
@@ -381,20 +380,20 @@ class _AddPhotoCard extends StatelessWidget {
             Text(L.addYourPhoto, style: AppTypography.h3(context)),
             const SizedBox(height: 4),
             Text(
-              'Face the camera, good light, hair off your forehead.',
+              L.stFaceTheCamera,
               textAlign: TextAlign.center,
               style: AppTypography.bodySmall(context),
             ),
             const SizedBox(height: 18),
             PrimaryButton(
-              label: 'Take a selfie',
+              label: L.takeSelfie,
               icon: Icons.photo_camera_rounded,
               height: 54,
               onPressed: onTakePhoto,
             ),
             const SizedBox(height: 10),
             PrimaryButton(
-              label: 'Upload a photo',
+              label: L.uploadPhoto,
               icon: Icons.image_outlined,
               height: 54,
               style: PrimaryButtonStyle.ghost,
@@ -482,7 +481,7 @@ class _AnalysingCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Finding the cut that frames you best.',
+                  L.stFindingBestCut,
                   style: AppTypography.bodySmall(context),
                 ),
               ],
@@ -835,7 +834,7 @@ class _CutDetails extends StatelessWidget {
             children: [
               Expanded(child: Text(style.name, style: AppTypography.h3(context))),
               MiniPill(
-                fits ? 'GREAT FIT' : 'WORTH A TRY',
+                fits ? L.stGreatFit : L.stWorthATry,
                 style: fits ? MiniPillStyle.accent : MiniPillStyle.ghost,
               ),
             ],

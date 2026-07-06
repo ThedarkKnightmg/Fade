@@ -52,7 +52,7 @@ class _CameraScreenState extends State<CameraScreen> {
       Navigator.of(context).pop<Uint8List>(bytes);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Hold still — try again.')),
+        SnackBar(content: Text(L.stHoldStill)),
       );
     }
   }
@@ -119,7 +119,7 @@ class _StartingView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Text('Opening camera…',
+        Text(L.stOpeningCamera,
             style: AppTypography.h4(context).copyWith(color: Colors.white)),
       ],
     );
@@ -238,27 +238,26 @@ class _UnavailableView extends StatelessWidget {
               color: Colors.white70, size: 32),
         ),
         const SizedBox(height: 16),
-        Text('Camera unavailable',
+        Text(L.stCameraUnavailable,
             textAlign: TextAlign.center,
             style: AppTypography.h3(context).copyWith(color: Colors.white)),
         const SizedBox(height: 6),
         Text(
-          'We couldn’t open the camera (it may be blocked, or this device '
-          'has none). Upload a photo instead.',
+          L.stCameraUnavailableBody,
           textAlign: TextAlign.center,
           style: AppTypography.bodySmall(context)
               .copyWith(color: Colors.white60),
         ),
         const SizedBox(height: 22),
         PrimaryButton(
-          label: busy ? 'Opening…' : L.uploadPhoto,
+          label: busy ? L.stOpening : L.uploadPhoto,
           icon: Icons.image_outlined,
           height: 54,
           onPressed: busy ? null : onUpload,
         ),
         const SizedBox(height: 10),
         PrimaryButton(
-          label: 'Cancel',
+          label: L.cancel,
           height: 50,
           style: PrimaryButtonStyle.ghost,
           onPressed: onClose,

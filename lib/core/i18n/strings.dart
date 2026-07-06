@@ -1314,6 +1314,14 @@ class L {
   static String sayHiTo(String name) => _t('Say hi 👋 — text $name',
       'Поздоровайтесь 👋 — напишите $name', "Salom 👋 — $name'ga yozing");
   static String get messageHint => _t('Message…', 'Сообщение…', 'Xabar…');
+  static String get yourClients => _t('Your clients',
+      'Ваши клиенты', 'Mijozlaringiz');
+  static String get clientsMessageHere => _t(
+      'Clients who book with you show up here — message them anytime.',
+      'Клиенты, которые к вам записались, появятся здесь — пишите им в любое время.',
+      "Sizga yozilgan mijozlar shu yerda chiqadi — istalgan vaqt yozing.");
+  static String get tapToMessage =>
+      _t('Tap to message ✍️', 'Нажмите, чтобы написать ✍️', 'Yozish uchun bosing ✍️');
 
   // ── Shop detail extra ─────────────────────────────────
   static String get reviewHint => _t('How was the cut? Be honest…',
@@ -1508,4 +1516,185 @@ class L {
       'Barbershopni belgilash uchun xaritani suring');
   static String get locationSaved =>
       _t('Location saved', 'Локация сохранена', 'Joylashuv saqlandi');
+
+  // ════════════════════════════════════════════════════════
+  //  Coverage sweep — auth, booking, profile, AI/style, widgets
+  // ════════════════════════════════════════════════════════
+
+  // ── Auth (login / register) ───────────────────────────
+  static String get authWelcome => _t('Welcome\n', 'С возвращением\n', 'Xush kelibsiz\n');
+  static String get authWelcomeBack => _t('back!', '!', 'yana!');
+  static String get authWelcomeSub => _t('Your chair is exactly where you left it.', 'Ваше кресло ждёт вас там же, где вы его оставили.', "O'rindig'ingiz aynan qoldirgan joyingizda turibdi.");
+  static String get authPassword => _t('Password', 'Пароль', 'Parol');
+  static String get authForgotPw => _t('Forgot password?', 'Забыли пароль?', 'Parolni unutdingizmi?');
+  static String get authEnterEmailFirst => _t('Enter your email first, then tap again.', 'Сначала введите email, затем нажмите снова.', "Avval emailingizni kiriting, so'ng qayta bosing.");
+  static String authResetLinkSent(String email) => _t('Reset link sent to $email', 'Ссылка для сброса отправлена на $email', "Tiklash havolasi $email manziliga yuborildi");
+  static String get authSignIn => _t('Sign in', 'Войти', 'Kirish');
+  static String get authOrContinue => _t('or continue with', 'или войти через', 'yoki davom eting');
+  static String get authNewHere => _t('New here?  ', 'Впервые здесь?  ', 'Yangimisiz?  ');
+  static String get authCreateAccount => _t('Create account', 'Создать аккаунт', 'Hisob yaratish');
+  static String get authGrabYour => _t('Grab your\n', 'Займите своё\n', "O'z\n");
+  static String get authOwnChair => _t('own chair', 'кресло', "o'rindig'ingizni oling");
+  static String get authOneMinute => _t('One minute now, zero waiting later.', 'Минута сейчас — ноль ожидания потом.', 'Hozir bir daqiqa, keyin umuman kutmaysiz.');
+  static String get authFullName => _t('Full name', 'Полное имя', "To'liq ism");
+  static String get authMin8Chars => _t('min. 8 characters', 'мин. 8 символов', 'kamida 8 ta belgi');
+  static String get authAlreadyHaveAcct => _t('Already have an account?  ', 'Уже есть аккаунт?  ', 'Hisobingiz bormi?  ');
+
+  // ── Lists / profile ───────────────────────────────────
+  static String get pfMyAppointments => _t('My appointments', 'Мои записи', 'Mening yozuvlarim');
+  static String get pfTagCancelled => _t('CANCELLED', 'ОТМЕНЕНО', 'BEKOR');
+  static String get pfTagDeclined => _t('DECLINED', 'ОТКЛОНЕНО', 'RAD ETILDI');
+  static String get pfMessagesEmptyBody => _t(
+      'Book a cut at a shop, then message your barber here if you need to.',
+      'Запишитесь в барбершоп, а потом при необходимости напишите барберу здесь.',
+      "Barbershopga yoziling, keyin kerak bo'lsa barberingizga shu yerda yozing.");
+  static String get pfEveryShop => _t('Every shop in town', 'Все барбершопы города', 'Shahardagi barcha barbershoplar');
+  static String pfInviteShare(String code) => _t(
+      'Book your next cut on Fade with my code $code — we both move up to VIP. ✂️',
+      'Запишись на стрижку в Fade по моему коду $code — мы оба поднимемся до VIP. ✂️',
+      "Fade'da keyingi sochingizni mening kodim $code bilan yozing — ikkalamiz ham VIP'ga ko'tarilamiz. ✂️");
+  static String get pfMyBarber => _t('MY BARBER', 'МОЙ БАРБЕР', 'MENING BARBERIM');
+  static String pfAtShop(String name) => _t('at $name', 'в $name', "$name'da");
+  static String get pfBookYourBarber => _t('book your barber', 'запишись к барберу', 'barberingizga yoziling');
+
+  // ── Shared widgets ────────────────────────────────────
+  static String get wdInviteVip => _t('Invite friends, go VIP', 'Приглашай друзей — стань VIP', "Do'stlarni taklif qil, VIP bo'l");
+  static String get wdInviteVipSub => _t(
+      'You both earn points toward VIP when a friend books their first cut with your code.',
+      'Вы оба получаете баллы к VIP, когда друг записывается на первую стрижку по вашему коду.',
+      "Do'stingiz kodingiz bilan birinchi soch olishga yozilganda, ikkalangiz ham VIP uchun ball olasiz.");
+  static String get wdGetThere => _t('Get there', 'Как добраться', 'Qanday borish');
+  static String get wdAnyone => _t('Anyone', 'Любой', 'Har kim');
+  static String get wdPremium => _t('PREMIUM', 'ПРЕМИУМ', 'PREMIUM');
+  static String get wdMyBarber => _t('MY BARBER', 'МОЙ БАРБЕР', 'MENING BARBERIM');
+  static String wdBookedThisWeek(int n) => _t('$n booked this week', 'Записей за неделю: $n', "Bu hafta $n ta yozildi");
+  static String wdLeftToday(int n) => _t('$n left today', 'Осталось сегодня: $n', 'Bugun $n qoldi');
+  static String wdYearsReviews(int years, int reviews) => _t(
+      '$years yrs · $reviews reviews',
+      '$years лет · $reviews отзывов',
+      '$years yil · $reviews sharh');
+
+  // ── Shop detail: booking cockpit ──────────────────────
+  static String get bkChooseATime => _t('Choose a time', 'Выберите время', 'Vaqt tanlang');
+  static String get bkPickATime => _t('Pick a time', 'Выберите время', 'Vaqtni tanlang');
+  static String get bkPickAService => _t('Pick a service', 'Выберите услугу', 'Xizmat tanlang');
+  static String get bkFreeChairs => _t('free chairs', 'свободные кресла', "bo'sh o'rindiqlar");
+  static String get bkPremiumBadge => _t('PREMIUM', 'ПРЕМИУМ', 'PREMIUM');
+  static String get bkBookYourVisit => _t('Book your visit', 'Запишитесь на визит', 'Tashrifingizga yoziling');
+  static String bkServicesCount(int n) => _t('$n services', '$n услуг', '$n xizmat');
+  static String bkMakeMyBarber(String name) => _t('Make $name my barber', 'Сделать $name моим барбером', "$name'ni mening barberim qilish");
+  static String bkIsYourBarber(String name) => _t('$name is your barber — tap to unpin', '$name — ваш барбер, нажмите, чтобы убрать', "$name — sizning barberingiz, olib tashlash uchun bosing");
+  static String bkMessageAfterBook(String name) => _t('Message $name after you book', 'Напишите $name после записи', "Yozilgach $name'ga yozing");
+  static String bkMessageName(String name) => _t('Message $name', 'Написать $name', "$name'ga yozing");
+  static String bkMoreReviews(int n) => _t('+ $n more reviews', '+ ещё $n отзывов', '+ yana $n sharh');
+  static String bkFullyBooked(String day) => _t('Fully booked $day — try another day', 'Всё занято $day — выберите другой день', 'Hammasi band $day — boshqa kunni tanlang');
+  static String bkOnlySlotsLeft(int count, String day) => _t('Only $count slots left $day', 'Осталось всего $count слотов $day', "Faqat $count ta joy qoldi $day");
+  static String bkSlotsOpen(int count, String day) => _t('$count slots open $day', '$count свободных слотов $day', "$count ta joy bo'sh $day");
+  // Booking confirmation: variable reward
+  static String get bkPriorityPass => _t('Priority booking pass', 'Пропуск на приоритетную запись', 'Ustuvor yozuv passi');
+  static String get bkPriorityPassSub => _t('First pick of slots next time', 'Первый выбор слотов в следующий раз', "Keyingi safar joylardan birinchi tanlov");
+  static String get bkSkipQueuePass => _t('Skip-the-queue pass', 'Пропуск очереди', "Navbatsiz o'tish passi");
+  static String get bkSkipQueueSub => _t('Jump the waitlist once', 'Один раз без очереди', "Bir marta navbatsiz");
+  static String get bkEarnedThisBooking => _t('Earned on this booking', 'Начислено за эту запись', 'Shu yozuv uchun berildi');
+  static String get bkPlusOnePerk => _t('+1 toward your next perk', '+1 к следующему бонусу', 'Keyingi bonusga +1');
+  static String get bkLoyaltyProgressSaved => _t('Loyalty progress saved', 'Прогресс сохранён', 'Progress saqlandi');
+  static String get bkYouJustEarned => _t('YOU JUST EARNED', 'ВЫ ПОЛУЧИЛИ', 'SIZ YUTDINGIZ');
+  static String get bkNoteNo => _t('NOTE №', 'ЗАПИСЬ №', 'YOZUV №');
+  static String get bkPerkUnlocked => _t('Perk unlocked! 🎉', 'Бонус открыт! 🎉', 'Bonus ochildi! 🎉');
+  static String bkCutsToNextPerk(int remaining) => _t('$remaining ${remaining == 1 ? 'cut' : 'cuts'} to your next perk', 'До бонуса ещё $remaining стрижек', 'Keyingi bonusgacha $remaining soch');
+  static String bkCutsCount(int n) => _t('$n cuts', '$n стрижек', '$n soch');
+  static String bkCalDetails(String name) => _t('With $name — booked via Fade', 'С $name — записано через Fade', 'Fade orqali $name bilan');
+  static String bkCalClipboard(String service, String barber, String shop, String when) => _t('$service with $barber at $shop — $when', '$service у $barber в $shop — $when', "$shop, $barber — $service — $when");
+
+  // ── AI hair studio (extras) ───────────────────────────
+  static String get stAiHairIntro => _t(
+      'Take a selfie and our AI re-renders your hair so you can see a new cut on your real face before you book.',
+      'Сделайте селфи — AI перерисует ваши волосы, и вы увидите новую стрижку на своём лице ещё до записи.',
+      "Selfi oling — AI sochingizni qayta chizadi va yozilishdan oldin yangi soch turini o'z yuzingizda ko'rasiz.");
+  static String get stTryDemoFace => _t('try a demo face →', 'демо-лицо →', 'demo yuz →');
+  static String get stAiRender => _t('AI render', 'AI-рендер', 'AI render');
+  static String get stStylisedPreview => _t('Stylised preview', 'Стилизованное превью', "Uslublangan ko'rinish");
+  static String get stTapCheckKey => _t(
+      'Tap to check your AI key and try again.',
+      'Нажмите, чтобы проверить AI-ключ и повторить.',
+      "AI kalitini tekshirish va qayta urinish uchun bosing.");
+  static String get stStylisedPreviewTapAddKey => _t(
+      'This is a stylised preview. Tap to add your Google AI key and re-render real hair on your photo.',
+      'Это стилизованное превью. Нажмите, чтобы добавить Google AI-ключ и получить реалистичные волосы на фото.',
+      "Bu uslublangan ko'rinish. Google AI kalitini qo'shib, suratingizda haqiqiy sochni chizish uchun bosing.");
+  static String get stFreeWorkerUrl => _t('Free — AI worker URL', 'Бесплатно — URL AI-воркера', 'Bepul — AI worker URL');
+  static String get stFreeWorkerHint => _t(
+      'Free Cloudflare worker (I give you the code + steps). Leave blank if unused.',
+      'Бесплатный Cloudflare-воркер (код и шаги я дам). Оставьте пустым, если не нужен.',
+      "Bepul Cloudflare worker (kod va qadamlarni beraman). Kerak bo'lmasa, bo'sh qoldiring.");
+  static String get stPremiumGeminiKey => _t('Premium — Gemini key', 'Премиум — ключ Gemini', 'Premium — Gemini kaliti');
+  static String get stNeedsBilling => _t('(needs billing)', '(нужна оплата)', "(to'lov kerak)");
+  static String get stSave => _t('Save', 'Сохранить', 'Saqlash');
+
+  // ── Camera screen ─────────────────────────────────────
+  static String get stHoldStill => _t('Hold still — try again.', 'Не двигайтесь — попробуйте снова.', "Qimirlamang — qayta urinib ko'ring.");
+  static String get stOpeningCamera => _t('Opening camera…', 'Открываем камеру…', 'Kamera ochilmoqda…');
+  static String get stCameraUnavailable => _t('Camera unavailable', 'Камера недоступна', 'Kamera mavjud emas');
+  static String get stCameraUnavailableBody => _t(
+      'We couldn’t open the camera (it may be blocked, or this device has none). Upload a photo instead.',
+      'Не удалось открыть камеру (возможно, доступ заблокирован или её нет). Загрузите фото вместо этого.',
+      "Kamerani ochib bo'lmadi (bloklangan yoki qurilmada yo'q bo'lishi mumkin). Buning o'rniga surat yuklang.");
+  static String get stOpening => _t('Opening…', 'Открываем…', 'Ochilmoqda…');
+
+  // ── Face scan ─────────────────────────────────────────
+  static String get stAiAnalysing => _t('AI is analysing', 'AI анализирует', 'AI tahlil qilmoqda');
+  static String get stFaceStatus1 => _t('Detecting your face…', 'Определяем лицо…', 'Yuzingiz aniqlanmoqda…');
+  static String get stFaceStatus2 => _t('Mapping your features…', 'Считываем черты…', "Yuz qirralari o'qilmoqda…");
+  static String get stFaceStatus3 => _t('Reading face shape…', 'Определяем форму лица…', 'Yuz shakli aniqlanmoqda…');
+  static String get stFaceStatus4 => _t('Matching the best cuts…', 'Подбираем лучшие стрижки…', 'Eng mos soch turlari tanlanmoqda…');
+
+  // ── Style studio (extras) ─────────────────────────────
+  static String get stTryOn => _t('TRY-ON', 'ПРИМЕРКА', "SINAB KO'RISH");
+  static String get stTryANew => _t('Try a new ', 'Попробуйте новый ', 'Yangi ');
+  static String get stLookWord => _t('look', 'образ', 'uslub');
+  static String get stSeeEachCut => _t(
+      'Add your photo and see each cut on your own face.',
+      'Добавьте фото и примерьте каждую стрижку на своём лице.',
+      "Suratingizni qo'shing va har bir soch turini o'z yuzingizda ko'ring.");
+  static String get stPhotoStaysOnDevice => _t(
+      'Your photo stays on your device — nothing is uploaded.',
+      'Фото остаётся на устройстве — ничего не загружается.',
+      "Surat qurilmangizda qoladi — hech narsa yuklanmaydi.");
+  static String get stFaceTheCamera => _t(
+      'Face the camera, good light, hair off your forehead.',
+      'Смотрите в камеру, хороший свет, волосы убраны со лба.',
+      "Kameraga qarang, yorug'lik yaxshi bo'lsin, sochni peshonadan oling.");
+  static String get stFindingBestCut => _t(
+      'Finding the cut that frames you best.',
+      'Подбираем стрижку, которая вам к лицу.',
+      "Sizga eng mos keladigan soch turini tanlayapmiz.");
+  static String get stNoPhotoDemoSelfie => _t(
+      'No photo selected — try "demo selfie" to preview.',
+      'Фото не выбрано — попробуйте «демо-селфи» для превью.',
+      "Surat tanlanmadi — ko'rish uchun \"demo selfi\"ni sinab ko'ring.");
+  static String get stGreatFit => _t('GREAT FIT', 'ОТЛИЧНО', 'JUDA MOS');
+  static String get stWorthATry => _t('WORTH A TRY', 'СТОИТ ПОПРОБОВАТЬ', "SINAB KO'RING");
+  static String get stWeThink => _t('We think ', 'Мы думаем, ', 'Bizningcha, ');
+  static String stSuitsYourFace(String shape) => _t(
+      ' suits your $shape face — but try them all:',
+      ' подойдёт вашему $shape лицу — но попробуйте все:',
+      " $shape yuzingizga mos keladi — lekin hammasini sinab ko'ring:");
+  static String stFaceLabel(String shape) => _t('$shape face', '$shape лицо', '$shape yuz');
+
+  // ── Atelier ───────────────────────────────────────────
+  static String get stTheWord => _t('The ', '', '');
+  static String get stBarbersWord => _t('barbers', 'барберы', 'barberlar');
+  static String get stPickAMaster => _t(
+      'pick a master, keep them forever',
+      'выберите мастера и оставайтесь с ним',
+      "usta tanlang va u bilan qoling");
+  static String get stNoOneCutsThat => _t(
+      'no one cuts that here… yet',
+      'здесь такого пока не стригут…',
+      "bu yerda buni hali hech kim qirqmaydi…");
+  static String get stMyBarberPill => _t('MY BARBER', 'МОЙ БАРБЕР', 'MENING BARBERIM');
+
+  // ── Misc ──────────────────────────────────────────────
+  static String get verifiedWord => _t('verified', 'подтверждено', 'tasdiqlangan');
+  static String get walletWord => _t('WALLET', 'КОШЕЛЁК', 'HAMYON');
 }

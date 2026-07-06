@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// A premium, orchestrated launch intro (Yandex-Go-slick): an energy glow
@@ -224,7 +225,7 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
                     Opacity(
                       opacity: tag.clamp(0.0, 1.0),
                       child: Text(
-                        'book your barber',
+                        L.pfBookYourBarber,
                         style: GoogleFonts.nunito(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,

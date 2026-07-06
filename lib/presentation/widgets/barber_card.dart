@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/i18n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/barber.dart';
@@ -49,7 +50,7 @@ class BarberCard extends StatelessWidget {
                     ),
                     if (isMyBarber) ...[
                       const SizedBox(width: 6),
-                      const MiniPill('MY BARBER'),
+                      MiniPill(L.wdMyBarber),
                     ],
                   ],
                 ),
@@ -69,7 +70,8 @@ class BarberCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${barber.yearsExperience} yrs · ${barber.reviewCount} reviews',
+                      L.wdYearsReviews(
+                          barber.yearsExperience, barber.reviewCount),
                       style: GoogleFonts.nunito(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,

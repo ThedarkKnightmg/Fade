@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/i18n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/mock_data.dart';
@@ -173,7 +174,7 @@ class BarbershopCard extends StatelessWidget {
                             size: 14, color: Color(0xFFE0683C)),
                         const SizedBox(width: 4),
                         Text(
-                          '$bookedWk booked this week',
+                          L.wdBookedThisWeek(bookedWk),
                           style: GoogleFonts.nunito(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w800,
@@ -186,7 +187,7 @@ class BarbershopCard extends StatelessWidget {
                               size: 14, color: AppColors.accent),
                           const SizedBox(width: 2),
                           Text(
-                            '$freeToday left today',
+                            L.wdLeftToday(freeToday),
                             style: GoogleFonts.nunito(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w800,
@@ -206,7 +207,7 @@ class BarbershopCard extends StatelessWidget {
                             style: MiniPillStyle.ghost),
                         const Spacer(),
                         Text(
-                          '${shop.reviewCount} reviews',
+                          L.reviewsCount(shop.reviewCount),
                           style: GoogleFonts.nunito(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
@@ -319,7 +320,7 @@ class _PremiumBadge extends StatelessWidget {
               size: 13, color: Color(0xFF3A2E10)),
           const SizedBox(width: 4),
           Text(
-            'PREMIUM',
+            L.wdPremium,
             style: GoogleFonts.nunito(
               fontSize: 10.5,
               fontWeight: FontWeight.w900,

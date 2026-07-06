@@ -179,7 +179,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                           Divider(color: p.divider, thickness: 1.4),
                           const SizedBox(height: 10),
                           Text(
-                            'NOTE №${b.id.length > 12 ? b.id.substring(2, 12) : b.id.substring(2)}',
+                            '${L.bkNoteNo} ${b.id.length > 12 ? b.id.substring(2, 12) : b.id.substring(2)}',
                             style: GoogleFonts.nunito(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
@@ -227,7 +227,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                           '?action=TEMPLATE'
                           '&text=${Uri.encodeComponent('${b.service.name} · ${b.barbershop.name}')}'
                           '&dates=${z(b.dateTime)}Z/${z(end)}Z'
-                          '&details=${Uri.encodeComponent('With ${b.barber.name} — booked via Fade')}'
+                          '&details=${Uri.encodeComponent(L.bkCalDetails(b.barber.name))}'
                           '&location=${Uri.encodeComponent(b.barbershop.address)}',
                         );
                         var ok = false;
@@ -239,8 +239,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                         final when =
                             DateFormat('EEE d MMM, HH:mm').format(b.dateTime);
                         await Clipboard.setData(ClipboardData(
-                          text: '${b.service.name} with ${b.barber.name} '
-                              'at ${b.barbershop.name} — $when',
+                          text: L.bkCalClipboard(b.service.name,
+                              b.barber.name, b.barbershop.name, when),
                         ));
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -277,19 +277,19 @@ class _Reward {
 _Reward _pickReward(String id) {
   final roll = id.hashCode.abs() % 100;
   if (roll < 8) {
-    return const _Reward('priority', '🔓', 'Priority booking pass',
-        'First pick of slots next time', Color(0xFFE0467E));
+    return _Reward('priority', '🔓', L.bkPriorityPass,
+        L.bkPriorityPassSub, const Color(0xFFE0467E));
   }
   if (roll < 22) {
-    return const _Reward('skip', '⚡', 'Skip-the-queue pass',
-        'Jump the waitlist once', Color(0xFFE0683C));
+    return _Reward('skip', '⚡', L.bkSkipQueuePass,
+        L.bkSkipQueueSub, const Color(0xFFE0683C));
   }
   if (roll < 42) {
-    return const _Reward('double', '⭐', 'Double loyalty points',
-        'Earned on this booking', Color(0xFFE0A12E));
+    return _Reward('double', '⭐', L.perkDoublePoints,
+        L.bkEarnedThisBooking, const Color(0xFFE0A12E));
   }
-  return const _Reward('', '✂️', '+1 toward your next perk',
-      'Loyalty progress saved', AppColors.accent);
+  return _Reward('', '✂️', L.bkPlusOnePerk,
+      L.bkLoyaltyProgressSaved, AppColors.accent);
 }
 
 class _RewardReveal extends StatelessWidget {
@@ -330,7 +330,7 @@ class _RewardReveal extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'YOU JUST EARNED',
+                  L.bkYouJustEarned,
                   style: GoogleFonts.nunito(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w900,
@@ -391,8 +391,8 @@ class _LoyaltyMini extends StatelessWidget {
               Expanded(
                 child: Text(
                   unlocked
-                      ? 'Perk unlocked! 🎉'
-                      : '$remaining ${remaining == 1 ? 'cut' : 'cuts'} to your next perk',
+                      ? L.bkPerkUnlocked
+                      : L.bkCutsToNextPerk(remaining),
                   style: GoogleFonts.nunito(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
@@ -401,7 +401,7 @@ class _LoyaltyMini extends StatelessWidget {
                 ),
               ),
               Text(
-                '$cuts cuts',
+                L.bkCutsCount(cuts),
                 style: GoogleFonts.nunito(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,

@@ -90,7 +90,7 @@ class _BarberProfileSheet extends StatelessWidget {
                                       ),
                                       if (isMine) ...[
                                         const SizedBox(width: 8),
-                                        const MiniPill('MY BARBER'),
+                                        MiniPill(L.stMyBarberPill),
                                       ],
                                     ],
                                   ),

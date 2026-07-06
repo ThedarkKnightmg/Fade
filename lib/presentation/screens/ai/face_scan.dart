@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../style/hair_overlay.dart';
@@ -27,12 +28,12 @@ class _FaceScanViewState extends State<FaceScanView>
     duration: const Duration(milliseconds: 2600),
   );
 
-  static const _steps = [
-    'Detecting your face…',
-    'Mapping your features…',
-    'Reading face shape…',
-    'Matching the best cuts…',
-  ];
+  List<String> get _steps => [
+        L.stFaceStatus1,
+        L.stFaceStatus2,
+        L.stFaceStatus3,
+        L.stFaceStatus4,
+      ];
 
   @override
   void initState() {
@@ -62,7 +63,7 @@ class _FaceScanViewState extends State<FaceScanView>
               const Icon(Icons.auto_awesome_rounded,
                   size: 16, color: AppColors.accent),
               const SizedBox(width: 6),
-              Text('AI is analysing',
+              Text(L.stAiAnalysing,
                   style: AppTypography.h4(context)
                       .copyWith(color: AppColors.accent)),
             ],

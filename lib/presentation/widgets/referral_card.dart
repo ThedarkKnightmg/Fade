@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/i18n/strings.dart';
 import '../../data/app_state.dart';
 
 /// "Invite friends, go VIP" referral — reciprocity + viral growth loop.
@@ -40,7 +41,7 @@ class ReferralCard extends StatelessWidget {
                   color: Colors.white, size: 22),
               const SizedBox(width: 8),
               Text(
-                'Invite friends, go VIP',
+                L.wdInviteVip,
                 style: GoogleFonts.nunito(
                   fontSize: 17,
                   fontWeight: FontWeight.w900,
@@ -51,7 +52,7 @@ class ReferralCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'You both earn points toward VIP when a friend books their first cut with your code.',
+            L.wdInviteVipSub,
             style: GoogleFonts.nunito(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -96,7 +97,7 @@ class ReferralCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'Share',
+                    L.share,
                     style: GoogleFonts.nunito(
                       fontSize: 14,
                       fontWeight: FontWeight.w900,

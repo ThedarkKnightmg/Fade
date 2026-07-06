@@ -71,7 +71,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             children: [
               FadeSlideIn(
                 child:
-                    Text('My appointments', style: AppTypography.h1(context)),
+                    Text(L.pfMyAppointments, style: AppTypography.h1(context)),
               ),
               const SizedBox(height: 16),
               FadeSlideIn(
@@ -330,12 +330,12 @@ class _BookingNote extends StatelessWidget {
         b.status == BookingStatus.upcoming;
 
     final (statusLabel, statusStyle) = switch (b.status) {
-      BookingStatus.requested => ('PENDING', MiniPillStyle.gold),
-      BookingStatus.upcoming => ('CONFIRMED', MiniPillStyle.accent),
-      BookingStatus.completed => ('DONE', MiniPillStyle.ink),
-      BookingStatus.cancelled => ('CANCELLED', MiniPillStyle.ghost),
-      BookingStatus.declined => ('DECLINED', MiniPillStyle.ghost),
-      BookingStatus.noShow => ('NO-SHOW', MiniPillStyle.ghost),
+      BookingStatus.requested => (L.tagPending, MiniPillStyle.gold),
+      BookingStatus.upcoming => (L.tagConfirmed, MiniPillStyle.accent),
+      BookingStatus.completed => (L.tagDone, MiniPillStyle.ink),
+      BookingStatus.cancelled => (L.pfTagCancelled, MiniPillStyle.ghost),
+      BookingStatus.declined => (L.pfTagDeclined, MiniPillStyle.ghost),
+      BookingStatus.noShow => (L.tagNoShow, MiniPillStyle.ghost),
     };
 
     return PaperCard(
