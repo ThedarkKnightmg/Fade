@@ -18,27 +18,30 @@ const _scissors = Icons.content_cut_rounded;
 Future<void> _writeBadge({
   required String path,
   required int size,
-  required bool background, // navy fill vs transparent
+  required bool background, // filled bg vs transparent
   required double glyphFrac, // glyph size as fraction of canvas
   required Color glyphColor,
+  Color bgColor = Colors.white, // background fill when [background]
+  bool glow = false, // soft accent glow behind the glyph
 }) async {
   final s = size.toDouble();
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, s, s));
 
   if (background) {
-    canvas.drawRect(Rect.fromLTWH(0, 0, s, s), Paint()..color = _navy);
-    // A soft top-left glow, echoing the badge's lit look.
-    canvas.drawCircle(
-      Offset(s * 0.32, s * 0.28),
-      s * 0.5,
-      Paint()
-        ..shader = ui.Gradient.radial(
-          Offset(s * 0.32, s * 0.28),
-          s * 0.5,
-          [_blue.withValues(alpha: 0.28), _blue.withValues(alpha: 0)],
-        ),
-    );
+    canvas.drawRect(Rect.fromLTWH(0, 0, s, s), Paint()..color = bgColor);
+    if (glow) {
+      canvas.drawCircle(
+        Offset(s * 0.32, s * 0.28),
+        s * 0.5,
+        Paint()
+          ..shader = ui.Gradient.radial(
+            Offset(s * 0.32, s * 0.28),
+            s * 0.5,
+            [_blue.withValues(alpha: 0.28), _blue.withValues(alpha: 0)],
+          ),
+      );
+    }
   }
 
   final tp = TextPainter(textDirection: TextDirection.ltr);
@@ -77,6 +80,7 @@ void main() {
         path: 'assets/icon/icon_full.png',
         size: 1024,
         background: true,
+        bgColor: Colors.white, // clean white field, blue scissors
         glyphFrac: 0.52,
         glyphColor: _blue,
       );

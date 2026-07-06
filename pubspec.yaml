@@ -44,9 +44,8 @@ flutter:
 flutter_launcher_icons:
   android: "ic_launcher"
   image_path: "assets/icon/icon_full.png"
-  # Adaptive icon = the animated Fade badge: navy field + blue scissors,
-  # masked to any launcher shape.
-  adaptive_icon_background: "#16294B"
+  # Adaptive icon = white field + blue scissors, masked to any launcher shape.
+  adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/icon/icon_foreground.png"
   min_sdk_android: 21
   web:
