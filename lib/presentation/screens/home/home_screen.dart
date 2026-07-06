@@ -402,11 +402,6 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 18),
-                // Yandex-style search bar — the front door to discovery.
-                FadeSlideIn(
-                  child: _SearchBar(onTap: () => onSearchTap?.call()),
-                ),
-                const SizedBox(height: 18),
                 // Find shops near you — placed ABOVE the quick tiles so it sits
                 // at the top until the user sets a location.
                 if (state.address == null) ...[
@@ -714,70 +709,6 @@ class _HomeFilterChip extends StatelessWidget {
 
 /// Yandex-style quick-action grid — four big, soft-tinted tiles for the app's
 /// main jobs (book, AI try-on, map, bookings), each colour-coded.
-/// A big rounded Yandex-style search pill: search glyph, hint, and a filter
-/// chip. Taps into the explore/search flow.
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        height: 56,
-        padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
-        decoration: BoxDecoration(
-          color: p.card,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: p.border),
-          boxShadow: [
-            BoxShadow(
-              color: p.shadow,
-              blurRadius: 16,
-              spreadRadius: -4,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.search_rounded, size: 22, color: p.textTertiary),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                L.searchBarbers,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.nunito(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: p.textTertiary,
-                ),
-              ),
-            ),
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.tune_rounded,
-                  size: 19, color: AppColors.accent),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _QuickActions extends StatelessWidget {
   const _QuickActions({
     required this.onBook,
@@ -912,20 +843,19 @@ class _QuickTile extends StatelessWidget {
                 ),
               );
 
-    // Sticker is 0.6× bigger (×1.6) than before and pops higher above the box.
-    // A per-tile phase (from the label) desyncs the hover so they don't bob in
-    // lockstep.
+    // Big 3D sticker that pops above the box and gently hovers. A per-tile
+    // phase (from the label) desyncs the hover so they don't bob in lockstep.
     final phase = (label.hashCode.abs() % 100) / 100.0;
     final Widget stickerBox = SizedBox(
-      width: 125,
-      height: 147,
+      width: 106,
+      height: 124,
       child: FittedBox(fit: BoxFit.contain, child: sticker),
     );
     return PressableScale(
       onTap: onTap,
       pressedScale: 0.96,
       child: SizedBox(
-        height: 150,
+        height: 130,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -937,7 +867,7 @@ class _QuickTile extends StatelessWidget {
               bottom: 0,
               child: Container(
                 height: 62,
-                padding: const EdgeInsets.fromLTRB(100, 8, 12, 8),
+                padding: const EdgeInsets.fromLTRB(86, 8, 12, 8),
                 decoration: clayDecoration(p, radius: 20),
                 alignment: Alignment.centerLeft,
                 // Auto-shrink to one clean line so the bigger sticker never

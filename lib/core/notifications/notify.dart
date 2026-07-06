@@ -20,8 +20,10 @@ class Notify {
   static Future<void> init() async {
     if (kIsWeb) return;
     try {
-      // The branded scissors vector is the default small icon everywhere.
-      const android = AndroidInitializationSettings('ic_stat_fade');
+      // Init with the app's launcher icon — it ALWAYS exists, so init can
+      // never fail on a missing resource. The branded scissors icon is only
+      // *tried* per-notification (with a fallback), never at init.
+      const android = AndroidInitializationSettings('@mipmap/ic_launcher');
       const ios = DarwinInitializationSettings();
       await _plugin.initialize(
         const InitializationSettings(android: android, iOS: ios),
@@ -48,8 +50,8 @@ class Notify {
   static Future<void> welcomeOnce(String title, String body) async {
     if (!_ready) return;
     final sp = await SharedPreferences.getInstance();
-    if (sp.getBool('notifHelloV5') ?? false) return;
-    await sp.setBool('notifHelloV5', true);
+    if (sp.getBool('notifHelloV6') ?? false) return;
+    await sp.setBool('notifHelloV6', true);
     await show(title, body);
   }
 
@@ -68,6 +70,7 @@ class Notify {
         channelDescription: 'Booking updates and requests',
         importance: Importance.high,
         priority: Priority.high,
+        icon: 'ic_stat_fade', // branded scissors — falls back if unresolved
         color: _brand,
         subText: 'FADE',
         ticker: title,
