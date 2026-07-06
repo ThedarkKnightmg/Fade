@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'core/i18n/strings.dart';
 import 'core/notifications/notify.dart';
 import 'core/supabase/supabase_service.dart';
 import 'core/theme/app_theme.dart';
@@ -20,6 +21,8 @@ Future<void> main() async {
   await Notify.init();
   // Restore the saved profile + prefs so signed-in users skip onboarding.
   await AppState.instance.load();
+  // One-time proof ping (after load so it speaks the saved language).
+  await Notify.welcomeOnce(L.notifHelloTitle, L.notifHelloBody);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

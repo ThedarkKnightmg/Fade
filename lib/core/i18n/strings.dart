@@ -1279,6 +1279,12 @@ class L {
       '$name wants $time — accept or decline.',
       '$name хочет на $time — примите или отклоните.',
       '$name $time ga yozilmoqchi — qabul qiling yoki rad eting.');
+  static String get notifHelloTitle => _t('Notifications are on 🔔',
+      'Уведомления включены 🔔', 'Bildirishnomalar yoqildi 🔔');
+  static String get notifHelloBody => _t(
+      'Booking updates and requests will land right here.',
+      'Обновления записей и заявки будут приходить сюда.',
+      'Yozuv yangiliklari va so\'rovlar shu yerga keladi.');
   static String get vipClub => _t('VIP Club', 'VIP-клуб', 'VIP klub');
   static String get noBarberPinned => _t(
       'no barber pinned yet — find your person',
