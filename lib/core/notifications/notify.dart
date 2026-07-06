@@ -47,8 +47,8 @@ class Notify {
   static Future<void> welcomeOnce(String title, String body) async {
     if (!_ready) return;
     final sp = await SharedPreferences.getInstance();
-    if (sp.getBool('notifHello') ?? false) return;
-    await sp.setBool('notifHello', true);
+    if (sp.getBool('notifHelloV2') ?? false) return;
+    await sp.setBool('notifHelloV2', true);
     await show(title, body);
   }
 
