@@ -164,6 +164,7 @@ class VipExplainerScreen extends StatelessWidget {
                         until: s.vipUntil == null
                             ? ''
                             : DateFormat('d MMM yyyy').format(s.vipUntil!),
+                        savedSom: s.vipCommissionSavedSom,
                       )
                     : _CtaBar(
                         price: L.vipPerMonth(_som(AppState.vipMonthlySom)),
@@ -901,8 +902,9 @@ class _CtaBar extends StatelessWidget {
 
 // ── Sticky "already VIP" bar ────────────────────────────────────────────
 class _ActiveBar extends StatelessWidget {
-  const _ActiveBar({required this.until});
+  const _ActiveBar({required this.until, this.savedSom = 0});
   final String until;
+  final int savedSom;
 
   @override
   Widget build(BuildContext context) {
@@ -951,7 +953,14 @@ class _ActiveBar extends StatelessWidget {
                       fontWeight: FontWeight.w900,
                       color: p.text,
                     )),
-                if (until.isNotEmpty)
+                if (savedSom > 0)
+                  Text(L.vipSavedSoFar("${Money.group(savedSom)} so'm"),
+                      style: GoogleFonts.nunito(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: _goldDeep,
+                      ))
+                else if (until.isNotEmpty)
                   Text(L.vipActiveUntil(until),
                       style: AppTypography.caption(context)),
               ],

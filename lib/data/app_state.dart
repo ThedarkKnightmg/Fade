@@ -1115,6 +1115,18 @@ class AppState extends ChangeNotifier {
   static const int newClientFeePercent = 5;
   static const int regularFlatFeeSom = 500;
 
+  // VIP barbers pay HALF the new-client fee (2.5%) — the headline VIP perk.
+  // The platform gives up 2.5 points here, but the give-back stays SMALL by
+  // design: (1) it only touches brand-new Fade-delivered clients (walk-ins and
+  // regulars are already 0%), (2) the monthly VIP subscription dwarfs any
+  // realistic monthly discount, and (3) VIP placement drives MORE new-client
+  // volume, so 2.5% of a bigger base ≈ 5% of the base — commission revenue
+  // holds while the subscription is pure upside. Client-side for now;
+  // enforced server-side once the backend lands.
+  static const double vipNewClientFeePercent = 2.5;
+  double get effectiveNewClientFeePercent =>
+      barberVip ? vipNewClientFeePercent : newClientFeePercent.toDouble();
+
   int _walletSom = 42000;
   int get walletSom => _walletSom;
   bool get walletLow => _walletSom < 12000;
@@ -1180,6 +1192,13 @@ class AppState extends ChangeNotifier {
   int commissionSomFor(Booking b) {
     if (b.isWalkIn) return 0;
     if (isReturningClient(b)) return 0;
+    return (Money.toSom(b.service.price) * effectiveNewClientFeePercent / 100)
+        .round();
+  }
+
+  /// The undiscounted 5% fee — used to show a VIP barber what the discount saved.
+  int commissionFullSomFor(Booking b) {
+    if (b.isWalkIn || isReturningClient(b)) return 0;
     return (Money.toSom(b.service.price) * newClientFeePercent / 100).round();
   }
 
@@ -1206,11 +1225,19 @@ class AppState extends ChangeNotifier {
     final fee = commissionSomFor(b);
     if (fee <= 0) return;
     _walletSom -= fee;
+    final vip = barberVip;
+    if (vip) {
+      final saved = commissionFullSomFor(b) - fee;
+      if (saved > 0) _vipCommissionSavedSom += saved;
+    }
     _ledger.insert(
       0,
       WalletTx(
         label: b.clientName ?? b.barber.name,
-        sub: 'New-client fee · ${b.service.name}',
+        // VIP fees are labelled with the half rate so the barber SEES the win.
+        sub: vip
+            ? 'New-client fee · VIP 2.5% · ${b.service.name}'
+            : 'New-client fee · ${b.service.name}',
         amountSom: fee,
         credit: false,
         at: DateTime.now(),
@@ -1258,6 +1285,27 @@ class AppState extends ChangeNotifier {
   bool get barberVip =>
       _vipUntil != null && _vipUntil!.isAfter(DateTime.now());
   DateTime? get vipUntil => _vipUntil;
+
+  // Running total of what the 2.5% VIP rate saved this barber vs. the full 5%.
+  // A small, honest reinforcement — the real VIP payoff is more bookings, not
+  // this figure (which is exactly why the platform's give-back stays small).
+  int _vipCommissionSavedSom = 0;
+  int get vipCommissionSavedSom => _vipCommissionSavedSom;
+
+  /// Rough monthly picture for the VIP value pitch: at the barber's recent
+  /// new-client run-rate, what the half-price fee saves per month. Bounded by
+  /// design — it takes ~4M so'm of new-client bookings a month just to match
+  /// the subscription, so the subscription always more than covers the cut.
+  int get vipMonthlyFeeSavingEstSom {
+    // 2.5 points saved on this month's new-client bookings.
+    final newClientSomThisMonth = _bookings
+        .where((b) =>
+            !b.isWalkIn &&
+            b.status == BookingStatus.completed &&
+            !isReturningClient(b))
+        .fold<int>(0, (sum, b) => sum + Money.toSom(b.service.price));
+    return (newClientSomThisMonth * 2.5 / 100).round();
+  }
 
   /// Provider-handoff stub: pretend the provider confirmed the subscription.
   void activateVipBoost() {

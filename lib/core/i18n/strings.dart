@@ -1930,9 +1930,13 @@ class L {
   static String get vipFeeCardTitle => _t('Half the commission',
       'Комиссия вдвое меньше', 'Komissiya yarmiga kam');
   static String get vipFeeCardSub => _t(
-      'Your 5% new-client fee drops to 2.5% while you\'re VIP — more stays in your pocket.',
-      'Ваш сбор 5% за новых клиентов падает до 2.5% с VIP — больше остаётся вам.',
-      "VIP bilan yangi mijoz uchun 5% to'lov 2.5% ga tushadi — ko'proq sizga qoladi.");
+      'Your 5% new-client fee drops to 2.5% — and being on top brings you more new clients to earn from.',
+      'Ваш сбор 5% за новых клиентов падает до 2.5% — а место в топе приносит больше новых клиентов.',
+      "Yangi mijoz uchun 5% to'lov 2.5% ga tushadi — tepadagi o'rin esa ko'proq yangi mijoz keltiradi.");
+  static String vipSavedSoFar(String som) => _t(
+      'VIP has saved you $som in fees so far',
+      'VIP уже сэкономил вам $som на сборах',
+      'VIP sizga hozirgacha $som to\'lov tejadi');
   static String get vipPerkLowerFeeTitle =>
       _t('Lower commission', 'Ниже комиссия', 'Past komissiya');
   static String get vipPerkLowerFeeSub => _t(
