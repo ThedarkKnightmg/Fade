@@ -1376,6 +1376,7 @@ class L {
       'One price a month — always at the top.',
       'Одна цена в месяц — всегда в топе.',
       "Oyiga bir narx — doim tepada.");
+  static String get vipActiveChip => _t('Active', 'Активна', 'Faol');
 
   static String weekdayShort(int d) {
     const en = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

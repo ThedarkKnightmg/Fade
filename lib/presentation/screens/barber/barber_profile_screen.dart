@@ -21,7 +21,8 @@ import 'barber_avatar.dart';
 import 'barber_history_screen.dart';
 import 'shop_location_picker_screen.dart';
 import 'wallet_screen.dart';
-import 'vip_boost_screen.dart';
+import 'boost_screen.dart';
+import 'vip_screen.dart';
 import '../settings/settings_screen.dart';
 import '../settings/support_sheet.dart';
 
@@ -133,10 +134,16 @@ class BarberProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // ── Grow: Turbo Boost / VIP + the share QR, as clean rows. ──
+                // ── Grow: two separate products — Boost (pay-per-hour) and
+                //    VIP (subscription) — each its own sell card. ──
                 FadeSlideIn(
-                  delay: const Duration(milliseconds: 140),
+                  delay: const Duration(milliseconds: 130),
                   child: const _BoostSellCard(),
+                ),
+                const SizedBox(height: 12),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 155),
+                  child: const _VipSellCard(),
                 ),
                 const SizedBox(height: 12),
                 FadeSlideIn(
@@ -341,9 +348,8 @@ class _NavTile extends StatelessWidget {
   }
 }
 
-/// Turbo Boost / VIP — a clean white row with gold accents (the wallet above
-/// is the screen's one hero). Shows live Ups + VIP/Live status; taps into the
-/// Boost hub.
+/// BOOST — the pay-per-hour product, on its own blue sell card. Shows live Ups
+/// balance and a Live pill when a boost is running; taps into the Boost screen.
 class _BoostSellCard extends StatelessWidget {
   const _BoostSellCard();
 
@@ -356,7 +362,100 @@ class _BoostSellCard extends StatelessWidget {
       onTap: () {
         HapticFeedback.selectionClick();
         Navigator.of(context)
-            .push(FadeThroughPageRoute(child: const VipBoostScreen()));
+            .push(FadeThroughPageRoute(child: const BoostScreen()));
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: clayDecoration(p, radius: 20),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(Icons.bolt_rounded,
+                  size: 24, color: AppColors.accent),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(L.tabBoost,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.h4(context)),
+                      ),
+                      if (boosted) ...[
+                        const SizedBox(width: 6),
+                        _AccentPill(label: L.boostedNowChip),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(L.boostTabSub,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySmall(context)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            // Live Ups balance chip.
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.bolt_rounded,
+                      size: 14, color: AppColors.accent),
+                  const SizedBox(width: 3),
+                  Text('${s.boosts}',
+                      style: GoogleFonts.nunito(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.accent,
+                      )),
+                ],
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right_rounded,
+                size: 20, color: p.textTertiary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// VIP — the subscription product, on its own gold sell card. Shows the monthly
+/// price (or Active status) and taps into the VIP screen.
+class _VipSellCard extends StatelessWidget {
+  const _VipSellCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final s = AppState.instance;
+    final vip = s.barberVip;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        Navigator.of(context)
+            .push(FadeThroughPageRoute(child: const VipScreen()));
       },
       behavior: HitTestBehavior.opaque,
       child: Container(
@@ -371,8 +470,8 @@ class _BoostSellCard extends StatelessWidget {
                 color: AppColors.gold.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(13),
               ),
-              child: const Icon(Icons.rocket_launch_rounded,
-                  size: 23, color: AppColors.gold),
+              child: const Icon(Icons.workspace_premium_rounded,
+                  size: 24, color: AppColors.gold),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -382,22 +481,19 @@ class _BoostSellCard extends StatelessWidget {
                   Row(
                     children: [
                       Flexible(
-                        child: Text(L.boostSellTitle,
+                        child: Text(L.tierVipTitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.h4(context)),
                       ),
-                      if (s.barberVip) ...[
+                      if (vip) ...[
                         const SizedBox(width: 6),
                         const _GoldPill(label: 'VIP'),
-                      ] else if (boosted) ...[
-                        const SizedBox(width: 6),
-                        _GoldPill(label: L.boostedNowChip),
                       ],
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(L.boostSellSub,
+                  Text(L.vipTabSub,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.bodySmall(context)),
@@ -405,7 +501,7 @@ class _BoostSellCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            // Live Ups balance chip.
+            // Monthly price chip (or Active).
             Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -413,19 +509,15 @@ class _BoostSellCard extends StatelessWidget {
                 color: AppColors.gold.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.bolt_rounded,
-                      size: 14, color: AppColors.gold),
-                  const SizedBox(width: 3),
-                  Text('${s.boosts}',
-                      style: GoogleFonts.nunito(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFF8A6100),
-                      )),
-                ],
+              child: Text(
+                vip
+                    ? L.vipActiveChip
+                    : "${Money.group(AppState.vipMonthlySom)} so'm",
+                style: GoogleFonts.nunito(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFF8A6100),
+                ),
               ),
             ),
             const SizedBox(width: 4),
@@ -434,6 +526,30 @@ class _BoostSellCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A small accent (blue) status pill on the boost row (Live).
+class _AccentPill extends StatelessWidget {
+  const _AccentPill({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(label,
+          style: GoogleFonts.nunito(
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.5,
+            color: AppColors.accent,
+          )),
     );
   }
 }

@@ -14,7 +14,8 @@ import '../../../data/app_state.dart';
 import '../../../data/models/wallet_tx.dart';
 import '../../widgets/paper_kit.dart';
 import '../payment/payment_sheet.dart';
-import 'vip_boost_screen.dart';
+import 'boost_screen.dart';
+import 'vip_screen.dart';
 
 /// The barber's prepaid wallet — the monetization "vending machine", led by a
 /// skeuomorphic **coin wallet**: three metallic coins (Credit · Earned · Tips)
@@ -55,7 +56,7 @@ class WalletScreen extends StatelessWidget {
                   delay: const Duration(milliseconds: 60),
                   child: _WalletPocket(
                     onBoost: () => Navigator.of(context).push(
-                      FadeThroughPageRoute(child: const VipBoostScreen()),
+                      FadeThroughPageRoute(child: const BoostScreen()),
                     ),
                   ),
                 ),
@@ -86,8 +87,7 @@ class WalletScreen extends StatelessWidget {
                       onTap: i == 3
                           ? () => Navigator.of(context).push(
                                 FadeThroughPageRoute(
-                                    child: const VipBoostScreen(
-                                        initialTab: 1)), // VIP tab
+                                    child: const VipScreen()),
                               )
                           : null,
                     ),
