@@ -21,12 +21,22 @@ import 'vip_explainer_screen.dart';
 /// Both promote the chair: gold map pin, top of search, premium badge, top of
 /// the roster. Purchases are provider-handoff STUBS — no card data, no real
 /// money; enforcement is server-side once the backend lands.
-class VipBoostScreen extends StatelessWidget {
-  const VipBoostScreen({super.key});
+class VipBoostScreen extends StatefulWidget {
+  const VipBoostScreen({super.key, this.initialTab = 0});
+
+  /// 0 = Boost (Ups) · 1 = VIP. The profile's card can deep-link straight to VIP.
+  final int initialTab;
+
+  @override
+  State<VipBoostScreen> createState() => _VipBoostScreenState();
+}
+
+class _VipBoostScreenState extends State<VipBoostScreen> {
+  late int _tab = widget.initialTab;
 
   static String _som(int v) => "${Money.group(v)} so'm";
 
-  void _toast(BuildContext context, String msg) {
+  void _toast(String msg) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
@@ -35,31 +45,37 @@ class VipBoostScreen extends StatelessWidget {
       ));
   }
 
-  void _useBoost(BuildContext context) {
+  void _useBoost() {
     if (AppState.instance.useBoost()) {
       HapticFeedback.mediumImpact();
-      _toast(context, L.boostOnToast);
+      _toast(L.boostOnToast);
     }
   }
 
-  void _buyPack(BuildContext context, BoostPack pack) {
+  void _buyPack(BoostPack pack) {
     showPaymentSheet(
       context,
       title: L.upsUnit(pack.count),
       amountSom: pack.priceSom,
       onPaid: (_) {
         AppState.instance.buyBoostPack(pack.id);
-        _toast(context, L.upsAddedToast(pack.count));
+        _toast(L.upsAddedToast(pack.count));
       },
     );
   }
 
-  void _buyVip(BuildContext context) {
+  void _buyVip() {
     // Explain VIP with an animated walkthrough first, then let that screen
     // lead into the payment sheet — never charge before it's understood.
     Navigator.of(context).push(
       FadeThroughPageRoute(child: const VipExplainerScreen()),
     );
+  }
+
+  void _setTab(int t) {
+    if (_tab == t) return;
+    HapticFeedback.selectionClick();
+    setState(() => _tab = t);
   }
 
   @override
@@ -70,151 +86,50 @@ class VipBoostScreen extends StatelessWidget {
       body: AnimatedBuilder(
         animation: AppState.instance,
         builder: (context, _) {
-          final s = AppState.instance;
           return SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+            child: Column(
               children: [
-                FadeSlideIn(
-                  child: Row(
+                // Header + the Boost / VIP switch.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: Column(
                     children: [
-                      CircleBtn(
-                        icon: Icons.arrow_back_rounded,
-                        size: 42,
-                        onTap: () => Navigator.of(context).maybePop(),
+                      Row(
+                        children: [
+                          CircleBtn(
+                            icon: Icons.arrow_back_rounded,
+                            size: 42,
+                            onTap: () => Navigator.of(context).maybePop(),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(L.boostHubTitle,
+                              style: AppTypography.h2(context)),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Text(L.tierVipTitle, style: AppTypography.h2(context)),
+                      const SizedBox(height: 14),
+                      _BoostVipSwitch(index: _tab, onChanged: _setTab),
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
-                // Gold hero — the "fill your chair right now" pitch.
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 60),
-                  child: _GoldHero(),
-                ),
-                const SizedBox(height: 16),
-                // Boosts balance + use-now.
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 110),
-                  child: _BoostBalanceCard(
-                    boosts: s.boosts,
-                    active: s.boostActive,
-                    activeUntil: s.boostActiveUntil,
-                    onUse: s.boosts > 0 ? () => _useBoost(context) : null,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 150),
-                  child: Text(L.fuelTitle, style: AppTypography.h3(context)),
-                ),
-                const SizedBox(height: 12),
-                // The Fuel packs.
-                for (final (i, pack) in AppState.boostPacks.indexed) ...[
-                  FadeSlideIn(
-                    delay: Duration(milliseconds: 180 + i * 55),
-                    child: _PackCard(
-                      pack: pack,
-                      best: pack.id == 'growth',
-                      onBuy: () => _buyPack(context, pack),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-                const SizedBox(height: 12),
-                // What a boost does.
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 360),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: clayDecoration(p, radius: 22),
-                    child: Column(
-                      children: [
-                        for (final (i, perk) in _perks.indexed) ...[
-                          _PerkRow(perk: perk),
-                          if (i < 3) const SizedBox(height: 12),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 22),
-                // VIP unlimited option.
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 420),
-                  child: Text(L.orGoUnlimited, style: AppTypography.h3(context)),
-                ),
-                const SizedBox(height: 12),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 450),
-                  child: s.barberVip
-                      ? Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: clayDecoration(p,
-                              radius: 22, borderColor: AppColors.gold),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.workspace_premium_rounded,
-                                  color: AppColors.gold, size: 24),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  L.vipActiveUntil(DateFormat('d MMM yyyy')
-                                      .format(s.vipUntil!)),
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w900,
-                                    color: p.text,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: clayDecoration(p, radius: 22),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.all_inclusive_rounded,
-                                      color: AppColors.gold, size: 22),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(L.tierVipTitle,
-                                        style: AppTypography.h4(context)),
-                                  ),
-                                  Text(
-                                    L.vipPerMonth(_som(AppState.vipMonthlySom)),
-                                    style: GoogleFonts.nunito(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w900,
-                                      color: p.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              PrimaryButton(
-                                label: L.buyVipNow,
-                                icon: Icons.rocket_launch_rounded,
-                                height: 52,
-                                onPressed: () => _buyVip(context),
-                              ),
-                            ],
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 12),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 480),
-                  child: Center(
-                    child: Text(L.itsAHoldNotCharge,
-                        style: AppTypography.caption(context)),
+                const SizedBox(height: 14),
+                // Animated swap between the two clearly-separated panels.
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 280),
+                    switchInCurve: Curves.easeOutCubic,
+                    transitionBuilder: (child, anim) {
+                      final slide = Tween<Offset>(
+                        begin: Offset(_tab == 0 ? -0.06 : 0.06, 0),
+                        end: Offset.zero,
+                      ).animate(anim);
+                      return FadeTransition(
+                        opacity: anim,
+                        child: SlideTransition(position: slide, child: child),
+                      );
+                    },
+                    child: _tab == 0
+                        ? _boostPanel(context)
+                        : _vipPanel(context),
                   ),
                 ),
               ],
@@ -222,6 +137,158 @@ class VipBoostScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  // ── BOOST (Ups) — pay per hour ──
+  Widget _boostPanel(BuildContext context) {
+    final s = AppState.instance;
+    return ListView(
+      key: const ValueKey('boost'),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+      children: [
+        FadeSlideIn(child: _GoldHero()),
+        const SizedBox(height: 16),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 60),
+          child: _BoostBalanceCard(
+            boosts: s.boosts,
+            active: s.boostActive,
+            activeUntil: s.boostActiveUntil,
+            onUse: s.boosts > 0 ? _useBoost : null,
+          ),
+        ),
+        const SizedBox(height: 20),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 100),
+          child: Text(L.fuelTitle, style: AppTypography.h3(context)),
+        ),
+        const SizedBox(height: 12),
+        for (final (i, pack) in AppState.boostPacks.indexed) ...[
+          FadeSlideIn(
+            delay: Duration(milliseconds: 140 + i * 55),
+            child: _PackCard(
+              pack: pack,
+              best: pack.id == 'growth',
+              onBuy: () => _buyPack(pack),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+        const SizedBox(height: 6),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 320),
+          child: Center(
+            child: Text(L.boostTabSub, style: AppTypography.caption(context)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── VIP — one price a month ──
+  Widget _vipPanel(BuildContext context) {
+    final p = Paper.of(context);
+    final s = AppState.instance;
+    return ListView(
+      key: const ValueKey('vip'),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+      children: [
+        FadeSlideIn(child: const _VipHero()),
+        const SizedBox(height: 18),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 60),
+          child: Text(L.orGoUnlimited, style: AppTypography.h3(context)),
+        ),
+        const SizedBox(height: 12),
+        // The four premium perks.
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 100),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: clayDecoration(p, radius: 22),
+            child: Column(
+              children: [
+                for (final (i, perk) in _perks.indexed) ...[
+                  _PerkRow(perk: perk),
+                  if (i < 3) const SizedBox(height: 12),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 160),
+          child: s.barberVip
+              ? Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: clayDecoration(p,
+                      radius: 22, borderColor: AppColors.gold),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.workspace_premium_rounded,
+                          color: AppColors.gold, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          L.vipActiveUntil(
+                              DateFormat('d MMM yyyy').format(s.vipUntil!)),
+                          style: GoogleFonts.nunito(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: p.text,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: clayDecoration(p, radius: 22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.all_inclusive_rounded,
+                              color: AppColors.gold, size: 22),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(L.tierVipTitle,
+                                style: AppTypography.h4(context)),
+                          ),
+                          Text(
+                            L.vipPerMonth(_som(AppState.vipMonthlySom)),
+                            style: GoogleFonts.nunito(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: p.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      PrimaryButton(
+                        label: L.buyVipNow,
+                        icon: Icons.rocket_launch_rounded,
+                        height: 52,
+                        onPressed: _buyVip,
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+        const SizedBox(height: 10),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 200),
+          child: Center(
+            child:
+                Text(L.itsAHoldNotCharge, style: AppTypography.caption(context)),
+          ),
+        ),
+      ],
     );
   }
 
@@ -234,6 +301,166 @@ class VipBoostScreen extends StatelessWidget {
         _Perk(Icons.emoji_events_rounded, L.vipPerkRosterTop,
             L.vipPerkRosterTopSub),
       ];
+}
+
+/// The segmented Boost ⇄ VIP switch — a sliding pill (blue for Boost, gold for
+/// VIP) glides under the selected tab.
+class _BoostVipSwitch extends StatelessWidget {
+  const _BoostVipSwitch({required this.index, required this.onChanged});
+  final int index;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    Widget seg(int i, IconData icon, String label, Color active) {
+      final on = index == i;
+      return Expanded(
+        child: GestureDetector(
+          onTap: () => onChanged(i),
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: on ? active : Colors.transparent,
+              borderRadius: BorderRadius.circular(13),
+              boxShadow: on
+                  ? [
+                      BoxShadow(
+                          color: active.withValues(alpha: 0.35),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4))
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon,
+                    size: 17, color: on ? Colors.white : p.textSecondary),
+                const SizedBox(width: 6),
+                Text(label,
+                    style: GoogleFonts.nunito(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: on ? Colors.white : p.textSecondary,
+                    )),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: p.cardAlt,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          seg(0, Icons.bolt_rounded, L.tabBoost, AppColors.accent),
+          const SizedBox(width: 5),
+          seg(1, Icons.workspace_premium_rounded, L.tierVipTitle,
+              AppColors.gold),
+        ],
+      ),
+    );
+  }
+}
+
+/// A compact gold VIP hero for the VIP tab (crown + always-on pitch).
+class _VipHero extends StatelessWidget {
+  const _VipHero();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            colors: [Color(0xFFF3C556), Color(0xFFD99A18)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gold.withValues(alpha: 0.4),
+              blurRadius: 24,
+              spreadRadius: -6,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Breathe(
+                builder: (context, t) => DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment(-0.9 + 1.8 * t, -0.8),
+                      radius: 1.1,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.30),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                      stops: const [0.0, 0.6],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  ScaleIn(
+                    child: Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(Icons.workspace_premium_rounded,
+                          color: Colors.white, size: 30),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(L.tierVipTitle,
+                            style: GoogleFonts.nunito(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white)),
+                        const SizedBox(height: 2),
+                        Text(L.vipTabSub,
+                            style: GoogleFonts.nunito(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                height: 1.25,
+                                color: Colors.white.withValues(alpha: 0.92))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _GoldHero extends StatelessWidget {

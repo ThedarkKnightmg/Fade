@@ -86,7 +86,8 @@ class WalletScreen extends StatelessWidget {
                       onTap: i == 3
                           ? () => Navigator.of(context).push(
                                 FadeThroughPageRoute(
-                                    child: const VipBoostScreen()),
+                                    child: const VipBoostScreen(
+                                        initialTab: 1)), // VIP tab
                               )
                           : null,
                     ),

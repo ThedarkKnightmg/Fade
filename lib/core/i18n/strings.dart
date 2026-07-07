@@ -1364,6 +1364,19 @@ class L {
       'Демо — без реального списания. В продакшене — переход к провайдеру.',
       'Demo — haqiqiy to\'lov yo\'q. Ishlab chiqarishda provayderga o\'tadi.');
 
+  // ── Boost ⇄ VIP hub ──
+  static String get tabBoost => _t('Boost', 'Буст', 'Bust');
+  static String get boostHubTitle =>
+      _t('Grow your chair', 'Развивайте кресло', "O'rindig'ingizni o'stiring");
+  static String get boostTabSub => _t(
+      'Pay per hour — jump to the top when you want.',
+      'Оплата за час — в топ, когда захотите.',
+      "Soatlik to'lov — xohlaganda tepaga chiqing.");
+  static String get vipTabSub => _t(
+      'One price a month — always at the top.',
+      'Одна цена в месяц — всегда в топе.',
+      "Oyiga bir narx — doim tepada.");
+
   static String weekdayShort(int d) {
     const en = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const ru = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
