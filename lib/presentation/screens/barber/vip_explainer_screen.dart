@@ -59,6 +59,8 @@ class VipExplainerScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = Paper.of(context);
     final perks = <_Perk>[
+      _Perk(Icons.percent_rounded, L.vipPerkLowerFeeTitle,
+          L.vipPerkLowerFeeSub),
       _Perk(Icons.location_on_rounded, L.vipPerkGoldPin, L.vipPerkGoldPinSub),
       _Perk(Icons.trending_up_rounded, L.vipPerkTopSearch,
           L.vipPerkTopSearchSub),
@@ -121,29 +123,36 @@ class VipExplainerScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
 
-                      // Social-proof stat — the payoff, counted up.
+                      // Money advantage — the new-client fee, shown dropping.
                       FadeSlideIn(
                         delay: const Duration(milliseconds: 200),
+                        child: const _CommissionCard(),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Social-proof stat — the payoff, counted up.
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 250),
                         child: const _ProofCard(),
                       ),
                       const SizedBox(height: 22),
 
                       FadeSlideIn(
-                        delay: const Duration(milliseconds: 240),
+                        delay: const Duration(milliseconds: 300),
                         child: Text(L.vipEverythingTitle,
                             style: AppTypography.h3(context)),
                       ),
                       const SizedBox(height: 12),
                       for (final (i, perk) in perks.indexed)
                         FadeSlideIn(
-                          delay: Duration(milliseconds: 280 + i * 70),
+                          delay: Duration(milliseconds: 340 + i * 70),
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 10),
                             child: _PerkRow(
                               perk: perk,
                               // Tick pops just after the row settles.
                               tickDelay:
-                                  Duration(milliseconds: 560 + i * 70),
+                                  Duration(milliseconds: 620 + i * 70),
                             ),
                           ),
                         ),
@@ -649,6 +658,74 @@ class _RiseRow extends StatelessWidget {
               const Icon(Icons.arrow_upward_rounded, size: 16, color: _navy),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Commission drop ─────────────────────────────────────────────────────
+/// The money advantage: VIP halves the new-client fee. The old 5% sits struck
+/// through above a big, softly-glowing gold 2.5% so the drop reads instantly.
+class _CommissionCard extends StatelessWidget {
+  const _CommissionCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: clayDecoration(p, radius: 22, borderColor: AppColors.gold),
+      child: Row(
+        children: [
+          // The fee, visibly dropping: 5% struck → 2.5% gold.
+          SizedBox(
+            width: 66,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(L.vipFeeWas,
+                    style: GoogleFonts.nunito(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: p.textTertiary,
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: p.textTertiary,
+                    )),
+                const Icon(Icons.arrow_downward_rounded,
+                    size: 15, color: AppColors.gold),
+                ScaleIn(
+                  from: 0.4,
+                  duration: const Duration(milliseconds: 520),
+                  child: Breathe(
+                    period: const Duration(milliseconds: 2600),
+                    builder: (context, t) => Text(
+                      L.vipFeeNow,
+                      style: GoogleFonts.nunito(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        height: 1,
+                        color: Color.lerp(AppColors.gold, _goldDeep, t),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(L.vipFeeCardTitle,
+                    style: GoogleFonts.nunito(
+                        fontSize: 16, fontWeight: FontWeight.w900, color: p.text)),
+                const SizedBox(height: 3),
+                Text(L.vipFeeCardSub, style: AppTypography.bodySmall(context)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

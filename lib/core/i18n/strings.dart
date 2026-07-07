@@ -1906,4 +1906,19 @@ class L {
       _t('Activate VIP', 'Активировать VIP', 'VIPni faollashtirish');
   static String get vipYoureInTitle =>
       _t("You're VIP ✨", 'Вы VIP ✨', 'Siz VIP ✨');
+  // Lower-commission advantage.
+  static String get vipFeeWas => '5%';
+  static String get vipFeeNow => '2.5%';
+  static String get vipFeeCardTitle => _t('Half the commission',
+      'Комиссия вдвое меньше', 'Komissiya yarmiga kam');
+  static String get vipFeeCardSub => _t(
+      'Your 5% new-client fee drops to 2.5% while you\'re VIP — more stays in your pocket.',
+      'Ваш сбор 5% за новых клиентов падает до 2.5% с VIP — больше остаётся вам.',
+      "VIP bilan yangi mijoz uchun 5% to'lov 2.5% ga tushadi — ko'proq sizga qoladi.");
+  static String get vipPerkLowerFeeTitle =>
+      _t('Lower commission', 'Ниже комиссия', 'Past komissiya');
+  static String get vipPerkLowerFeeSub => _t(
+      'Half the new-client fee on every booking',
+      'Вдвое меньше сбора за новых клиентов',
+      "Har bir yozuvda yangi mijoz to'lovi yarmiga kam");
 }
