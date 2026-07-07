@@ -61,6 +61,8 @@ class VipExplainerScreen extends StatelessWidget {
     final perks = <_Perk>[
       _Perk(Icons.percent_rounded, L.vipPerkLowerFeeTitle,
           L.vipPerkLowerFeeSub),
+      _Perk(Icons.bolt_rounded, L.vipPerkBoostsTitle, L.vipPerkBoostsSub),
+      _Perk(Icons.insights_rounded, L.navAnalytics, L.analyticsSub),
       _Perk(Icons.location_on_rounded, L.vipPerkGoldPin, L.vipPerkGoldPinSub),
       _Perk(Icons.trending_up_rounded, L.vipPerkTopSearch,
           L.vipPerkTopSearchSub),

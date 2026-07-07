@@ -19,6 +19,7 @@ import '../../widgets/primary_button.dart';
 import 'barber_avatar.dart';
 import 'barber_history_screen.dart';
 import 'scan_client_sheet.dart';
+import 'vip_explainer_screen.dart';
 
 /// Barber "Today" — a calm, flat home: who you are, whether you're online,
 /// the next booking as the single blue hero, weekly goal, earnings chart and
@@ -110,6 +111,22 @@ class BarberDashboardScreen extends StatelessWidget {
                     cuts: doneToday,
                     hours: todayMinutes / 60,
                     rating: myRating,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // The VIP "business tool" strip: savings if VIP, else the
+                // earn-VIP-pricing milestone toward 20 bookings.
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 150),
+                  child: _VipValueStrip(
+                    isVip: s.barberVip,
+                    savedThisMonthSom: s.vipMonthlyFeeSavingEstSom,
+                    done: s.completedBookingsThisMonth,
+                    goal: AppState.vipMilestoneGoal,
+                    reached: s.vipMilestoneReached,
+                    onGoVip: () => Navigator.of(context).push(
+                      FadeThroughPageRoute(child: const VipExplainerScreen()),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -405,6 +422,135 @@ class _PulseDotState extends State<_PulseDot>
 // ─────────────────────────────────────────────────────────────────────────
 //  Availability card
 // ─────────────────────────────────────────────────────────────────────────
+
+/// The VIP "business tool" strip on the dashboard. VIP barbers see what the
+/// 2.5% rate saved them this month; everyone else sees progress toward the
+/// 20-booking milestone that makes VIP pay for itself. Taps into the VIP screen.
+class _VipValueStrip extends StatelessWidget {
+  const _VipValueStrip({
+    required this.isVip,
+    required this.savedThisMonthSom,
+    required this.done,
+    required this.goal,
+    required this.reached,
+    required this.onGoVip,
+  });
+  final bool isVip;
+  final int savedThisMonthSom;
+  final int done;
+  final int goal;
+  final bool reached;
+  final VoidCallback onGoVip;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final gold = isVip || reached;
+    final tint = gold ? AppColors.gold : AppColors.accent;
+    final showProgress = !isVip && !reached;
+
+    final String title;
+    final String sub;
+    if (isVip) {
+      title = L.vipSavedTitle;
+      sub = savedThisMonthSom > 0
+          ? L.vipSavedThisMonth("${Money.group(savedThisMonthSom)} so'm")
+          : L.milestoneReachedSub;
+    } else if (reached) {
+      title = L.milestoneReachedTitle;
+      sub = L.milestoneReachedSub;
+    } else {
+      title = L.milestoneTitle;
+      sub = L.milestoneSub(goal);
+    }
+
+    return GestureDetector(
+      onTap: onGoVip,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration:
+            clayDecoration(p, radius: 20, borderColor: gold ? AppColors.gold : null),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: tint.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(
+                    gold
+                        ? Icons.workspace_premium_rounded
+                        : Icons.trending_up_rounded,
+                    size: 23,
+                    color: tint,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.h4(context)),
+                      const SizedBox(height: 2),
+                      Text(sub,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.bodySmall(context)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_right_rounded, color: p.textTertiary),
+              ],
+            ),
+            if (showProgress) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: SizedBox(
+                  height: 8,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ColoredBox(
+                            color: AppColors.accent.withValues(alpha: 0.12)),
+                      ),
+                      FractionallySizedBox(
+                        widthFactor: (done / goal).clamp(0.0, 1.0),
+                        child: const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [
+                              Color(0xFF4FA3FF),
+                              AppColors.accentDeep,
+                            ]),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(L.milestoneProgress(done, goal),
+                    style: AppTypography.caption(context)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _AvailabilityCard extends StatelessWidget {
   const _AvailabilityCard({required this.accepting});

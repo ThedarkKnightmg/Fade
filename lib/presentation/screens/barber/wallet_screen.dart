@@ -84,7 +84,7 @@ class WalletScreen extends StatelessWidget {
                     delay: Duration(milliseconds: 200 + i * 55),
                     child: _TierTile(
                       tier: t,
-                      onTap: i == 3
+                      onTap: i == 1
                           ? () => Navigator.of(context).push(
                                 FadeThroughPageRoute(
                                     child: const VipExplainerScreen()),
@@ -129,14 +129,12 @@ class WalletScreen extends StatelessWidget {
   }
 
   static List<_Tier> get _tiers => [
-        _Tier(Icons.event_available_rounded, L.tierFreeTitle, L.tierFreeSub,
-            AppColors.green, '0%'),
-        _Tier(Icons.person_add_alt_1_rounded, L.tierNewTitle, L.tierNewSub,
+        _Tier(Icons.percent_rounded, L.tierStandardTitle, L.tierStandardSub,
             AppColors.accent, '5%'),
-        _Tier(Icons.loyalty_rounded, L.tierRegularTitle, L.tierRegularSub,
-            AppColors.green, '~0%'),
-        _Tier(Icons.rocket_launch_rounded, L.tierVipTitle, L.tierVipSub,
-            AppColors.gold, 'VIP'),
+        _Tier(Icons.workspace_premium_rounded, L.tierVipProTitle,
+            L.tierVipProSub, AppColors.gold, '2.5%'),
+        _Tier(Icons.event_available_rounded, L.tierWalkinTitle, L.tierWalkinSub,
+            AppColors.green, '0%'),
       ];
 }
 

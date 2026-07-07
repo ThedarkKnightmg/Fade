@@ -983,9 +983,9 @@ class L {
   static String get walletBalanceLabel =>
       _t('Balance', 'Баланс', 'Balans');
   static String get walletVending => _t(
-      'Load a little, get clients out. You only pay when Fade brings you a brand-new client.',
-      'Пополните немного — получайте клиентов. Платите, только когда Fade приводит нового клиента.',
-      "Ozgina soling — mijoz oling. Faqat Fade yangi mijoz keltirsa to'laysiz.");
+      'Load a little, keep booking. A small 5% per booking — half that on VIP.',
+      'Пополните немного и принимайте записи. Небольшие 5% с записи — вдвое меньше на VIP.',
+      "Ozgina soling va yozuvlarni qabul qiling. Har yozuvdan 5% — VIP'da yarmi.");
   static String get walletLowWarn => _t(
       'Low balance — top up to keep getting new clients',
       'Мало средств — пополните, чтобы получать клиентов',
@@ -1940,7 +1940,74 @@ class L {
   static String get vipPerkLowerFeeTitle =>
       _t('Lower commission', 'Ниже комиссия', 'Past komissiya');
   static String get vipPerkLowerFeeSub => _t(
-      'Half the new-client fee on every booking',
-      'Вдвое меньше сбора за новых клиентов',
-      "Har bir yozuvda yangi mijoz to'lovi yarmiga kam");
+      'Half the fee on every booking',
+      'Вдвое меньше сбора за каждую запись',
+      "Har bir yozuvda to'lov yarmiga kam");
+  static String get vipPerkBoostsTitle => _t(
+      '5 free boosts a month', '5 бустов в месяц', 'Oyiga 5 ta bepul boost');
+  static String get vipPerkBoostsSub => _t(
+      'Visibility fuel, bundled into VIP',
+      'Топливо видимости — в составе VIP',
+      "Ko'rinish yoqilg'isi — VIP tarkibida");
+
+  // ── Flat commission tiers (wallet) ──
+  static String get tierStandardTitle =>
+      _t('Standard rate', 'Стандарт', 'Standart');
+  static String get tierStandardSub => _t('5% on every booking',
+      '5% с каждой записи', 'Har bir yozuvdan 5%');
+  static String get tierVipProTitle => _t('VIP (Pro)', 'VIP (Pro)', 'VIP (Pro)');
+  static String get tierVipProSub => _t('Half price — 2.5% per booking',
+      'Вдвое меньше — 2.5% за запись', 'Yarim narx — 2.5%');
+  static String get tierWalkinTitle =>
+      _t('Your walk-ins', 'Ваши без записи', 'Navbatsizlar');
+  static String get tierWalkinSub => _t('Off-app clients — always free',
+      'Клиенты вне приложения — бесплатно', 'Ilovadan tashqari — bepul');
+
+  // ── Dashboard: VIP savings + earn-VIP milestone ──
+  static String get vipSavedTitle =>
+      _t('VIP is paying off', 'VIP окупается', "VIP o'zini oqlamoqda");
+  static String vipSavedThisMonth(String som) => _t(
+      'You saved $som in fees this month',
+      'Вы сэкономили $som на сборах в этом месяце',
+      "Bu oy $som to'lov tejadingiz");
+  static String get milestoneTitle =>
+      _t('Earn VIP pricing', 'Заработайте цену VIP', "VIP narxini oling");
+  static String milestoneProgress(int n, int goal) => _t(
+      '$n / $goal bookings this month',
+      '$n / $goal записей в этом месяце',
+      'Bu oy $n / $goal yozuv');
+  static String milestoneSub(int goal) => _t(
+      "The busier you get, the more VIP's half-price fee saves you",
+      'Чем больше записей, тем больше экономит VIP',
+      "Qancha ko'p yozuv bo'lsa, VIP shuncha ko'p tejaydi");
+  static String get milestoneReachedTitle =>
+      _t("You've earned VIP pricing 🎉", 'Вы заработали цену VIP 🎉',
+          "VIP narxini ishlab oldingiz 🎉");
+  static String get milestoneReachedSub => _t(
+      'Lock in 2.5% — VIP pays off at your volume',
+      'Зафиксируйте 2.5% — VIP окупается при вашем объёме',
+      "2.5% ni mahkamlang — VIP hajmingizda o'zini oqlaydi");
+
+  // ── Analytics (VIP perk) ──
+  static String get navAnalytics => _t('Analytics', 'Аналитика', 'Tahlil');
+  static String get analyticsTitle =>
+      _t('Your services', 'Ваши услуги', 'Xizmatlaringiz');
+  static String get analyticsSub => _t('Which cuts earn you the most',
+      'Что приносит больше дохода', "Qaysi xizmat ko'proq daromad keltiradi");
+  static String get analyticsEmpty => _t(
+      'Complete a few bookings to see your breakdown',
+      'Завершите несколько записей, чтобы увидеть разбивку',
+      "Tahlilni ko'rish uchun bir nechta yozuvni yakunlang");
+  static String analyticsBookingsCount(int n) =>
+      _t('$n bookings', '$n записей', '$n yozuv');
+  static String get analyticsTotalLabel =>
+      _t('This month', 'В этом месяце', 'Bu oy');
+  static String get analyticsLockedTitle => _t('Analytics is a VIP perk',
+      'Аналитика — привилегия VIP', 'Tahlil — VIP imkoniyati');
+  static String get analyticsLockedSub => _t(
+      'Go VIP to see which services earn you the most',
+      'Перейдите на VIP, чтобы видеть прибыльность услуг',
+      "Xizmatlar foydasini ko'rish uchun VIP oling");
+  static String get analyticsUnlock =>
+      _t('Unlock with VIP', 'Открыть с VIP', 'VIP bilan ochish');
 }

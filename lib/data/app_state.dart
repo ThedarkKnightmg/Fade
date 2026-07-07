@@ -1186,42 +1186,25 @@ class AppState extends ChangeNotifier {
         x.status == BookingStatus.completed);
   }
 
-  /// Commission under the tiered model: walk-ins (Tier 1) and returning regulars
-  /// (Tier 3) are FREE — only a brand-new client the app delivered pays 5%
-  /// (Tier 2). This is the whole "vending machine": you only pay for new chairs.
+  /// Flat commission: every Fade booking pays the platform rate — 5% standard,
+  /// 2.5% for VIP. Only manually-logged walk-ins (the barber's own off-platform
+  /// clients) are free, since Fade never handled them.
   int commissionSomFor(Booking b) {
     if (b.isWalkIn) return 0;
-    if (isReturningClient(b)) return 0;
     return (Money.toSom(b.service.price) * effectiveNewClientFeePercent / 100)
         .round();
   }
 
   /// The undiscounted 5% fee — used to show a VIP barber what the discount saved.
   int commissionFullSomFor(Booking b) {
-    if (b.isWalkIn || isReturningClient(b)) return 0;
+    if (b.isWalkIn) return 0;
     return (Money.toSom(b.service.price) * newClientFeePercent / 100).round();
   }
 
   void _chargeCommission(String id) {
     final b = _bookingById(id);
-    if (b == null || b.isWalkIn) return; // walk-ins never charge
+    if (b == null || b.isWalkIn) return; // off-platform walk-ins never charge
     _ensureLedgerSeed();
-    // A returning regular — kept free. Log a 0-fee line so the barber SEES the
-    // value ("this regular cost me nothing"), reinforcing the model.
-    if (isReturningClient(b)) {
-      _ledger.insert(
-        0,
-        WalletTx(
-          label: b.clientName ?? b.barber.name,
-          sub: 'Regular · kept free',
-          amountSom: 0,
-          credit: false,
-          at: DateTime.now(),
-        ),
-      );
-      notifyListeners();
-      return;
-    }
     final fee = commissionSomFor(b);
     if (fee <= 0) return;
     _walletSom -= fee;
@@ -1230,14 +1213,12 @@ class AppState extends ChangeNotifier {
       final saved = commissionFullSomFor(b) - fee;
       if (saved > 0) _vipCommissionSavedSom += saved;
     }
+    // Every booking is labelled with the rate applied so the barber SEES it.
     _ledger.insert(
       0,
       WalletTx(
         label: b.clientName ?? b.barber.name,
-        // VIP fees are labelled with the half rate so the barber SEES the win.
-        sub: vip
-            ? 'New-client fee · VIP 2.5% · ${b.service.name}'
-            : 'New-client fee · ${b.service.name}',
+        sub: 'Booking fee · ${vip ? '2.5%' : '5%'} · ${b.service.name}',
         amountSom: fee,
         credit: false,
         at: DateTime.now(),
@@ -1280,7 +1261,12 @@ class AppState extends ChangeNotifier {
   // (stub) — no real money moves here; the subscription itself is server-side
   // once the backend lands (session-only in the mock).
 
-  static const int vipMonthlySom = 99000;
+  // Priced at 199k — deliberately under the 200k "mental barrier" so a busy
+  // barber signs up without hesitating.
+  static const int vipMonthlySom = 199000;
+  // Boosts bundled into the monthly VIP subscription — VIP is a business tool,
+  // not a tax: you also get visibility fuel every month.
+  static const int vipMonthlyBoosts = 5;
   DateTime? _vipUntil;
   bool get barberVip =>
       _vipUntil != null && _vipUntil!.isAfter(DateTime.now());
@@ -1292,25 +1278,53 @@ class AppState extends ChangeNotifier {
   int _vipCommissionSavedSom = 0;
   int get vipCommissionSavedSom => _vipCommissionSavedSom;
 
-  /// Rough monthly picture for the VIP value pitch: at the barber's recent
-  /// new-client run-rate, what the half-price fee saves per month. Bounded by
-  /// design — it takes ~4M so'm of new-client bookings a month just to match
-  /// the subscription, so the subscription always more than covers the cut.
+  /// The VIP "you saved X this month" figure: 2.5 points off every booking this
+  /// month. (Break-even vs. the 200k subscription is ~8M so'm of monthly
+  /// bookings — above that the barber comes out ahead on fees alone.)
   int get vipMonthlyFeeSavingEstSom {
-    // 2.5 points saved on this month's new-client bookings.
-    final newClientSomThisMonth = _bookings
-        .where((b) =>
-            !b.isWalkIn &&
-            b.status == BookingStatus.completed &&
-            !isReturningClient(b))
+    final bookedSomThisMonth = _bookings
+        .where((b) => !b.isWalkIn && b.status == BookingStatus.completed)
         .fold<int>(0, (sum, b) => sum + Money.toSom(b.service.price));
-    return (newClientSomThisMonth * 2.5 / 100).round();
+    return (bookedSomThisMonth * 2.5 / 100).round();
+  }
+
+  // ── The "earn VIP pricing" milestone ──
+  // Barbers who complete this many Fade bookings in a month have proven the app
+  // delivers — the nudge point where VIP's 2.5% starts paying for itself. It
+  // doesn't auto-grant VIP; it's the psychological trigger to subscribe.
+  static const int vipMilestoneGoal = 20;
+  int get completedBookingsThisMonth => _bookings
+      .where((b) => !b.isWalkIn && b.status == BookingStatus.completed)
+      .length;
+  bool get vipMilestoneReached =>
+      completedBookingsThisMonth >= vipMilestoneGoal;
+
+  /// Per-service profitability for the analytics view (a VIP perk): completed
+  /// Fade bookings grouped by service, richest first.
+  List<({String name, int count, int revenueSom})> serviceBreakdown() {
+    final byName = <String, ({int count, int revenueSom})>{};
+    for (final b in _bookings) {
+      if (b.isWalkIn || b.status != BookingStatus.completed) continue;
+      final cur = byName[b.service.name] ?? (count: 0, revenueSom: 0);
+      byName[b.service.name] = (
+        count: cur.count + 1,
+        revenueSom: cur.revenueSom + Money.toSom(b.service.price),
+      );
+    }
+    final list = byName.entries
+        .map((e) =>
+            (name: e.key, count: e.value.count, revenueSom: e.value.revenueSom))
+        .toList()
+      ..sort((a, b) => b.revenueSom.compareTo(a.revenueSom));
+    return list;
   }
 
   /// Provider-handoff stub: pretend the provider confirmed the subscription.
+  /// Bundles [vipMonthlyBoosts] visibility boosts into the month.
   void activateVipBoost() {
     final base = barberVip ? _vipUntil! : DateTime.now();
     _vipUntil = base.add(const Duration(days: 30));
+    _boosts += vipMonthlyBoosts;
     notifyListeners();
   }
 
