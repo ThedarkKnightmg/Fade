@@ -505,6 +505,16 @@ class AppState extends ChangeNotifier {
     _save();
   }
 
+  // Preferred payment method (provider-handoff stub — Payme/Click/Uzum/cards).
+  // No card data is stored; this is just the last-used provider id.
+  String _payMethod = 'payme';
+  String get payMethod => _payMethod;
+  void setPayMethod(String id) {
+    _payMethod = id;
+    notifyListeners();
+    _save();
+  }
+
   // First-run barber setup (goal + photos) — shown once, then remembered.
   bool _barberOnboarded = false;
   bool get barberOnboarded => _barberOnboarded;
@@ -1862,6 +1872,7 @@ class AppState extends ChangeNotifier {
     final sp = await SharedPreferences.getInstance();
     _hasCompletedOnboarding = sp.getBool('onboarded') ?? _hasCompletedOnboarding;
     _barberOnboarded = sp.getBool('barberOnboarded') ?? _barberOnboarded;
+    _payMethod = sp.getString('payMethod') ?? _payMethod;
     _offDays
       ..clear()
       ..addAll((sp.getStringList('offDays') ?? const [])
@@ -1962,6 +1973,7 @@ class AppState extends ChangeNotifier {
     final sp = await SharedPreferences.getInstance();
     await sp.setBool('onboarded', _hasCompletedOnboarding);
     await sp.setBool('barberOnboarded', _barberOnboarded);
+    await sp.setString('payMethod', _payMethod);
     await sp.setStringList(
         'offDays', _offDays.map((d) => d.toString()).toList());
     await sp.setBool('authed', _isAuthenticated);

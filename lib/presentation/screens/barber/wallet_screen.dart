@@ -13,6 +13,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/wallet_tx.dart';
 import '../../widgets/paper_kit.dart';
+import '../payment/payment_sheet.dart';
 import 'vip_boost_screen.dart';
 
 /// The barber's prepaid wallet — the monetization "vending machine", led by a
@@ -266,11 +267,15 @@ class _WalletPocketState extends State<_WalletPocket> {
                       child: _PocketAction(
                         icon: Icons.arrow_downward_rounded,
                         label: L.actTopUp,
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          s.topUpWallet(50000);
-                          _walletToast(context, L.topUpAddedToast);
-                        },
+                        onTap: () => showPaymentSheet(
+                          context,
+                          title: L.actTopUp,
+                          amountOptions: const [50000, 100000, 200000, 500000],
+                          onPaid: (som) {
+                            s.topUpWallet(som);
+                            _walletToast(context, L.topUpAddedToast);
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),

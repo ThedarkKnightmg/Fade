@@ -11,6 +11,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
+import '../payment/payment_sheet.dart';
 
 /// The "Turbo Boost" hub. Two ways to jump to the top of the neighborhood:
 ///   • BARBER FUEL — cheap micro-transaction packs of "Ups" you keep in the
@@ -41,16 +42,27 @@ class VipBoostScreen extends StatelessWidget {
   }
 
   void _buyPack(BuildContext context, BoostPack pack) {
-    // Provider handoff stub — a real flow redirects to Payme/Click and returns.
-    HapticFeedback.mediumImpact();
-    AppState.instance.buyBoostPack(pack.id);
-    _toast(context, L.upsAddedToast(pack.count));
+    showPaymentSheet(
+      context,
+      title: L.upsUnit(pack.count),
+      amountSom: pack.priceSom,
+      onPaid: (_) {
+        AppState.instance.buyBoostPack(pack.id);
+        _toast(context, L.upsAddedToast(pack.count));
+      },
+    );
   }
 
   void _buyVip(BuildContext context) {
-    HapticFeedback.heavyImpact();
-    AppState.instance.activateVipBoost();
-    _toast(context, L.vipActivated);
+    showPaymentSheet(
+      context,
+      title: L.tierVipTitle,
+      amountSom: AppState.vipMonthlySom,
+      onPaid: (_) {
+        AppState.instance.activateVipBoost();
+        _toast(context, L.vipActivated);
+      },
+    );
   }
 
   @override

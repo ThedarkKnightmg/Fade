@@ -11,6 +11,7 @@ import '../../../data/app_state.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../auth/login_screen.dart';
+import '../payment/payment_sheet.dart';
 import 'calendar_sync_screen.dart';
 import 'support_sheet.dart';
 import 'verify_contact_screen.dart';
@@ -337,6 +338,13 @@ class SettingsScreen extends StatelessWidget {
                         trailing: MiniPill(state.language.code,
                             style: MiniPillStyle.ghost),
                         onTap: () => _pickLanguage(context),
+                      ),
+                      _Divider(),
+                      _Tile(
+                        icon: Icons.credit_card_rounded,
+                        label: L.payMethodsTitle,
+                        value: L.payMethodsSub,
+                        onTap: () => showPaymentMethodsSheet(context),
                       ),
                       _Divider(),
                       _Tile(

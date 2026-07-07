@@ -534,27 +534,24 @@ class _ShopsMapScreenState extends State<ShopsMapScreen>
     final Alignment align;
     final Widget inner;
     if (single != null) {
-      final color = _listingColor(single.id);
       if (pill) {
-        w = 150;
-        h = 76;
+        w = single.featured ? 168 : 150;
+        h = 80;
         align = Alignment.bottomCenter;
         inner = _PricePin(
           label: Money.compact(single.fromUsd),
-          color: color,
           hot: single.hot,
-          gold: single.featured,
+          vip: single.featured,
           selected: _selectedId == single.id,
           onTap: () => _select(single.id),
         );
       } else {
-        w = 46;
-        h = 46;
+        w = 52;
+        h = 52;
         align = Alignment.center;
         inner = _Dot(
-          color: color,
           hot: single.hot,
-          featured: single.featured,
+          vip: single.featured,
           selected: _selectedId == single.id,
           onTap: () => _select(single.id),
         );
@@ -568,6 +565,7 @@ class _ShopsMapScreenState extends State<ShopsMapScreen>
         count: c.count,
         fromLabel: Money.compact(c.minUsd),
         hot: c.hot,
+        featured: c.featured,
         onTap: () => _expand(c),
       );
     } else {
@@ -640,27 +638,14 @@ class _Cluster {
 const Color _pinNavy = Color(0xFF243049);
 const Color _flame = Color(0xFFFF7A33);
 
-/// Rainbow palette for individual price points — red, orange, green, teal,
-/// blue, indigo, violet, pink. Each listing gets a stable colour from its id
-/// so the map reads bright and varied (clusters stay navy so groups stand out).
-const List<Color> _pinPalette = [
-  Color(0xFFE5392F), // red
-  Color(0xFFF4621F), // orange
-  Color(0xFF1FA463), // green
-  Color(0xFF0FB5AE), // teal
-  Color(0xFF2E8BFF), // blue
-  Color(0xFF4759E0), // indigo
-  Color(0xFF7A3CF0), // violet
-  Color(0xFFE83E8C), // pink
-];
-
-Color _listingColor(String id) {
-  var h = 0;
-  for (var i = 0; i < id.length; i++) {
-    h = (h * 31 + id.codeUnitAt(i)) & 0x7fffffff;
-  }
-  return _pinPalette[h % _pinPalette.length];
-}
+// Premium/VIP gold — a warm gradient so sponsored barbers read as a cut above.
+const Color _goldLight = Color(0xFFFCE7A6);
+const Color _goldDeep = Color(0xFFC9962B);
+const LinearGradient _vipGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [_goldLight, AppColors.gold, _goldDeep],
+);
 
 List<BoxShadow> get _markerShadow => [
       BoxShadow(
@@ -670,38 +655,53 @@ List<BoxShadow> get _markerShadow => [
       ),
     ];
 
-/// A single point at low zoom: grey dot, flame if hot, gold scissors-coin if
-/// sponsored. Scales up when selected.
+/// A warm gold halo beneath VIP markers so they lift off the map.
+List<BoxShadow> get _vipShadow => [
+      BoxShadow(
+        color: AppColors.gold.withValues(alpha: 0.55),
+        blurRadius: 16,
+        spreadRadius: -1,
+        offset: const Offset(0, 3),
+      ),
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.28),
+        blurRadius: 8,
+        offset: const Offset(0, 4),
+      ),
+    ];
+
+/// A single point at low zoom. Regular shops share one calm navy dot; VIP
+/// (sponsored) shops wear a premium gold coin with a crown and a warm halo so
+/// they clearly stand out. Hot spots show a flame. Scales up when selected.
 class _Dot extends StatelessWidget {
   const _Dot({
-    required this.color,
     required this.hot,
-    required this.featured,
+    required this.vip,
     required this.selected,
     required this.onTap,
   });
 
-  final Color color;
   final bool hot;
-  final bool featured;
+  final bool vip;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     Widget core;
-    if (featured) {
+    if (vip) {
+      // Premium: bigger gold coin, crown glyph, gold halo — a cut above.
       core = Container(
-        width: 28,
-        height: 28,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
-          color: AppColors.gold,
+          gradient: _vipGradient,
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white, width: 2),
-          boxShadow: _markerShadow,
+          boxShadow: _vipShadow,
         ),
-        child: const Icon(Icons.content_cut_rounded,
-            size: 15, color: _pinNavy),
+        child: const Icon(Icons.workspace_premium_rounded,
+            size: 18, color: _pinNavy),
       );
     } else if (hot) {
       core = Container(
@@ -717,11 +717,12 @@ class _Dot extends StatelessWidget {
             size: 15, color: _flame),
       );
     } else {
+      // Every regular shop: the same calm navy dot.
       core = Container(
         width: 16,
         height: 16,
         decoration: BoxDecoration(
-          color: color,
+          color: _pinNavy,
           shape: BoxShape.circle,
           border: Border.all(
             color: selected ? AppColors.accent : Colors.white,
@@ -777,10 +778,11 @@ class _ClusterDot extends StatelessWidget {
                 width: size,
                 height: size,
                 decoration: BoxDecoration(
-                  color: featured ? AppColors.gold : _pinNavy,
+                  color: featured ? null : _pinNavy,
+                  gradient: featured ? _vipGradient : null,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: _markerShadow,
+                  boxShadow: featured ? _vipShadow : _markerShadow,
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -792,7 +794,24 @@ class _ClusterDot extends StatelessWidget {
                   ),
                 ),
               ),
-              if (hot)
+              // A group holding a VIP shop wears a small crown; else a flame
+              // badge if any member is trending.
+              if (featured)
+                Positioned(
+                  top: -3,
+                  right: -3,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: _pinNavy,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: const Icon(Icons.workspace_premium_rounded,
+                        size: 11, color: AppColors.gold),
+                  ),
+                )
+              else if (hot)
                 Positioned(
                   top: -2,
                   right: -2,
@@ -821,12 +840,14 @@ class _ClusterPill extends StatelessWidget {
     required this.count,
     required this.fromLabel,
     required this.hot,
+    required this.featured,
     required this.onTap,
   });
 
   final int count;
   final String fromLabel;
   final bool hot;
+  final bool featured;
   final VoidCallback onTap;
 
   @override
@@ -841,8 +862,13 @@ class _ClusterPill extends StatelessWidget {
             decoration: BoxDecoration(
               color: _pinNavy,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-              boxShadow: _markerShadow,
+              border: Border.all(
+                color: featured
+                    ? AppColors.gold.withValues(alpha: 0.9)
+                    : Colors.white.withValues(alpha: 0.1),
+                width: featured ? 1.5 : 1,
+              ),
+              boxShadow: featured ? _vipShadow : _markerShadow,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -850,8 +876,9 @@ class _ClusterPill extends StatelessWidget {
                 Container(
                   width: 24,
                   height: 24,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: featured ? null : Colors.white,
+                    gradient: featured ? _vipGradient : null,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
@@ -865,7 +892,11 @@ class _ClusterPill extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 7),
-                if (hot) ...[
+                if (featured) ...[
+                  const Icon(Icons.workspace_premium_rounded,
+                      size: 14, color: AppColors.gold),
+                  const SizedBox(width: 3),
+                ] else if (hot) ...[
                   const Icon(Icons.local_fire_department_rounded,
                       size: 14, color: _flame),
                   const SizedBox(width: 3),
@@ -888,69 +919,80 @@ class _ClusterPill extends StatelessWidget {
   }
 }
 
-/// A Yandex-style price tag: a rounded pill with a downward tail. Selected
-/// pills fill electric blue; sponsored shops get a gold edge; hot spots flame.
+/// A Yandex-style price tag: a rounded pill with a downward tail. Every regular
+/// shop shares the same calm navy tag so the map reads consistent; VIP
+/// (sponsored) shops get a premium gold-gradient tag with a crown and a warm
+/// halo so they stand out. Selected tags fill electric blue (VIP keep gold with
+/// a blue ring); hot spots show a flame.
 class _PricePin extends StatelessWidget {
   const _PricePin({
     required this.label,
-    required this.color,
     required this.hot,
-    required this.gold,
+    required this.vip,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
-  final Color color;
   final bool hot;
-  final bool gold;
+  final bool vip;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final bg = color;
+    // VIP keeps its gold gradient even when selected (identity first); regular
+    // tags fill electric blue on selection.
+    final Gradient? grad = vip ? _vipGradient : null;
+    final Color solid = selected ? AppColors.accent : _pinNavy;
+    final Color textColor = vip ? _pinNavy : Colors.white;
+    final Color tailColor =
+        vip ? _goldDeep : (selected ? AppColors.accent : _pinNavy);
+    final Color ringColor = selected
+        ? (vip ? AppColors.accent : Colors.white)
+        : (vip
+            ? Colors.white.withValues(alpha: 0.75)
+            : Colors.white.withValues(alpha: 0.10));
+    final double ringWidth = selected ? (vip ? 2.5 : 2) : (vip ? 1.5 : 1);
+    final List<BoxShadow> shadows = vip
+        ? _vipShadow
+        : [
+            BoxShadow(
+              color: (selected ? AppColors.accent : Colors.black)
+                  .withValues(alpha: selected ? 0.55 : 0.35),
+              blurRadius: selected ? 16 : 8,
+              offset: const Offset(0, 4),
+            ),
+          ];
+
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           AnimatedScale(
-            scale: selected ? 1.0 : 0.96,
+            scale: selected ? 1.08 : (vip ? 1.03 : 0.96),
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutBack,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
               decoration: BoxDecoration(
-                color: bg,
+                color: grad == null ? solid : null,
+                gradient: grad,
                 borderRadius: BorderRadius.circular(13),
-                border: Border.all(
-                  color: selected
-                      ? Colors.white.withValues(alpha: 0.6)
-                      : (gold
-                          ? AppColors.gold
-                          : Colors.white.withValues(alpha: 0.08)),
-                  width: (selected || gold) ? 1.5 : 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: (selected ? color : Colors.black)
-                        .withValues(alpha: selected ? 0.55 : 0.35),
-                    blurRadius: selected ? 16 : 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                border: Border.all(color: ringColor, width: ringWidth),
+                boxShadow: shadows,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (hot) ...[
+                  if (vip) ...[
+                    const Icon(Icons.workspace_premium_rounded,
+                        size: 14, color: _pinNavy),
+                    const SizedBox(width: 4),
+                  ] else if (hot) ...[
                     Icon(Icons.local_fire_department_rounded,
                         size: 13, color: selected ? Colors.white : _flame),
-                    const SizedBox(width: 3),
-                  ] else if (gold) ...[
-                    const Icon(Icons.content_cut_rounded,
-                        size: 12, color: AppColors.gold),
                     const SizedBox(width: 3),
                   ],
                   Text(
@@ -958,14 +1000,14 @@ class _PricePin extends StatelessWidget {
                     style: GoogleFonts.nunito(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      color: textColor,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          CustomPaint(size: const Size(13, 7), painter: _TailPainter(bg)),
+          CustomPaint(size: const Size(13, 7), painter: _TailPainter(tailColor)),
         ],
       ),
     );

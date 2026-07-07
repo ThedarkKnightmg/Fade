@@ -1341,6 +1341,29 @@ class L {
   static String get csNeedName => _t('Add a name and a location first',
       'Сначала укажите название и локацию',
       'Avval nom va manzil kiriting');
+  // ── Payment ──
+  static String get payTitle => _t('Payment', 'Оплата', "To'lov");
+  static String get payChoose => _t('Payment method',
+      'Способ оплаты', "To'lov usuli");
+  static String payPay(String som) =>
+      _t('Pay $som so\'m', 'Оплатить $som сум', "$som so'm to'lash");
+  static String payVia(String provider) => _t(
+      'Contacting $provider…', 'Соединение с $provider…',
+      '$provider bilan bog\'lanmoqda…');
+  static String get paySuccess => _t('Payment successful ✓',
+      'Оплата прошла ✓', "To'lov muvaffaqiyatli ✓");
+  static String get payMethodsTitle =>
+      _t('Payment methods', 'Способы оплаты', "To'lov usullari");
+  static String get payMethodsSub => _t('Payme, Click, Uzum, cards',
+      'Payme, Click, Uzum, карты', 'Payme, Click, Uzum, kartalar');
+  static String get payDefault => _t('Default', 'По умолчанию', 'Asosiy');
+  static String get payTopUpAmount =>
+      _t('Top-up amount', 'Сумма пополнения', "To'ldirish summasi");
+  static String get payStubNote => _t(
+      'Demo — no real charge. Connects to the provider in production.',
+      'Демо — без реального списания. В продакшене — переход к провайдеру.',
+      'Demo — haqiqiy to\'lov yo\'q. Ishlab chiqarishda provayderga o\'tadi.');
+
   static String weekdayShort(int d) {
     const en = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const ru = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
