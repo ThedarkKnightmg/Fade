@@ -257,7 +257,7 @@ class L {
       'Поделитесь QR — постоянные записываются бесплатно',
       "QR ulashing — doimiylar bepul yoziladi");
   static String get boostSellTitle =>
-      _t('Turbo Boost', 'Турбо-буст', 'Turbo Bust');
+      _t('Turbo Boost', 'Turbo Boost', 'Turbo Boost');
   static String get boostSellSub => _t(
       'Top of search for an hour — or go VIP',
       'Час в топе поиска — или VIP',
@@ -274,7 +274,7 @@ class L {
       _t('this week', 'за неделю', 'shu hafta');
   static String get actTopUp => _t('Top up', 'Пополнить', "To'ldirish");
   static String get actActivity => _t('Activity', 'История', 'Faoliyat');
-  static String get actBoost => _t('Boost', 'Буст', 'Bust');
+  static String get actBoost => _t('Boost', 'Boost', 'Boost');
   static String get topUpAddedToast =>
       _t('Credit topped up ✓', 'Кредит пополнен ✓', "Kredit to'ldirildi ✓");
 
@@ -1144,18 +1144,36 @@ class L {
   static String upsInWallet(int n) => _t(
       '$n Ups in your wallet', '$n Up в кошельке', 'Hamyonda $n Up');
   static String get useBoostNow =>
-      _t('Use a boost now', 'Использовать буст', 'Bustni ishlatish');
+      _t('Use a boost now', 'Использовать Boost', 'Boostni ishlatish');
   static String boostedUntilTime(String t) => _t('Boosted until $t 🚀',
       'В топе до $t 🚀', '$t gacha tepada 🚀');
   static String get outOfUps => _t('Out of Ups — grab a pack below',
       'Нет Up — купите пакет ниже', 'Up tugadi — quyidan paket oling');
   static String get boostOnToast => _t("Boost on — you're at the top 🚀",
-      'Буст включён — вы в топе 🚀', 'Bust yoqildi — tepadasiz 🚀');
+      'Boost включён — вы в топе 🚀', 'Boost yoqildi — tepadasiz 🚀');
   static String upsUnit(int n) => _t('$n Ups', '$n Up', '$n Up');
   static String perBoostLabel(String som) =>
-      _t('$som / boost', '$som / буст', '$som / bust');
+      _t('$som / boost', '$som / Boost', '$som / Boost');
   static String get bestValue =>
       _t('Best value', 'Выгодно', 'Eng foydali');
+  // ── Boost: animated "what it does" showcase ──
+  static String get boostRiseTitle => _t('Jump to the top — for an hour',
+      'В топ — на один час', 'Bir soatga — tepaga');
+  static String get boostRiseSub => _t(
+      "Spend one Up and you're #1 in your area for 60 minutes — right when your chair is empty.",
+      'Потратьте один Up — и вы №1 в районе на 60 минут, как раз когда кресло пустует.',
+      "Bitta Up sarflang — 60 daqiqa hududda №1 bo'lasiz, aynan o'rindiq bo'sh paytda.");
+  static String get boostYouRow =>
+      _t('You · boosted', 'Вы · в топе', 'Siz · tepada');
+  static String get boostTopTag => _t('TOP', 'ТОП', 'TOP');
+  static String get boostHourLabel => _t('1 hour left', 'остался 1 час',
+      '1 soat qoldi');
+  static String get boostProofSuffix => _t('more walk-ins in a boosted hour',
+      'больше клиентов за час в топе', "tepadagi soatda ko'proq mijoz");
+  static String get boostProofSub => _t(
+      'The moment you flip it on, new clients see you first.',
+      'Как только включаете — новые клиенты видят вас первым.',
+      "Yoqishingiz bilan yangi mijozlar sizni birinchi ko'radi.");
   static String get orGoUnlimited => _t('Or go unlimited',
       'Или безлимит', 'Yoki cheksiz');
   static String upsAddedToast(int n) =>
@@ -1411,7 +1429,7 @@ class L {
       'Demo — haqiqiy to\'lov yo\'q. Ishlab chiqarishda provayderga o\'tadi.');
 
   // ── Boost ⇄ VIP hub ──
-  static String get tabBoost => _t('Boost', 'Буст', 'Bust');
+  static String get tabBoost => _t('Boost', 'Boost', 'Boost');
   static String get boostHubTitle =>
       _t('Grow your chair', 'Развивайте кресло', "O'rindig'ingizni o'stiring");
   static String get boostTabSub => _t(

@@ -87,8 +87,20 @@ class _BoostScreenState extends State<BoostScreen> {
                     children: [
                       FadeSlideIn(child: _BoostHero()),
                       const SizedBox(height: 16),
+                      // Animated: what a Boost does — surge to #1 for an hour.
                       FadeSlideIn(
                         delay: const Duration(milliseconds: 60),
+                        child: _BoostDemoCard(),
+                      ),
+                      const SizedBox(height: 14),
+                      // The payoff, counted up.
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 110),
+                        child: const _BoostProofCard(),
+                      ),
+                      const SizedBox(height: 18),
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 160),
                         child: _BoostBalanceCard(
                           boosts: s.boosts,
                           active: s.boostActive,
@@ -98,13 +110,13 @@ class _BoostScreenState extends State<BoostScreen> {
                       ),
                       const SizedBox(height: 20),
                       FadeSlideIn(
-                        delay: const Duration(milliseconds: 100),
+                        delay: const Duration(milliseconds: 200),
                         child: Text(L.fuelTitle, style: AppTypography.h3(context)),
                       ),
                       const SizedBox(height: 12),
                       for (final (i, pack) in AppState.boostPacks.indexed) ...[
                         FadeSlideIn(
-                          delay: Duration(milliseconds: 140 + i * 55),
+                          delay: Duration(milliseconds: 240 + i * 55),
                           child: _PackCard(
                             pack: pack,
                             best: pack.id == 'growth',
@@ -115,7 +127,7 @@ class _BoostScreenState extends State<BoostScreen> {
                       ],
                       const SizedBox(height: 6),
                       FadeSlideIn(
-                        delay: const Duration(milliseconds: 320),
+                        delay: const Duration(milliseconds: 420),
                         child: Center(
                           child: Text(L.boostTabSub,
                               style: AppTypography.caption(context)),
@@ -217,6 +229,317 @@ class _BoostHero extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Animated demo: surge to #1 for an hour, then the timer drains ─────────
+/// A titled card that demonstrates what a Boost does: your row surges to the
+/// top of the neighborhood, a "1 hour" bar drains, then you drop back — so the
+/// pay-per-hour, temporary nature reads at a glance.
+class _BoostDemoCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: clayDecoration(p, radius: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _BoostDemo(),
+          const SizedBox(height: 14),
+          Text(L.boostRiseTitle,
+              style: GoogleFonts.nunito(
+                  fontSize: 16, fontWeight: FontWeight.w900, color: p.text)),
+          const SizedBox(height: 4),
+          Text(L.boostRiseSub, style: AppTypography.bodySmall(context)),
+        ],
+      ),
+    );
+  }
+}
+
+class _BoostDemo extends StatefulWidget {
+  const _BoostDemo();
+  @override
+  State<_BoostDemo> createState() => _BoostDemoState();
+}
+
+class _BoostDemoState extends State<_BoostDemo>
+    with SingleTickerProviderStateMixin {
+  static const double _rowH = 42;
+  static const double _gap = 8;
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 5200),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  double _topFor(int slot) => slot * (_rowH + _gap);
+
+  Widget _content(bool risen, double drain) {
+    // Slots top→bottom = 0,1,2. Boosted → You takes #1 and the two nearby
+    // barbers slide down; otherwise You sits at the bottom.
+    final youSlot = risen ? 0 : 2;
+    final aSlot = risen ? 1 : 0;
+    final bSlot = risen ? 2 : 1;
+    return Column(
+      children: [
+        SizedBox(
+          height: _rowH * 3 + _gap * 2,
+          child: Stack(
+            children: [
+              _BoostRow(
+                  top: _topFor(aSlot),
+                  height: _rowH,
+                  boosted: false,
+                  rank: aSlot + 1,
+                  label: L.vipNearbyRow),
+              _BoostRow(
+                  top: _topFor(bSlot),
+                  height: _rowH,
+                  boosted: false,
+                  rank: bSlot + 1,
+                  label: L.vipNearbyRow),
+              _BoostRow(
+                  top: _topFor(youSlot),
+                  height: _rowH,
+                  boosted: risen,
+                  rank: youSlot + 1,
+                  label: L.boostYouRow),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        // The hour draining away.
+        Row(
+          children: [
+            const Icon(Icons.timer_outlined, size: 14, color: AppColors.accent),
+            const SizedBox(width: 6),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: SizedBox(
+                  height: 6,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ColoredBox(
+                            color: AppColors.accent.withValues(alpha: 0.14)),
+                      ),
+                      FractionallySizedBox(
+                        widthFactor: drain.clamp(0.0, 1.0),
+                        child: const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [
+                              Color(0xFF4FA3FF),
+                              AppColors.accentDeep,
+                            ]),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(L.boostHourLabel, style: AppTypography.caption(context)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduce) return _content(true, 0.55);
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final t = _c.value;
+        final risen = t >= 0.12 && t <= 0.9;
+        final double drain = t < 0.12
+            ? 1.0
+            : (t <= 0.9 ? (0.9 - t) / (0.9 - 0.12) : 0.0);
+        return _content(risen, drain);
+      },
+    );
+  }
+}
+
+class _BoostRow extends StatelessWidget {
+  const _BoostRow({
+    required this.top,
+    required this.height,
+    required this.boosted,
+    required this.rank,
+    required this.label,
+  });
+  final double top;
+  final double height;
+  final bool boosted;
+  final int rank;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 560),
+      curve: Curves.easeOutCubic,
+      top: top,
+      left: 0,
+      right: 0,
+      height: height,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 280),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: boosted ? null : p.card,
+          gradient: boosted
+              ? const LinearGradient(
+                  colors: [Color(0xFF4FA3FF), Color(0xFF1E6FE0)])
+              : null,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(
+            color: boosted ? Colors.white.withValues(alpha: 0.6) : p.border,
+          ),
+          boxShadow: boosted
+              ? [
+                  BoxShadow(
+                    color: AppColors.accent.withValues(alpha: 0.45),
+                    blurRadius: 14,
+                    spreadRadius: -2,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: boosted
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : p.textTertiary.withValues(alpha: 0.15),
+              ),
+              child: Text('$rank',
+                  style: GoogleFonts.nunito(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: boosted ? AppColors.accentDeep : p.textSecondary,
+                  )),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: boosted
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : p.textTertiary.withValues(alpha: 0.2),
+              ),
+              child: Icon(
+                boosted ? Icons.bolt_rounded : Icons.person_rounded,
+                size: 15,
+                color: boosted ? AppColors.accentDeep : p.textSecondary,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.nunito(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                  color: boosted ? Colors.white : p.text,
+                ),
+              ),
+            ),
+            if (boosted) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(L.boostTopTag,
+                    style: GoogleFonts.nunito(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                      color: AppColors.accentDeep,
+                    )),
+              ),
+              const SizedBox(width: 6),
+              const Icon(Icons.arrow_upward_rounded,
+                  size: 15, color: Colors.white),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The payoff — "3× more walk-ins in a boosted hour", counted up.
+class _BoostProofCard extends StatelessWidget {
+  const _BoostProofCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: clayDecoration(p, radius: 22, borderColor: AppColors.accent),
+      child: Row(
+        children: [
+          AnimatedCount(
+            value: 3,
+            duration: const Duration(milliseconds: 1100),
+            builder: (context, v) => Text(
+              '${v.toStringAsFixed(0)}×',
+              style: GoogleFonts.nunito(
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                height: 1,
+                color: AppColors.accent,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(L.boostProofSuffix,
+                    style: GoogleFonts.nunito(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: p.text)),
+                const SizedBox(height: 2),
+                Text(L.boostProofSub, style: AppTypography.bodySmall(context)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
