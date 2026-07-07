@@ -992,6 +992,20 @@ class L {
       "Balans kam — yangi mijozlar uchun to'ldiring");
   static String get topUpWord => _t('Top up', 'Пополнить', "To'ldirish");
   static String get walletActivity => _t('Activity', 'История', 'Faoliyat');
+  // ── Transaction feed (money in vs. commission out) ──
+  static String get walletLegendIn =>
+      _t('money in', 'приход', 'kirim');
+  static String get walletLegendFee =>
+      _t('commission', 'комиссия', 'komissiya');
+  static String get walletFreeTag => _t('FREE', 'БЕСПЛ.', 'BEPUL');
+  static String get txMoneyIn => _t('Money in', 'Пополнение', 'Kirim');
+  static String get txCommissionFee =>
+      _t('Commission fee', 'Комиссия', 'Komissiya');
+  static String get txKeptFree =>
+      _t('Regular — no fee', 'Постоянный — без сбора', 'Doimiy — bepul');
+  static String get dateToday => _t('Today', 'Сегодня', 'Bugun');
+  static String get dateYesterday =>
+      _t('Yesterday', 'Вчера', 'Kecha');
   static String get howFeesWork =>
       _t('How fees work', 'Как работают сборы', "To'lovlar qanday");
   static String get tierFreeTitle => _t('Calendar & walk-ins',
@@ -1292,6 +1306,38 @@ class L {
       'Войти в режим барбера', 'Barber rejimiga kirish');
   static String get biNext => _t('Continue', 'Далее', 'Davom etish');
   static String get biSkip => _t('Skip', 'Пропустить', "O'tkazib yuborish");
+
+  // ── Intro: how money & commissions work ──
+  static String get biMoneyTitle => _t('How you get paid',
+      'Как вы получаете деньги', 'Qanday pul olasiz');
+  static String get biMoneySub => _t(
+      'Simple and fair — you keep your price. Here is the whole deal.',
+      'Просто и честно — цена остаётся вашей. Вот и всё.',
+      "Sodda va halol — narx sizniki. Mana hammasi.");
+  static String get biMoneyKeepTitle => _t('You keep 100% of your price',
+      'Вы оставляете 100% цены', "Narxning 100% sizniki");
+  static String get biMoneyKeepSub => _t(
+      'Clients pay you directly for the cut. Fade never takes a slice of your work.',
+      'Клиенты платят вам напрямую. Fade не берёт долю с вашей работы.',
+      "Mijozlar to'g'ridan-to'g'ri sizga to'laydi. Fade ishingizdan ulush olmaydi.");
+  static String get biMoneyCommTitle => _t('Just 5% on new clients we bring',
+      'Всего 5% за новых клиентов', "Yangi mijoz uchun atigi 5%");
+  static String get biMoneyCommSub => _t(
+      "Only on their first visit. After that they're your regular — 0% forever.",
+      'Только за первый визит. Потом это ваш постоянный — 0% навсегда.',
+      "Faqat birinchi tashrifda. Keyin u doimiy — abadiy 0%.");
+  static String get biMoneyWalletTitle => _t("It's all in your wallet",
+      'Всё в вашем кошельке', "Hammasi hamyoningizda");
+  static String get biMoneyWalletSub => _t(
+      'Top up once; every fee and payout shows up as a clear transaction you can check.',
+      'Пополните один раз; каждый сбор и выплата — понятная запись.',
+      "Bir marta to'ldiring; har bir to'lov aniq yozuv bo'lib turadi.");
+  static String get biMoneyBoostTitle => _t('Boost & VIP are optional',
+      'Boost и VIP — по желанию', "Boost va VIP — ixtiyoriy");
+  static String get biMoneyBoostSub => _t(
+      'Pay only if you want the top spot. Never taken from your earnings.',
+      'Платите, только если хотите быть в топе. Из заработка не берётся.',
+      "Faqat tepada bo'lishni xohlasangiz to'laysiz. Daromaddan olinmaydi.");
 
   // ── QR scanner ──
   static String get scanOpenCamera => _t('Scan a QR code',

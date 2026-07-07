@@ -26,7 +26,7 @@ class BarberIntroScreen extends StatefulWidget {
 class _BarberIntroScreenState extends State<BarberIntroScreen> {
   final PageController _pc = PageController();
   int _page = 0;
-  static const int _last = 2;
+  static const int _last = 3;
 
   int _goal = AppState.instance.weeklyGoalSom;
 
@@ -88,7 +88,7 @@ class _BarberIntroScreenState extends State<BarberIntroScreen> {
                   const Spacer(),
                   SizedBox(
                     width: 42,
-                    child: _page == 2
+                    child: _page == _last
                         ? TextButton(
                             onPressed: _next,
                             child: Text(L.biSkip,
@@ -109,6 +109,7 @@ class _BarberIntroScreenState extends State<BarberIntroScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
                   _WelcomePage(),
+                  const _MoneyPage(),
                   _GoalPage(
                     goal: _goal,
                     onChanged: (v) => setState(() => _goal = v),
@@ -261,6 +262,144 @@ class _Perk extends StatelessWidget {
               style: AppTypography.bodySmall(context).copyWith(color: p.text)),
         ),
       ],
+    );
+  }
+}
+
+/// Page 2 — plain-language money & commissions, so a barber knows exactly how
+/// he gets paid before he ever takes a booking.
+class _MoneyPage extends StatelessWidget {
+  const _MoneyPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 30, 24, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Hero(
+            icon: Icons.account_balance_wallet_rounded,
+            title: L.biMoneyTitle,
+            sub: L.biMoneySub,
+          ),
+          const SizedBox(height: 28),
+          _MoneyRow(
+            index: 0,
+            icon: Icons.savings_rounded,
+            tint: AppColors.green,
+            title: L.biMoneyKeepTitle,
+            sub: L.biMoneyKeepSub,
+          ),
+          const SizedBox(height: 12),
+          _MoneyRow(
+            index: 1,
+            icon: Icons.person_add_alt_1_rounded,
+            tint: AppColors.accent,
+            title: L.biMoneyCommTitle,
+            sub: L.biMoneyCommSub,
+            badge: '5%',
+          ),
+          const SizedBox(height: 12),
+          _MoneyRow(
+            index: 2,
+            icon: Icons.receipt_long_rounded,
+            tint: AppColors.accent,
+            title: L.biMoneyWalletTitle,
+            sub: L.biMoneyWalletSub,
+          ),
+          const SizedBox(height: 12),
+          _MoneyRow(
+            index: 3,
+            icon: Icons.rocket_launch_rounded,
+            tint: AppColors.gold,
+            title: L.biMoneyBoostTitle,
+            sub: L.biMoneyBoostSub,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MoneyRow extends StatelessWidget {
+  const _MoneyRow({
+    required this.index,
+    required this.icon,
+    required this.tint,
+    required this.title,
+    required this.sub,
+    this.badge,
+  });
+  final int index;
+  final IconData icon;
+  final Color tint;
+  final String title;
+  final String sub;
+  final String? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return FadeSlideIn(
+      delay: Duration(milliseconds: 80 + index * 70),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: clayDecoration(p, radius: 18),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: tint.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Icon(icon, size: 22, color: tint),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(title,
+                            style: GoogleFonts.nunito(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              color: p.text,
+                            )),
+                      ),
+                      if (badge != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 9, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: tint.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(badge!,
+                              style: GoogleFonts.nunito(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                                color: tint,
+                              )),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(sub,
+                      style: AppTypography.bodySmall(context)
+                          .copyWith(height: 1.35)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/format/money.dart';
@@ -17,11 +17,11 @@ import '../payment/payment_sheet.dart';
 import 'boost_screen.dart';
 import 'vip_screen.dart';
 
-/// The barber's prepaid wallet — the monetization "vending machine", led by a
-/// skeuomorphic **coin wallet**: three metallic coins (Credit · Earned · Tips)
-/// poke out of a stitched teal→blue leather pocket that shows the embossed
-/// total, a weekly-gain delta, and Top-up · Activity · Boost. Below it float
-/// the frosted fee-tier slats, the white-label QR card, and the ledger.
+/// The barber's prepaid wallet — money only, kept simple to understand: a
+/// stitched teal→blue leather pocket with the balance and Top-up · Activity ·
+/// Boost, a plain-language "how fees work" list, and a clear transaction feed
+/// (money in vs. commission out, each with a date). No QR/sharing clutter —
+/// that lives on the profile's "Grow bookings" card.
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
 
@@ -94,20 +94,30 @@ class WalletScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                 ],
-                const SizedBox(height: 10),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 440),
-                  child: _LinkCard(link: s.barberLink),
-                ),
                 const SizedBox(height: 22),
                 FadeSlideIn(
-                  delay: const Duration(milliseconds: 480),
-                  child: Text(L.walletActivity, style: AppTypography.h3(context)),
+                  delay: const Duration(milliseconds: 440),
+                  child: Row(
+                    children: [
+                      Text(L.walletActivity,
+                          style: AppTypography.h3(context)),
+                      const Spacer(),
+                      _LegendChip(
+                          color: AppColors.green,
+                          sign: '＋',
+                          label: L.walletLegendIn),
+                      const SizedBox(width: 12),
+                      _LegendChip(
+                          color: AppColors.red,
+                          sign: '－',
+                          label: L.walletLegendFee),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
                 for (final (i, tx) in s.walletLedger.indexed)
                   FadeSlideIn(
-                    delay: Duration(milliseconds: 520 + i * 50),
+                    delay: Duration(milliseconds: 480 + i * 50),
                     child: _LedgerRow(tx: tx),
                   ),
               ],
@@ -123,7 +133,7 @@ class WalletScreen extends StatelessWidget {
             AppColors.green, '0%'),
         _Tier(Icons.person_add_alt_1_rounded, L.tierNewTitle, L.tierNewSub,
             AppColors.accent, '5%'),
-        _Tier(Icons.qr_code_2_rounded, L.tierRegularTitle, L.tierRegularSub,
+        _Tier(Icons.loyalty_rounded, L.tierRegularTitle, L.tierRegularSub,
             AppColors.green, '~0%'),
         _Tier(Icons.rocket_launch_rounded, L.tierVipTitle, L.tierVipSub,
             AppColors.gold, 'VIP'),
@@ -258,10 +268,7 @@ class _WalletPocketState extends State<_WalletPocket> {
                           style: balanceStyle,
                         ),
                       ),
-                const SizedBox(height: 16),
-                // The barber's scannable booking QR, tucked into the wallet.
-                _QrTicket(link: s.barberLink),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
@@ -360,63 +367,35 @@ void _showActivitySheet(BuildContext context) {
   );
 }
 
-/// A white "ticket" of the barber's booking QR, tucked into the wallet pocket.
-/// A regular who scans it books at 0% commission (Tier 3).
-class _QrTicket extends StatelessWidget {
-  const _QrTicket({required this.link});
-  final String link;
+/// A tiny legend chip under the Activity header — teaches the +/− convention.
+class _LegendChip extends StatelessWidget {
+  const _LegendChip(
+      {required this.color, required this.sign, required this.label});
+  final Color color;
+  final String sign;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            QrImageView(
-              data: 'https://$link',
-              version: QrVersions.auto,
-              size: 128,
-              backgroundColor: Colors.white,
-              eyeStyle: const QrEyeStyle(
-                eyeShape: QrEyeShape.circle,
-                color: AppColors.accentDeep,
-              ),
-              dataModuleStyle: const QrDataModuleStyle(
-                dataModuleShape: QrDataModuleShape.circle,
-                color: AppColors.accentDeep,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.qr_code_scanner_rounded,
-                    size: 13, color: Color(0xFF8A94A6)),
-                const SizedBox(width: 5),
-                Text(L.scanToBookMe,
-                    style: GoogleFonts.nunito(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF8A94A6),
-                    )),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(sign,
+            style: GoogleFonts.nunito(
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              color: color,
+            )),
+        if (label != null) ...[
+          const SizedBox(width: 4),
+          Text(label!,
+              style: GoogleFonts.nunito(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: Paper.of(context).textSecondary,
+              )),
+        ],
+      ],
     );
   }
 }
@@ -636,156 +615,54 @@ class _TierTileState extends State<_TierTile> {
   }
 }
 
-class _LinkCard extends StatelessWidget {
-  const _LinkCard({required this.link});
-  final String link;
-
-  @override
-  Widget build(BuildContext context) {
-    return PaperCard(
-      radius: 22,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.link_rounded,
-                  size: 20, color: AppColors.accent),
-              const SizedBox(width: 8),
-              Text(L.yourLinkLabel, style: AppTypography.h4(context)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  // "Engraved" groove — dark at the top, light at the bottom.
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0x22244A9E), Color(0x0AFFFFFF)],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    border: const Border(
-                      top: BorderSide(color: Color(0x33244A9E)),
-                      bottom: BorderSide(color: Color(0x80FFFFFF)),
-                    ),
-                  ),
-                  child: Text(link,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.nunito(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.accentDeep,
-                      )),
-                ),
-              ),
-              const SizedBox(width: 8),
-              _CopyKey(link: link),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(L.qrStickerHint, style: AppTypography.caption(context)),
-        ],
-      ),
-    );
-  }
-}
-
-class _CopyKey extends StatefulWidget {
-  const _CopyKey({required this.link});
-  final String link;
-
-  @override
-  State<_CopyKey> createState() => _CopyKeyState();
-}
-
-class _CopyKeyState extends State<_CopyKey> {
-  bool _down = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (_) => setState(() => _down = true),
-      onPointerUp: (_) => setState(() => _down = false),
-      onPointerCancel: (_) => setState(() => _down = false),
-      child: GestureDetector(
-        onTap: () {
-          Clipboard.setData(ClipboardData(text: 'https://${widget.link}'));
-          HapticFeedback.selectionClick();
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(
-              content: Text(L.linkCopiedToast),
-              behavior: SnackBarBehavior.floating,
-            ));
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 110),
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF429BFF), AppColors.accentDeep],
-            ),
-            borderRadius: BorderRadius.circular(12),
-            border:
-                Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.accent.withValues(alpha: 0.4),
-                blurRadius: _down ? 3 : 8,
-                offset: Offset(0, _down ? 1 : 4),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.copy_rounded, size: 18, color: Colors.white),
-        ),
-      ),
-    );
-  }
-}
-
+/// One transaction, as a self-contained card so it reads clearly: a coloured
+/// direction icon, what it was + when, and a signed amount. Money in is green
+/// with ＋; a commission fee is red with －; a regular kept free shows a FREE tag.
 class _LedgerRow extends StatelessWidget {
   const _LedgerRow({required this.tx});
   final WalletTx tx;
+
+  static String _relDate(DateTime at) {
+    final now = DateTime.now();
+    final d = DateTime(at.year, at.month, at.day);
+    final today = DateTime(now.year, now.month, now.day);
+    final diff = today.difference(d).inDays;
+    if (diff <= 0) return '${L.dateToday}, ${DateFormat('HH:mm').format(at)}';
+    if (diff == 1) return L.dateYesterday;
+    return DateFormat('d MMM').format(at);
+  }
 
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
     // A 0-fee debit = a returning regular kept free (Tier 3).
     final isFree = !tx.credit && tx.amountSom == 0;
-    final positive = tx.credit || isFree;
-    final tint = positive ? AppColors.green : AppColors.accent;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+    final Color tint = tx.credit
+        ? AppColors.green
+        : (isFree ? AppColors.gold : AppColors.red);
+    final IconData icon = tx.credit
+        ? Icons.south_west_rounded // money in
+        : (isFree ? Icons.favorite_rounded : Icons.north_east_rounded);
+    // What kind of line this is, in plain words (falls back to the tx sub).
+    final String kind = tx.credit
+        ? L.txMoneyIn
+        : (isFree ? L.txKeptFree : L.txCommissionFee);
+    final String caption = '$kind · ${_relDate(tx.at)}';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: clayDecoration(p, radius: 16),
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               color: tint.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(11),
-              border:
-                  Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              tx.credit
-                  ? Icons.add_rounded
-                  : (isFree
-                      ? Icons.favorite_rounded
-                      : Icons.content_cut_rounded),
-              size: 18,
-              color: tint,
-            ),
+            child: Icon(icon, size: 20, color: tint),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -793,25 +670,50 @@ class _LedgerRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(tx.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.nunito(
-                      fontSize: 14,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w800,
                       color: p.text,
                     )),
-                if (tx.sub != null)
-                  Text(tx.sub!, style: AppTypography.caption(context)),
+                const SizedBox(height: 2),
+                Text(caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.caption(context)),
               ],
             ),
           ),
-          Text(
-              isFree
-                  ? L.walkInFreeTag.split(' ').first // "FREE"
-                  : '${tx.credit ? '+' : '−'} ${Money.group(tx.amountSom)}',
-              style: GoogleFonts.nunito(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w900,
-                color: positive ? AppColors.green : p.text,
-              )),
+          const SizedBox(width: 8),
+          if (isFree)
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.green.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(L.walletFreeTag,
+                  style: GoogleFonts.nunito(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.green,
+                  )),
+            )
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('${tx.credit ? '＋' : '－'} ${Money.group(tx.amountSom)}',
+                    style: GoogleFonts.nunito(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: tx.credit ? AppColors.green : AppColors.red,
+                    )),
+                Text("so'm", style: AppTypography.caption(context)),
+              ],
+            ),
         ],
       ),
     );
