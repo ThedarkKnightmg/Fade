@@ -22,7 +22,7 @@ import 'barber_history_screen.dart';
 import 'shop_location_picker_screen.dart';
 import 'wallet_screen.dart';
 import 'boost_screen.dart';
-import 'vip_screen.dart';
+import 'vip_explainer_screen.dart';
 import '../settings/settings_screen.dart';
 import '../settings/support_sheet.dart';
 
@@ -455,7 +455,7 @@ class _VipSellCard extends StatelessWidget {
       onTap: () {
         HapticFeedback.selectionClick();
         Navigator.of(context)
-            .push(FadeThroughPageRoute(child: const VipScreen()));
+            .push(FadeThroughPageRoute(child: const VipExplainerScreen()));
       },
       behavior: HitTestBehavior.opaque,
       child: Container(

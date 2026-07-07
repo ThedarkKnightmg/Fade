@@ -15,7 +15,7 @@ import '../../../data/models/wallet_tx.dart';
 import '../../widgets/paper_kit.dart';
 import '../payment/payment_sheet.dart';
 import 'boost_screen.dart';
-import 'vip_screen.dart';
+import 'vip_explainer_screen.dart';
 
 /// The barber's prepaid wallet — money only, kept simple to understand: a
 /// stitched teal→blue leather pocket with the balance and Top-up · Activity ·
@@ -87,7 +87,7 @@ class WalletScreen extends StatelessWidget {
                       onTap: i == 3
                           ? () => Navigator.of(context).push(
                                 FadeThroughPageRoute(
-                                    child: const VipScreen()),
+                                    child: const VipExplainerScreen()),
                               )
                           : null,
                     ),

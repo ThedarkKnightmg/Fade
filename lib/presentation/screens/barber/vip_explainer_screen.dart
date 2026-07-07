@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/format/money.dart';
@@ -69,80 +70,100 @@ class VipExplainerScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: p.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                children: [
-                  Row(
+      // Rebuilds when VIP is activated so the hero + CTA flip to "active".
+      body: AnimatedBuilder(
+        animation: AppState.instance,
+        builder: (context, _) {
+          final s = AppState.instance;
+          final active = s.barberVip;
+          return SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
                     children: [
-                      CircleBtn(
-                        icon: Icons.arrow_back_rounded,
-                        size: 42,
-                        onTap: () => Navigator.of(context).maybePop(),
+                      Row(
+                        children: [
+                          CircleBtn(
+                            icon: Icons.arrow_back_rounded,
+                            size: 42,
+                            onTap: () => Navigator.of(context).maybePop(),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(L.tierVipTitle,
+                              style: AppTypography.h2(context)),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Text(L.tierVipTitle, style: AppTypography.h2(context)),
+                      const SizedBox(height: 16),
+                      FadeSlideIn(child: _Hero(active: active)),
+                      const SizedBox(height: 22),
+
+                      // Flagship perk #1 — the gold map pin, demonstrated.
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 80),
+                        child: _DemoCard(
+                          title: L.vipStandOutTitle,
+                          sub: L.vipStandOutSub,
+                          demo: const _StandOutDemo(),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Flagship perk #2 — rising to the top of search.
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 140),
+                        child: _DemoCard(
+                          title: L.vipRiseTitle,
+                          sub: L.vipRiseSub,
+                          demo: const _RiseDemo(),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Social-proof stat — the payoff, counted up.
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 200),
+                        child: const _ProofCard(),
+                      ),
+                      const SizedBox(height: 22),
+
+                      FadeSlideIn(
+                        delay: const Duration(milliseconds: 240),
+                        child: Text(L.vipEverythingTitle,
+                            style: AppTypography.h3(context)),
+                      ),
+                      const SizedBox(height: 12),
+                      for (final (i, perk) in perks.indexed)
+                        FadeSlideIn(
+                          delay: Duration(milliseconds: 280 + i * 70),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _PerkRow(
+                              perk: perk,
+                              // Tick pops just after the row settles.
+                              tickDelay:
+                                  Duration(milliseconds: 560 + i * 70),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  const FadeSlideIn(child: _Hero()),
-                  const SizedBox(height: 22),
-
-                  // Flagship perk #1 — the gold map pin, demonstrated.
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 80),
-                    child: _DemoCard(
-                      title: L.vipStandOutTitle,
-                      sub: L.vipStandOutSub,
-                      demo: const _StandOutDemo(),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Flagship perk #2 — rising to the top of search, demonstrated.
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 140),
-                    child: _DemoCard(
-                      title: L.vipRiseTitle,
-                      sub: L.vipRiseSub,
-                      demo: const _RiseDemo(),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Social-proof stat — the payoff, counted up.
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 200),
-                    child: const _ProofCard(),
-                  ),
-                  const SizedBox(height: 22),
-
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 240),
-                    child: Text(L.vipEverythingTitle,
-                        style: AppTypography.h3(context)),
-                  ),
-                  const SizedBox(height: 12),
-                  for (final (i, perk) in perks.indexed)
-                    FadeSlideIn(
-                      delay: Duration(milliseconds: 280 + i * 70),
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _PerkRow(perk: perk),
+                ),
+                active
+                    ? _ActiveBar(
+                        until: s.vipUntil == null
+                            ? ''
+                            : DateFormat('d MMM yyyy').format(s.vipUntil!),
+                      )
+                    : _CtaBar(
+                        price: L.vipPerMonth(_som(AppState.vipMonthlySom)),
+                        onActivate: () => _activate(context),
                       ),
-                    ),
-                ],
-              ),
+              ],
             ),
-            _CtaBar(
-              price: L.vipPerMonth(_som(AppState.vipMonthlySom)),
-              onActivate: () => _activate(context),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -150,7 +171,8 @@ class VipExplainerScreen extends StatelessWidget {
 
 // ── Hero ────────────────────────────────────────────────────────────────
 class _Hero extends StatelessWidget {
-  const _Hero();
+  const _Hero({this.active = false});
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -194,29 +216,63 @@ class _Hero extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Pulsing crown coin.
-                  ScaleIn(
-                    child: Breathe(
-                      period: const Duration(milliseconds: 2600),
-                      builder: (context, t) => Container(
-                        width: 62,
-                        height: 62,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.28),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.white
-                                  .withValues(alpha: 0.15 + 0.35 * t),
-                              blurRadius: 12 + 10 * t,
-                              spreadRadius: 1,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Pulsing crown coin.
+                      ScaleIn(
+                        child: Breathe(
+                          period: const Duration(milliseconds: 2600),
+                          builder: (context, t) => Container(
+                            width: 62,
+                            height: 62,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.28),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.white
+                                      .withValues(alpha: 0.15 + 0.35 * t),
+                                  blurRadius: 12 + 10 * t,
+                                  spreadRadius: 1,
+                                ),
+                              ],
                             ),
-                          ],
+                            child: const Icon(Icons.workspace_premium_rounded,
+                                color: Colors.white, size: 34),
+                          ),
                         ),
-                        child: const Icon(Icons.workspace_premium_rounded,
-                            color: Colors.white, size: 34),
                       ),
-                    ),
+                      const Spacer(),
+                      // "ACTIVE" ribbon once subscribed.
+                      if (active)
+                        ScaleIn(
+                          delay: const Duration(milliseconds: 320),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 11, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check_circle_rounded,
+                                    size: 14, color: _goldDeep),
+                                const SizedBox(width: 5),
+                                Text(L.vipActiveChip.toUpperCase(),
+                                    style: GoogleFonts.nunito(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.6,
+                                      color: _navy,
+                                    )),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -656,8 +712,9 @@ class _Perk {
 }
 
 class _PerkRow extends StatelessWidget {
-  const _PerkRow({required this.perk});
+  const _PerkRow({required this.perk, this.tickDelay = Duration.zero});
   final _Perk perk;
+  final Duration tickDelay;
 
   @override
   Widget build(BuildContext context) {
@@ -688,7 +745,14 @@ class _PerkRow extends StatelessWidget {
             ],
           ),
         ),
-        const Icon(Icons.check_circle_rounded, size: 18, color: AppColors.gold),
+        // The tick pops in just after the row settles — a small "included ✓".
+        ScaleIn(
+          delay: tickDelay,
+          from: 0.2,
+          duration: const Duration(milliseconds: 420),
+          child: const Icon(Icons.check_circle_rounded,
+              size: 19, color: AppColors.gold),
+        ),
       ],
     );
   }
@@ -751,6 +815,70 @@ class _CtaBar extends StatelessWidget {
             style: PrimaryButtonStyle.lime,
             height: 56,
             onPressed: onActivate,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sticky "already VIP" bar ────────────────────────────────────────────
+class _ActiveBar extends StatelessWidget {
+  const _ActiveBar({required this.until});
+  final String until;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+          20, 14, 20, 14 + MediaQuery.of(context).padding.bottom),
+      decoration: BoxDecoration(
+        color: p.card,
+        border: Border(top: BorderSide(color: p.border)),
+        boxShadow: [
+          BoxShadow(color: p.shadow, blurRadius: 18, offset: const Offset(0, -6)),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Softly pulsing gold crown coin — you're already in.
+          Breathe(
+            period: const Duration(milliseconds: 2600),
+            builder: (context, t) => Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                gradient: _goldGradient,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.gold.withValues(alpha: 0.3 + 0.35 * t),
+                    blurRadius: 10 + 10 * t,
+                    spreadRadius: -1,
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.workspace_premium_rounded,
+                  size: 24, color: _navy),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(L.vipYoureInTitle,
+                    style: GoogleFonts.nunito(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: p.text,
+                    )),
+                if (until.isNotEmpty)
+                  Text(L.vipActiveUntil(until),
+                      style: AppTypography.caption(context)),
+              ],
+            ),
           ),
         ],
       ),

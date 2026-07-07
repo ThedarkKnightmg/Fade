@@ -1904,4 +1904,6 @@ class L {
       _t('Everything included', 'Всё включено', 'Hammasi kiritilgan');
   static String get vipActivate =>
       _t('Activate VIP', 'Активировать VIP', 'VIPni faollashtirish');
+  static String get vipYoureInTitle =>
+      _t("You're VIP ✨", 'Вы VIP ✨', 'Siz VIP ✨');
 }
