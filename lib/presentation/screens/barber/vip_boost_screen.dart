@@ -12,6 +12,7 @@ import '../../../data/app_state.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../payment/payment_sheet.dart';
+import 'vip_explainer_screen.dart';
 
 /// The "Turbo Boost" hub. Two ways to jump to the top of the neighborhood:
 ///   • BARBER FUEL — cheap micro-transaction packs of "Ups" you keep in the
@@ -54,14 +55,10 @@ class VipBoostScreen extends StatelessWidget {
   }
 
   void _buyVip(BuildContext context) {
-    showPaymentSheet(
-      context,
-      title: L.tierVipTitle,
-      amountSom: AppState.vipMonthlySom,
-      onPaid: (_) {
-        AppState.instance.activateVipBoost();
-        _toast(context, L.vipActivated);
-      },
+    // Explain VIP with an animated walkthrough first, then let that screen
+    // lead into the payment sheet — never charge before it's understood.
+    Navigator.of(context).push(
+      FadeThroughPageRoute(child: const VipExplainerScreen()),
     );
   }
 

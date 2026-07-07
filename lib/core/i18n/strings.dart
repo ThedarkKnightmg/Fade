@@ -1810,4 +1810,38 @@ class L {
   // ── Misc ──────────────────────────────────────────────
   static String get verifiedWord => _t('verified', 'подтверждено', 'tasdiqlangan');
   static String get walletWord => _t('WALLET', 'КОШЕЛЁК', 'HAMYON');
+
+  // ── VIP explainer (animated walkthrough before payment) ──
+  static String get vipExplainTitle =>
+      _t('Become a VIP barber', 'Станьте VIP-барбером', "VIP barber bo'ling");
+  static String get vipExplainSub => _t(
+      "Here's exactly what VIP does for your chair — see it, then activate.",
+      'Вот что именно VIP даёт вашему креслу — посмотрите, затем активируйте.',
+      "VIP kresloingizga aynan nima berishini ko'ring — so'ng faollashtiring.");
+  static String get vipStandOutTitle =>
+      _t('Stand out on the map', 'Выделяйтесь на карте', 'Xaritada ajralib turing');
+  static String get vipStandOutSub => _t(
+      'Regular shops are small navy dots. VIP turns you into the gold pin clients spot first.',
+      'Обычные барбершопы — маленькие тёмные точки. VIP делает вас золотой меткой, которую замечают первой.',
+      "Oddiy barbershoplar — kichik to'q nuqtalar. VIP sizni mijozlar birinchi ko'radigan oltin belgiga aylantiradi.");
+  static String get vipRiseTitle => _t(
+      'Jump to the top of search', 'Поднимайтесь в топ поиска', 'Qidiruvda tepaga chiqing');
+  static String get vipRiseSub => _t(
+      'VIP lifts you above everyone nearby — first seen, first booked.',
+      'VIP поднимает вас выше всех рядом — вас видят и бронируют первыми.',
+      "VIP sizni yaqin-atrofdagilardan tepaga ko'taradi — birinchi ko'rinasiz, birinchi buyurtma olasiz.");
+  static String get vipYouPin => _t('YOU', 'ВЫ', 'SIZ');
+  static String get vipYouRow => _t('You · VIP', 'Вы · VIP', 'Siz · VIP');
+  static String get vipNearbyRow =>
+      _t('A barber nearby', 'Барбер рядом', 'Yaqindagi barber');
+  static String get vipProofSuffix =>
+      _t('more bookings', 'больше записей', "ko'proq buyurtma");
+  static String get vipProofSub => _t(
+      'VIP barbers fill more of their empty hours.',
+      'VIP-барберы заполняют больше пустых часов.',
+      "VIP barberlar bo'sh soatlarini ko'proq to'ldiradi.");
+  static String get vipEverythingTitle =>
+      _t('Everything included', 'Всё включено', 'Hammasi kiritilgan');
+  static String get vipActivate =>
+      _t('Activate VIP', 'Активировать VIP', 'VIPni faollashtirish');
 }
