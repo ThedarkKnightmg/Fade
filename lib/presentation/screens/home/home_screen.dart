@@ -848,52 +848,57 @@ class _QuickTile extends StatelessWidget {
     // phase (from the label) desyncs the hover so they don't bob in lockstep.
     final phase = (label.hashCode.abs() % 100) / 100.0;
     final Widget stickerBox = SizedBox(
-      width: 92,
-      height: 110,
+      width: 96,
+      height: 100,
       child: FittedBox(fit: BoxFit.contain, child: sticker),
     );
     return PressableScale(
       onTap: onTap,
       pressedScale: 0.96,
-      child: SizedBox(
-        height: 130,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // The box itself is unchanged (short + horizontal); the label sits
-            // inside it, to the right of the sticker.
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                height: 62,
-                // Label starts clear of the sticker (which ends at x≈84) so it
-                // is never covered; one clean line, same fixed size on all four.
-                padding: const EdgeInsets.fromLTRB(90, 8, 10, 8),
-                decoration: clayDecoration(p, radius: 20),
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.nunito(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
-                    color: p.text,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // The clay box is just a platform now; the sticker sits on it and
+          // pops above — the label lives OUTSIDE (below), so it has the full
+          // tile width and can never overflow or be covered.
+          SizedBox(
+            height: 98,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    height: 58,
+                    decoration: clayDecoration(p, radius: 20),
                   ),
                 ),
-              ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 4,
+                  child: Center(
+                    child: _Hover(phase: phase, child: stickerBox),
+                  ),
+                ),
+              ],
             ),
-            // The big 3D sticker stands OUTSIDE the box, popping above its top,
-            // gently hovering.
-            Positioned(
-              left: -8,
-              bottom: 8,
-              child: _Hover(phase: phase, child: stickerBox),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.nunito(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w800,
+              color: p.text,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
