@@ -663,12 +663,16 @@ class _PackCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(L.upsUnit(pack.count),
-                        style: GoogleFonts.nunito(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          color: p.text,
-                        )),
+                    Flexible(
+                      child: Text(L.upsUnit(pack.count),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.nunito(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: p.text,
+                          )),
+                    ),
                     if (best) ...[
                       const SizedBox(width: 8),
                       MiniPill(L.bestValue, style: MiniPillStyle.accent),

@@ -1252,7 +1252,47 @@ class AppState extends ChangeNotifier {
     return slug.isEmpty ? 'barber' : slug;
   }
 
-  String get barberLink => 'fade.app/b/$barberHandle';
+  // Base host for a barber's public booking link. Change this ONE constant to
+  // your deployed landing page (e.g. a free Cloudflare Worker at
+  // 'your-name.workers.dev') and every shared link points at the live page.
+  static const String bookingLinkBase = 'fade.app';
+
+  /// Display form (no scheme): fade.app/b/handle.
+  String get barberLink => '$bookingLinkBase/b/$barberHandle';
+
+  /// The full, tappable URL to share/copy — opens the barber's booking page.
+  String get barberBookingUrl => 'https://$barberLink';
+
+  /// Slugify any barber's name the same way [barberHandle] does.
+  static String handleFor(String name) {
+    final slug = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
+    return slug.isEmpty ? 'barber' : slug;
+  }
+
+  /// Resolve a scanned booking code — a full URL, 'fade.app/b/handle', or a
+  /// bare handle — to the shop that barber works at. Null if unknown.
+  Barbershop? shopFromBookingCode(String code) {
+    final handle = _handleFromCode(code);
+    if (handle == null) return null;
+    // The signed-in barber's own link points at the shop they work at.
+    if (handle == barberHandle) return meBarber.shop;
+    for (final shop in MockData.barbershops) {
+      for (final b in shop.barbers) {
+        if (handleFor(b.name) == handle) return shop;
+      }
+    }
+    return null;
+  }
+
+  static String? _handleFromCode(String code) {
+    var c = code.trim();
+    const marker = '/b/';
+    final idx = c.indexOf(marker);
+    if (idx >= 0) c = c.substring(idx + marker.length);
+    c = c.split('?').first.split('#').first.split('/').first;
+    final slug = c.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
+    return slug.isEmpty ? null : slug;
+  }
 
   // ═══════════════════ VIP Turbo Boost (Tier 4) ════════════════════════════
   // The paid accelerator a barber buys once the app proves it delivers clients:

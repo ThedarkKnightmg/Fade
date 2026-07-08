@@ -1036,6 +1036,32 @@ class L {
       'Bu QR orqali doimiylar 0% to\'laydi — koʻzguga yopishtiring.');
   static String get shareSticker =>
       _t('Share my QR', 'Поделиться QR', 'QR ulashish');
+  static String get inviteClientsTitle =>
+      _t('Invite clients', 'Пригласить клиентов', 'Mijoz taklif qiling');
+  static String get inviteClientsSub => _t(
+      'Send your link — friends book you in a tap',
+      'Отправьте ссылку — запишутся в один тап',
+      "Havolangizni yuboring — bir tegishda yoziladi");
+  static String get shareVerb => _t('Share', 'Поделиться', 'Ulashish');
+  static String get copyVerb => _t('Copy', 'Копировать', 'Nusxa');
+  static String shareInviteMsg(String url) => _t(
+      '✂️ Book your next haircut with me on Fade — $url',
+      '✂️ Записывайтесь ко мне на стрижку в Fade — $url',
+      "✂️ Fade orqali menga soch olishga yoziling — $url");
+  static String get showThisToClients => _t('Clients scan this to book you',
+      'Клиенты сканируют, чтобы записаться',
+      'Mijozlar buni skanerlab yoziladi');
+  // Client scanning a barber's code.
+  static String get scanBarberTitle =>
+      _t('Scan a barber', 'Сканировать барбера', 'Barberni skanerlash');
+  static String get scanBarberHint => _t(
+      "Point at a barber's Fade QR to book them",
+      'Наведите на QR барбера в Fade, чтобы записаться',
+      "Yozilish uchun barberning Fade QR-kodiga to'g'rilang");
+  static String get scanNoBarber => _t(
+      "That QR isn't a Fade barber link",
+      'Это не ссылка барбера Fade',
+      'Bu Fade barber havolasi emas');
   static String get linkCopiedToast =>
       _t('Link copied ✓', 'Ссылка скопирована ✓', 'Havola nusxalandi ✓');
   static String get getVipBoost => _t('Get VIP Boost', 'Купить VIP', 'VIP olish');

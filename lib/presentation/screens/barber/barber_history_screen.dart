@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/format/money.dart';
@@ -118,6 +121,13 @@ class _BarberHistoryScreenState extends State<BarberHistoryScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // ── Your shareable booking code, right at the top so it's the
+                //    first thing you can hand a client. ──
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: FadeSlideIn(child: const _InviteCard()),
+                ),
+                const SizedBox(height: 16),
                 // Tabs.
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -189,6 +199,159 @@ class _BarberHistoryScreenState extends State<BarberHistoryScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// The barber's own booking code — a scannable QR + link with Share/Copy, so a
+/// client can book them in a tap. The QR encodes the public booking URL; the
+/// client app's scanner resolves it back to this barber's shop.
+class _InviteCard extends StatelessWidget {
+  const _InviteCard();
+
+  Future<void> _share(BuildContext context) async {
+    final url = AppState.instance.barberBookingUrl;
+    final msg = L.shareInviteMsg(url);
+    // Telegram is the dominant channel here — open its share picker. If it
+    // isn't installed / can't open, fall back to copying the link.
+    final tg = Uri.parse('https://t.me/share/url'
+        '?url=${Uri.encodeComponent(url)}&text=${Uri.encodeComponent(msg)}');
+    var ok = false;
+    try {
+      ok = await launchUrl(tg, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      ok = false;
+    }
+    if (!ok && context.mounted) _copy(context);
+  }
+
+  void _copy(BuildContext context) {
+    final url = AppState.instance.barberBookingUrl;
+    Clipboard.setData(ClipboardData(text: url));
+    HapticFeedback.selectionClick();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(L.linkCopiedToast),
+        behavior: SnackBarBehavior.floating,
+      ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final s = AppState.instance;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: clayDecoration(p, radius: 20),
+      child: Row(
+        children: [
+          // Scannable QR of the booking URL.
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: p.border),
+            ),
+            child: QrImageView(
+              data: s.barberBookingUrl,
+              version: QrVersions.auto,
+              size: 76,
+              backgroundColor: Colors.white,
+              eyeStyle: const QrEyeStyle(
+                eyeShape: QrEyeShape.circle,
+                color: AppColors.accentDeep,
+              ),
+              dataModuleStyle: const QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.circle,
+                color: AppColors.accentDeep,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(L.inviteClientsTitle, style: AppTypography.h4(context)),
+                const SizedBox(height: 2),
+                Text(L.showThisToClients,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.bodySmall(context)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MiniBtn(
+                        icon: Icons.ios_share_rounded,
+                        label: L.shareVerb,
+                        filled: true,
+                        onTap: () => _share(context),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _MiniBtn(
+                      icon: Icons.copy_rounded,
+                      label: L.copyVerb,
+                      filled: false,
+                      onTap: () => _copy(context),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A compact pill button used in the invite card (filled = primary accent).
+class _MiniBtn extends StatelessWidget {
+  const _MiniBtn({
+    required this.icon,
+    required this.label,
+    required this.filled,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final bool filled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: filled ? AppColors.accent : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+          border: filled ? null : Border.all(color: p.border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                size: 15, color: filled ? Colors.white : p.textSecondary),
+            const SizedBox(width: 6),
+            Text(label,
+                style: GoogleFonts.nunito(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w900,
+                  color: filled ? Colors.white : p.textSecondary,
+                )),
+          ],
+        ),
       ),
     );
   }

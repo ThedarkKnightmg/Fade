@@ -10,7 +10,12 @@ import '../../../core/theme/app_colors.dart';
 /// [Navigator.pop], or null if the barber backs out. A framed cut-out with a
 /// sweeping laser line + corner brackets makes the target obvious.
 class QrScannerScreen extends StatefulWidget {
-  const QrScannerScreen({super.key});
+  const QrScannerScreen({super.key, this.title, this.hint});
+
+  /// Optional overrides so the same scanner reads correctly on both sides
+  /// (barber scanning a client's ticket vs. client scanning a barber's code).
+  final String? title;
+  final String? hint;
 
   @override
   State<QrScannerScreen> createState() => _QrScannerScreenState();
@@ -81,13 +86,13 @@ class _QrScannerScreenState extends State<QrScannerScreen>
             right: 24,
             child: Column(
               children: [
-                Text(L.scanClient,
+                Text(widget.title ?? L.scanClient,
                     style: GoogleFonts.nunito(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
                         color: Colors.white)),
                 const SizedBox(height: 6),
-                Text(L.scanPointHint,
+                Text(widget.hint ?? L.scanPointHint,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.nunito(
                         fontSize: 13.5,

@@ -21,6 +21,7 @@ import '../../../data/models/booking.dart';
 import '../../widgets/barbershop_card.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
+import '../barber/qr_scanner_screen.dart';
 import '../barbershop_detail/barbershop_detail_screen.dart';
 import '../location/address_picker_screen.dart';
 import '../map/shops_map_screen.dart';
@@ -44,6 +45,34 @@ class HomeScreen extends StatelessWidget {
   void _openMap(BuildContext context) {
     Navigator.of(context).push(
       FadeThroughPageRoute(child: const ShopsMapScreen()),
+    );
+  }
+
+  /// Scan a barber's Fade QR → jump straight to their shop to book.
+  Future<void> _openScanner(BuildContext context) async {
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => QrScannerScreen(
+          title: L.scanBarberTitle,
+          hint: L.scanBarberHint,
+        ),
+      ),
+    );
+    if (code == null || !context.mounted) return;
+    final shop = AppState.instance.shopFromBookingCode(code);
+    if (shop == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(L.scanNoBarber),
+          behavior: SnackBarBehavior.floating,
+        ));
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    Navigator.of(context).push(
+      FadeThroughPageRoute(child: BarbershopDetailScreen(shop: shop)),
     );
   }
 
@@ -398,6 +427,11 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    _RoundIcon(
+                      icon: Icons.qr_code_scanner_rounded,
+                      onTap: () => _openScanner(context),
+                    ),
+                    const SizedBox(width: 8),
                     _PointsPill(onTap: () => _showBonus(context)),
                   ],
                 ),
@@ -870,20 +904,17 @@ class _QuickTile extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(86, 8, 12, 8),
                 decoration: clayDecoration(p, radius: 20),
                 alignment: Alignment.centerLeft,
-                // Auto-shrink to one clean line so the bigger sticker never
-                // truncates the label.
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: GoogleFonts.nunito(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                      color: p.text,
-                    ),
+                // Fixed size + wrap so all four tiles read at the SAME scale.
+                // (FittedBox scale-down made every label a different size.)
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.nunito(
+                    fontSize: 13.5,
+                    height: 1.1,
+                    fontWeight: FontWeight.w800,
+                    color: p.text,
                   ),
                 ),
               ),
