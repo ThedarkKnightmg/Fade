@@ -831,9 +831,10 @@ class _QuickTile extends StatelessWidget {
                 width: s,
                 height: s,
                 fit: BoxFit.contain,
-                // Decode the ~1MB PNG down to display size so it never janks.
+                // Decode down to display size so it never janks. Width ONLY —
+                // giving both cacheWidth+cacheHeight force-decodes to a square
+                // and stretches any non-square sticker.
                 cacheWidth: 330,
-                cacheHeight: 330,
                 filterQuality: FilterQuality.medium,
                 // Missing PNG → fall back to the vector sticker.
                 errorBuilder: (_, __, ___) => SvgPicture.asset(
