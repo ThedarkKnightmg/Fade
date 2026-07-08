@@ -848,8 +848,8 @@ class _QuickTile extends StatelessWidget {
     // phase (from the label) desyncs the hover so they don't bob in lockstep.
     final phase = (label.hashCode.abs() % 100) / 100.0;
     final Widget stickerBox = SizedBox(
-      width: 106,
-      height: 124,
+      width: 92,
+      height: 110,
       child: FittedBox(fit: BoxFit.contain, child: sticker),
     );
     return PressableScale(
@@ -868,18 +868,17 @@ class _QuickTile extends StatelessWidget {
               bottom: 0,
               child: Container(
                 height: 62,
-                padding: const EdgeInsets.fromLTRB(86, 8, 12, 8),
+                // Label starts clear of the sticker (which ends at x≈84) so it
+                // is never covered; one clean line, same fixed size on all four.
+                padding: const EdgeInsets.fromLTRB(90, 8, 10, 8),
                 decoration: clayDecoration(p, radius: 20),
                 alignment: Alignment.centerLeft,
-                // Fixed size + wrap so all four tiles read at the SAME scale.
-                // (FittedBox scale-down made every label a different size.)
                 child: Text(
                   label,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.nunito(
                     fontSize: 13.5,
-                    height: 1.1,
                     fontWeight: FontWeight.w800,
                     color: p.text,
                   ),
@@ -889,8 +888,8 @@ class _QuickTile extends StatelessWidget {
             // The big 3D sticker stands OUTSIDE the box, popping above its top,
             // gently hovering.
             Positioned(
-              left: -6,
-              bottom: 6,
+              left: -8,
+              bottom: 8,
               child: _Hover(phase: phase, child: stickerBox),
             ),
           ],

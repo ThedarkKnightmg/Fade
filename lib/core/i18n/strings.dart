@@ -468,16 +468,16 @@ class L {
       _t('$n reviews', '$n отзывов', '$n sharh');
 
   // ── Home quick actions ────────────────────────────────
-  static String get quickBook => _t('Book a cut', 'Записаться', 'Yozilish');
+  static String get quickBook => _t('Book', 'Запись', 'Yozilish');
   static String get quickBookSub =>
       _t('find your barber', 'найти барбера', 'barber topish');
-  static String get quickAi => _t('AI try-on', 'AI-примерка', 'AI sinash');
+  static String get quickAi => _t('AI style', 'AI-стиль', 'AI sinash');
   static String get quickAiSub =>
       _t('see your style', 'ваш новый образ', 'yangi uslub');
   static String get quickNear => _t('Near me', 'Рядом', 'Yaqinda');
   static String get quickNearSub =>
       _t('shops on map', 'на карте', 'xaritada');
-  static String get quickCuts => _t('My cuts', 'Мои записи', 'Yozuvlarim');
+  static String get quickCuts => _t('Visits', 'Визиты', 'Yozuvlar');
   static String get quickCutsSub =>
       _t('your visits', 'ваши визиты', 'tashriflar');
 
