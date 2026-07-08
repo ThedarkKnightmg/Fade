@@ -15,6 +15,8 @@ import '../../widgets/primary_button.dart';
 import '../../widgets/referral_card.dart';
 import '../atelier/atelier_screen.dart';
 import '../auth/login_screen.dart';
+import '../barber/qr_scanner_screen.dart';
+import '../barbershop_detail/barbershop_detail_screen.dart';
 import '../booking/booking_flow_screen.dart';
 import '../onboarding/barber_intro_screen.dart';
 import '../settings/settings_screen.dart';
@@ -26,6 +28,34 @@ class ProfileScreen extends StatelessWidget {
   void _openSettings(BuildContext context) {
     Navigator.of(context).push(
       FadeThroughPageRoute(child: const SettingsScreen()),
+    );
+  }
+
+  /// Scan a barber's Fade QR → jump straight to their shop to book.
+  Future<void> _openScanner(BuildContext context) async {
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => QrScannerScreen(
+          title: L.scanBarberTitle,
+          hint: L.scanBarberHint,
+        ),
+      ),
+    );
+    if (code == null || !context.mounted) return;
+    final shop = AppState.instance.shopFromBookingCode(code);
+    if (shop == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(L.scanNoBarber),
+          behavior: SnackBarBehavior.floating,
+        ));
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    Navigator.of(context).push(
+      FadeThroughPageRoute(child: BarbershopDetailScreen(shop: shop)),
     );
   }
 
@@ -449,6 +479,13 @@ class ProfileScreen extends StatelessWidget {
                       horizontal: 16, vertical: 6),
                   child: Column(
                     children: [
+                      _SettingRow(
+                        icon: Icons.qr_code_scanner_rounded,
+                        label: L.scanBarberTitle,
+                        tint: AppColors.accent,
+                        onTap: () => _openScanner(context),
+                      ),
+                      Divider(color: p.divider, height: 1),
                       _SettingRow(
                         icon: Icons.dark_mode_rounded,
                         label: L.darkMode,
