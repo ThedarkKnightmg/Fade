@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/app_state.dart';
+import '../../widgets/paper_kit.dart';
 import 'barber_dashboard_screen.dart';
 import 'barber_messages_screen.dart';
 import 'barber_profile_screen.dart';
@@ -119,30 +120,17 @@ class _BarberNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // Reference layout, same as the client bar — a minimal floating pill with
-    // circular slots, no labels — but THEME-coloured, not black. The badge
-    // stays on Requests.
+    // Clean clay pill, same as the client bar — icons with a glowing active-dot
+    // underneath, no per-tab circles. The badge stays on Requests.
     return AnimatedBuilder(
       animation: AppState.instance,
       builder: (context, _) {
         final pending = AppState.instance.incomingRequests.length;
         return Container(
-          height: 72,
+          height: 68,
           margin: EdgeInsets.fromLTRB(
               16, 0, 16, 12 + MediaQuery.of(context).padding.bottom),
-          decoration: BoxDecoration(
-            color: p.card,
-            borderRadius: BorderRadius.circular(36),
-            border: Border.all(color: p.border),
-            boxShadow: [
-              BoxShadow(
-                color: p.shadow,
-                blurRadius: 24,
-                spreadRadius: -4,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
+          decoration: clayDecoration(p, radius: 26),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -187,44 +175,35 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // Same slot treatment as the client bar: a circle that lights up with the
-    // accent when selected, grey glyph otherwise. Minimal — no label.
+    // Clean tab: just the glyph (with the Requests badge), and a glowing accent
+    // dot that grows in underneath the selected one. No circular slot.
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 56,
-        height: 72,
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: selected
-                  ? AppColors.accent.withValues(alpha: 0.14)
-                  : p.textTertiary.withValues(alpha: 0.08),
-            ),
-            child: Stack(
+        width: 54,
+        height: 68,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
               clipBehavior: Clip.none,
               alignment: Alignment.center,
               children: [
                 AnimatedScale(
-                  scale: selected ? 1.08 : 1.0,
+                  scale: selected ? 1.18 : 1.0,
                   duration: const Duration(milliseconds: 320),
                   curve: Curves.easeOutCubic,
                   child: Icon(
                     icon,
-                    size: 24,
+                    size: 25,
                     color: selected ? AppColors.accent : p.textTertiary,
                   ),
                 ),
                 if (badge > 0)
                   Positioned(
-                    right: 4,
-                    top: 6,
+                    right: -6,
+                    top: -6,
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       constraints:
@@ -247,7 +226,27 @@ class _NavItem extends StatelessWidget {
                   ),
               ],
             ),
-          ),
+            const SizedBox(height: 5),
+            // A glowing dot slides/grows in under the selected tab.
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOut,
+              width: selected ? 6 : 0,
+              height: 6,
+              decoration: BoxDecoration(
+                color: AppColors.accent,
+                shape: BoxShape.circle,
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.accent.withValues(alpha: 0.7),
+                          blurRadius: 8,
+                        )
+                      ]
+                    : null,
+              ),
+            ),
+          ],
         ),
       ),
     );
