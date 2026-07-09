@@ -1286,9 +1286,10 @@ class _BonusSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // The ONE loyalty goal, shared with the ticket + punch card.
+    // The ONE loyalty metric, shared with the ticket + punch card — real
+    // completed visits (no cosmetic +11 baseline that pinned the bar full).
     const goal = AppState.vipStreakGoal;
-    final cuts = AppState.instance.totalCuts;
+    final cuts = AppState.instance.loyaltyVisits;
     final pct = (cuts / goal).clamp(0.0, 1.0);
     final remaining = goal - cuts;
     final streak = 2 + (cuts % 7);

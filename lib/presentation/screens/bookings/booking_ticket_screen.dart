@@ -28,7 +28,7 @@ class BookingTicketScreen extends StatelessWidget {
         animation: AppState.instance,
         builder: (context, _) {
           final s = AppState.instance;
-          final visits = s.bookingsByStatus(BookingStatus.completed).length;
+          final visits = s.loyaltyVisits; // the ONE shared loyalty metric
           final atVip = visits >= AppState.vipStreakGoal;
           final progress = (visits / AppState.vipStreakGoal).clamp(0.0, 1.0);
           return SafeArea(

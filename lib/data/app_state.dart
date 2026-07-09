@@ -852,6 +852,7 @@ class AppState extends ChangeNotifier {
     }
     _setBookingStatus(id, BookingStatus.completed);
     _chargeCommission(id); // the app delivered this client → small fee
+    if (b.clientName == null) _awardVisitPerk(b); // loyalty pass earned by visit
   }
   // No-show marking records a fee intent (see the no-show shield below), so the
   // existing barber schedule button becomes shield-aware with no UI change.
@@ -1534,6 +1535,21 @@ class AppState extends ChangeNotifier {
       .toList()
     ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
+  /// Resolve a scanned ticket's booking id to a checkable booking — INCLUDES
+  /// the user's own bookings (clientName == null), which the client ticket QR
+  /// encodes. Without this the handshake only ever worked on seeded demo
+  /// clients, never on a real client's ticket. Null if not checkable.
+  Booking? scannableById(String bookingId) {
+    for (final b in _bookings) {
+      if (b.id != bookingId) continue;
+      if (b.verifiedAt != null || b.status != BookingStatus.upcoming) {
+        return null;
+      }
+      return b;
+    }
+    return null;
+  }
+
   /// Overdue bookings (15+ min past, not checked in) — the no-show fail-safe.
   List<Booking> overdueBookings() {
     final now = DateTime.now();
@@ -1544,8 +1560,10 @@ class AppState extends ChangeNotifier {
   /// Review gating: you can only review a shop you've actually engaged with (a
   /// verified visit in production; here: any of your own bookings there), so a
   /// barber can't harvest reviews from people who never came.
-  bool canReviewShop(String shopId) => _bookings
-      .any((b) => b.clientName == null && b.barbershop.id == shopId);
+  bool canReviewShop(String shopId) => _bookings.any((b) =>
+      b.clientName == null &&
+      b.barbershop.id == shopId &&
+      b.status == BookingStatus.completed);
 
   // === Working hours (barber-configurable) ===
   // Drives the schedule grid's open/close and the bookable slot range.
@@ -1858,6 +1876,29 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Loyalty passes are EARNED by completing a visit, not by requesting a
+  // booking — dedup by booking id so a booking grants at most one, ever.
+  final Set<String> _awardedPerkBookings = {};
+  void _awardVisitPerk(Booking b) {
+    if (_awardedPerkBookings.contains(b.id)) return;
+    _awardedPerkBookings.add(b.id);
+    final roll = b.id.hashCode.abs() % 100;
+    final perk = roll < 8
+        ? 'priority'
+        : roll < 22
+            ? 'skip'
+            : roll < 42
+                ? 'double'
+                : null;
+    if (perk != null) _perks.add(perk);
+  }
+
+  /// The ONE loyalty metric shown across the app — completed visits toward VIP
+  /// (no cosmetic baseline), so the home sheet, ticket, and punch card agree.
+  int get loyaltyVisits => _bookings
+      .where((b) => b.clientName == null && b.status == BookingStatus.completed)
+      .length;
+
   AppLanguage _language = AppLanguage.en;
   AppLanguage get language => _language;
   void setLanguage(AppLanguage value) {
@@ -2067,6 +2108,9 @@ class AppState extends ChangeNotifier {
     _perks
       ..clear()
       ..addAll(sp.getStringList('perks') ?? const []);
+    _awardedPerkBookings
+      ..clear()
+      ..addAll(sp.getStringList('awardedPerks') ?? const []);
     final lang = sp.getString('lang');
     if (lang != null) {
       _language = AppLanguage.values
@@ -2276,6 +2320,7 @@ class AppState extends ChangeNotifier {
     await sp.setString(
         'services', jsonEncode(_myServices.map(_serviceToMap).toList()));
     await sp.setString('breaks', jsonEncode(_breaks.map(_breakToMap).toList()));
+    await sp.setStringList('awardedPerks', _awardedPerkBookings.toList());
   }
 
   static Future<void> _putEpoch(

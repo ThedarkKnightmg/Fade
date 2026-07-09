@@ -53,11 +53,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
       _look = HairData.byId(id);
       AppState.instance.clearDesiredStyle();
     }
-    // The pass is real: persist it so it shows up in the home bonus sheet
-    // instead of vanishing when this screen pops.
-    if (_reward.id.isNotEmpty) {
-      AppState.instance.addPerk(_reward.id);
-    }
+    // The reward is EARNED when the visit is completed (AppState._awardVisitPerk
+    // uses the same deterministic roll on this booking id) — NOT on the request,
+    // so passes can't be farmed by re-booking without ever showing up.
   }
 
   @override
@@ -367,9 +365,9 @@ class _LoyaltyMini extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // One shared loyalty goal everywhere (home sheet, ticket, punch card).
+    // One shared loyalty metric everywhere (home sheet, ticket, punch card).
     const goal = AppState.vipStreakGoal;
-    final cuts = AppState.instance.totalCuts;
+    final cuts = AppState.instance.loyaltyVisits;
     final into = cuts % goal;
     final unlocked = into == 0;
     final remaining = unlocked ? 0 : goal - into;

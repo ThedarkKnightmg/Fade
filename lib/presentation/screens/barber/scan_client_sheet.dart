@@ -73,14 +73,11 @@ class _ScanClientSheetState extends State<_ScanClientSheet> {
     if (parts.length >= 3 && parts[0] == 'fade' && parts[1] == 'ticket') {
       bookingId = parts[2];
     }
-    final scannable = AppState.instance.todayScannable;
-    Booking? match;
-    for (final b in scannable) {
-      if (b.id == bookingId) {
-        match = b;
-        break;
-      }
-    }
+    // Match by id against ALL checkable bookings — including the user's own
+    // (clientName == null), which the client's ticket QR actually encodes.
+    final match = bookingId == null
+        ? null
+        : AppState.instance.scannableById(bookingId);
     if (match != null) {
       await _verify(match);
     } else {
