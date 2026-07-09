@@ -1057,13 +1057,21 @@ class AppState extends ChangeNotifier {
   // [isWalkIn], so it shows on the schedule AND greys the slot for clients.
 
   /// Log a walk-in on the signed-in barber's calendar. No commission, no ledger.
-  void addWalkIn({
+  /// Returns false if the chosen slot already holds a booking/walk-in
+  /// (anti-double-booking, now enforced in BOTH directions).
+  bool addWalkIn({
     required DateTime dateTime,
     required String name,
     required BarberService service,
     String? note,
   }) {
     final me = meBarber;
+    final aligned = DateTime(dateTime.year, dateTime.month, dateTime.day,
+        dateTime.hour, dateTime.minute >= 30 ? 30 : 0);
+    if (blockedSlotsFor(shopId: me.shop.id, barberId: me.barber.id, day: dateTime)
+        .contains(aligned)) {
+      return false;
+    }
     _bookings.add(Booking(
       id: 'walkin_${DateTime.now().microsecondsSinceEpoch}',
       barbershop: me.shop,
@@ -1076,6 +1084,7 @@ class AppState extends ChangeNotifier {
       note: (note == null || note.trim().isEmpty) ? null : note.trim(),
     ));
     notifyListeners();
+    return true;
   }
 
   void removeWalkIn(String id) {
@@ -1092,6 +1101,18 @@ class AppState extends ChangeNotifier {
     required DateTime day,
   }) {
     final out = <DateTime>{};
+    // Block every 30-min slot the interval [start, start+minutes) touches, so a
+    // long/combo cut (or a break) occupies its WHOLE duration, not just its start.
+    void blockSpan(DateTime start, int minutes) {
+      final end = start.add(Duration(minutes: minutes));
+      var t = DateTime(start.year, start.month, start.day, start.hour,
+          start.minute >= 30 ? 30 : 0);
+      while (t.isBefore(end)) {
+        out.add(t);
+        t = t.add(const Duration(minutes: 30));
+      }
+    }
+
     for (final b in _bookings) {
       if (b.barbershop.id != shopId) continue;
       if (barberId != null && b.barber.id != barberId) continue;
@@ -1099,11 +1120,27 @@ class AppState extends ChangeNotifier {
       if (b.isWalkIn ||
           b.status == BookingStatus.requested ||
           b.status == BookingStatus.upcoming) {
-        out.add(b.dateTime);
+        blockSpan(b.dateTime, b.service.durationMinutes);
+      }
+    }
+    // The barber's breaks (lunch, etc.) block their own shop's client slots too.
+    if (shopId == meBarber.shop.id) {
+      for (final br in barberBreaksOn(day)) {
+        blockSpan(br.startOn(day), br.durationMinutes);
       }
     }
     return out;
   }
+
+  /// Hours for a given shop. The signed-in barber's custom hours apply ONLY to
+  /// the shop they registered at; every other shop uses the default 9–21, so a
+  /// barber's schedule can't bound the availability of shops they don't work at.
+  (int, int) shopHours(String shopId) =>
+      _registeredBarber?.shopId == shopId ? (_workStart, _workEnd) : (9, 21);
+
+  /// Off-days for a given shop (empty for shops the barber doesn't own).
+  Set<int> shopOffDays(String shopId) =>
+      _registeredBarber?.shopId == shopId ? _offDays : const <int>{};
 
   // === Calendar sync (stub connection; real two-way OAuth = backend) ===
   bool _googleCalConnected = false;
@@ -1322,8 +1359,12 @@ class AppState extends ChangeNotifier {
   /// month. (Break-even vs. the 200k subscription is ~8M so'm of monthly
   /// bookings — above that the barber comes out ahead on fees alone.)
   int get vipMonthlyFeeSavingEstSom {
+    final start = DateTime(DateTime.now().year, DateTime.now().month, 1);
     final bookedSomThisMonth = _bookings
-        .where((b) => !b.isWalkIn && b.status == BookingStatus.completed)
+        .where((b) =>
+            !b.isWalkIn &&
+            b.status == BookingStatus.completed &&
+            !b.dateTime.isBefore(start))
         .fold<int>(0, (sum, b) => sum + Money.toSom(b.service.price));
     return (bookedSomThisMonth * 2.5 / 100).round();
   }
@@ -1333,9 +1374,16 @@ class AppState extends ChangeNotifier {
   // delivers — the nudge point where VIP's 2.5% starts paying for itself. It
   // doesn't auto-grant VIP; it's the psychological trigger to subscribe.
   static const int vipMilestoneGoal = 20;
-  int get completedBookingsThisMonth => _bookings
-      .where((b) => !b.isWalkIn && b.status == BookingStatus.completed)
-      .length;
+  int get completedBookingsThisMonth {
+    final start = DateTime(DateTime.now().year, DateTime.now().month, 1);
+    return _bookings
+        .where((b) =>
+            !b.isWalkIn &&
+            b.status == BookingStatus.completed &&
+            !b.dateTime.isBefore(start))
+        .length;
+  }
+
   bool get vipMilestoneReached =>
       completedBookingsThisMonth >= vipMilestoneGoal;
 
@@ -1392,6 +1440,12 @@ class AppState extends ChangeNotifier {
   /// Up OR an active VIP subscription. (A future map/roster can read this to
   /// gold-pin + float them to the top.)
   bool get barberBoosted => boostActive || barberVip;
+
+  /// A shop the client should see floated to the top of lists + gold-pinned on
+  /// the map — the signed-in barber's own shop while they have an active Boost
+  /// or VIP. Makes the placement perk observable in-app.
+  bool shopIsBoosted(String shopId) =>
+      barberBoosted && _registeredBarber?.shopId == shopId;
 
   /// Buy a Fuel pack — provider-handoff stub; adds Ups to the wallet.
   void buyBoostPack(String packId) {

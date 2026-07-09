@@ -14,6 +14,7 @@ import '../../../core/location/geo_position.dart';
 import '../../../core/map/fast_tiles.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../data/app_state.dart';
 import '../../../data/map_listings.dart';
 import '../../../data/mock_data.dart';
 import '../../../data/models/barbershop.dart';
@@ -133,7 +134,9 @@ class _ShopsMapScreenState extends State<ShopsMapScreen>
           lat: shops[i].lat,
           lng: shops[i].lng,
           fromUsd: _fromUsd(shops[i], i),
-          hot: shops[i].isPremium,
+          // Gold pin for premium shops AND the barber's own boosted/VIP shop.
+          hot: shops[i].isPremium ||
+              AppState.instance.shopIsBoosted(shops[i].id),
           featured: true,
           shopIndex: i,
         ),

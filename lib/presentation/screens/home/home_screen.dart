@@ -585,18 +585,29 @@ class _ShopsSectionState extends State<_ShopsSection> {
 
   List<Barbershop> _list() {
     final s = widget.shops;
+    // A boosted/VIP barber's own shop floats to the very top (perk made real).
+    List<Barbershop> boostedFirst(List<Barbershop> xs) {
+      final st = AppState.instance;
+      return [
+        ...xs.where((x) => st.shopIsBoosted(x.id)),
+        ...xs.where((x) => !st.shopIsBoosted(x.id)),
+      ];
+    }
+
     switch (_f) {
       case _HomeFilter.all:
-        return [
+        return boostedFirst([
           ...s.where((x) => x.isPremium),
           ...s.where((x) => !x.isPremium),
-        ];
+        ]);
       case _HomeFilter.premium:
-        return s.where((x) => x.isPremium).toList();
+        return boostedFirst(s.where((x) => x.isPremium).toList());
       case _HomeFilter.top:
-        return [...s]..sort((a, b) => b.rating.compareTo(a.rating));
+        return boostedFirst(
+            [...s]..sort((a, b) => b.rating.compareTo(a.rating)));
       case _HomeFilter.budget:
-        return [...s]..sort((a, b) => a.priceLevel.compareTo(b.priceLevel));
+        return boostedFirst(
+            [...s]..sort((a, b) => a.priceLevel.compareTo(b.priceLevel)));
     }
   }
 

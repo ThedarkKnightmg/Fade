@@ -59,9 +59,10 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
       _barberId = widget.shop.barbers.first.id;
     }
     final now = DateTime.now();
-    final hours = AppState.instance;
+    final (startHour, endHour) =
+        AppState.instance.shopHours(widget.shop.id);
     final todayLeft = MockData.timeSlotsFor(now,
-            startHour: hours.workStartHour, endHour: hours.workEndHour)
+            startHour: startHour, endHour: endHour)
         .any((t) => t.isAfter(now.add(const Duration(minutes: 30))));
     if (!todayLeft) _dateIndex = 1;
     // Open booking-ready: pre-select the first free slot so the Book CTA is
@@ -85,10 +86,11 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
 
   List<DateTime> get _slots {
     final day = _days[_dateIndex];
-    final now = DateTime.now();
     final s = AppState.instance;
-    return MockData.timeSlotsFor(day,
-            startHour: s.workStartHour, endHour: s.workEndHour)
+    if (s.shopOffDays(widget.shop.id).contains(day.weekday)) return const [];
+    final now = DateTime.now();
+    final (startHour, endHour) = s.shopHours(widget.shop.id);
+    return MockData.timeSlotsFor(day, startHour: startHour, endHour: endHour)
         .where((t) =>
             _dateIndex > 0 ||
             t.isAfter(now.add(const Duration(minutes: 30))))
@@ -100,11 +102,12 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
   Set<DateTime> get _bookedSlots {
     final day = _days[_dateIndex];
     final s = AppState.instance;
+    final (startHour, endHour) = s.shopHours(widget.shop.id);
     final mock = MockData.bookedSlotsFor(day,
         shopId: widget.shop.id,
         barberId: _barberId,
-        startHour: s.workStartHour,
-        endHour: s.workEndHour);
+        startHour: startHour,
+        endHour: endHour);
     final mine = [
       ...AppState.instance.bookingsByStatus(BookingStatus.requested),
       ...AppState.instance.bookingsByStatus(BookingStatus.upcoming),

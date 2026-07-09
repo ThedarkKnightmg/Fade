@@ -59,8 +59,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     // hours the slot list uses, so the auto-advance matches what's shown.
     final now = DateTime.now();
     final s = AppState.instance;
+    final (startHour, endHour) = s.shopHours(widget.shop.id);
     final todayLeft = MockData.timeSlotsFor(now,
-            startHour: s.workStartHour, endHour: s.workEndHour)
+            startHour: startHour, endHour: endHour)
         .any((t) => t.isAfter(now.add(const Duration(minutes: 30))));
     if (!todayLeft) _dateIndex = 1;
   }
@@ -73,10 +74,12 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
   List<DateTime> get _slots {
     final day = _days[_dateIndex];
-    final now = DateTime.now();
     final s = AppState.instance;
-    return MockData.timeSlotsFor(day,
-            startHour: s.workStartHour, endHour: s.workEndHour)
+    // A day the barber marked off has no bookable slots.
+    if (s.shopOffDays(widget.shop.id).contains(day.weekday)) return const [];
+    final now = DateTime.now();
+    final (startHour, endHour) = s.shopHours(widget.shop.id);
+    return MockData.timeSlotsFor(day, startHour: startHour, endHour: endHour)
         .where((t) =>
             _dateIndex > 0 ||
             t.isAfter(now.add(const Duration(minutes: 30))))
@@ -88,11 +91,12 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   Set<DateTime> get _booked {
     final day = _days[_dateIndex];
     final s = AppState.instance;
+    final (startHour, endHour) = s.shopHours(widget.shop.id);
     final mock = MockData.bookedSlotsFor(day,
         shopId: widget.shop.id,
         barberId: _barberId,
-        startHour: s.workStartHour,
-        endHour: s.workEndHour);
+        startHour: startHour,
+        endHour: endHour);
     // The user's own slots that hold time: pending requests + confirmed.
     final mine = [
       ...AppState.instance.bookingsByStatus(BookingStatus.requested),

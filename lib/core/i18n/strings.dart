@@ -1072,6 +1072,10 @@ class L {
       "Yakunlash uchun hamyonni to'ldiring");
   static String get scanAlreadyDone => _t(
       'Already checked in', 'Уже отмечен', 'Allaqachon belgilangan');
+  static String get slotTakenWarn => _t(
+      'That slot is already taken',
+      'Это время уже занято',
+      "Bu vaqt allaqachon band");
   static String get linkCopiedToast =>
       _t('Link copied ✓', 'Ссылка скопирована ✓', 'Havola nusxalandi ✓');
   static String get getVipBoost => _t('Get VIP Boost', 'Купить VIP', 'VIP olish');

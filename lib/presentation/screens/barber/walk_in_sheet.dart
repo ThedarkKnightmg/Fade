@@ -66,10 +66,22 @@ class _WalkInSheetState extends State<_WalkInSheet> {
     if (svc == null) return;
     final d = widget.day;
     final when = DateTime(d.year, d.month, d.day, _time.hour, _time.minute);
-    AppState.instance.addWalkIn(dateTime: when, name: _name.text, service: svc);
+    final ok = AppState.instance
+        .addWalkIn(dateTime: when, name: _name.text, service: svc);
+    final messenger = ScaffoldMessenger.of(context);
+    if (!ok) {
+      HapticFeedback.heavyImpact();
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(L.slotTakenWarn),
+          behavior: SnackBarBehavior.floating,
+        ));
+      return;
+    }
     HapticFeedback.mediumImpact();
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context)
+    messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
         content: Text(L.walkInAdded),
