@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart'
     show CupertinoSliverRefreshControl, RefreshIndicatorMode;
@@ -750,7 +749,7 @@ class _QuickActions extends StatelessWidget {
                   label: L.quickBook,
                   sub: L.quickBookSub,
                   asset: 'assets/tiles/book.png',
-                  stickerScale: 1.6,
+                  stickerScale: 1.4,
                   onTap: onBook,
                 ),
               ),
@@ -862,9 +861,7 @@ class _QuickTile extends StatelessWidget {
                 ),
               );
 
-    // Big 3D sticker that pops above the box and gently hovers. A per-tile
-    // phase (from the label) desyncs the hover so they don't bob in lockstep.
-    final phase = (label.hashCode.abs() % 100) / 100.0;
+    // Big 3D sticker that sits on the box (static — no hover/float).
     final Widget stickerBox = SizedBox(
       width: 96 * stickerScale,
       height: 100 * stickerScale,
@@ -896,10 +893,10 @@ class _QuickTile extends StatelessWidget {
                 Positioned(
                   left: 0,
                   right: 0,
-                  bottom: 4,
-                  child: Center(
-                    child: _Hover(phase: phase, child: stickerBox),
-                  ),
+                  // Bigger stickers sit a touch lower so they don't pop up as
+                  // high above the box (kept above the label, never over it).
+                  bottom: 4 - (stickerScale - 1.0) * 22,
+                  child: Center(child: stickerBox),
                 ),
               ],
             ),
@@ -918,44 +915,6 @@ class _QuickTile extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Gently hovers its child up and down (a soft float). [phase] offsets the
-/// cycle so several hovering stickers don't bob in unison.
-class _Hover extends StatefulWidget {
-  const _Hover({required this.child, this.phase = 0});
-  final Widget child;
-  final double phase;
-
-  @override
-  State<_Hover> createState() => _HoverState();
-}
-
-class _HoverState extends State<_Hover> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2800),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (_, child) {
-        // Smooth sine bob — only ~4px, so it reads as a subtle float.
-        final v = (_c.value + widget.phase) % 1.0;
-        final dy = math.sin(v * 2 * math.pi) * 4.0;
-        return Transform.translate(offset: Offset(0, dy), child: child);
-      },
-      child: widget.child,
     );
   }
 }
