@@ -42,12 +42,18 @@ class _ScanClientSheetState extends State<_ScanClientSheet> {
     HapticFeedback.mediumImpact();
     await Future<void>.delayed(const Duration(milliseconds: 850));
     if (!mounted) return;
-    AppState.instance.verifyAndComplete(b.id);
+    final blocked = AppState.instance.verifyAndComplete(b.id);
     Navigator.of(context).pop();
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
-        content: Text('${L.verifiedCheckedIn} · ${L.commissionCharged}'),
+        content: Text(blocked == null
+            ? '${L.verifiedCheckedIn} · ${L.commissionCharged}'
+            : blocked == 'early'
+                ? L.scanTooEarly
+                : blocked == 'credit'
+                    ? L.scanNeedTopUp
+                    : L.scanAlreadyDone),
         behavior: SnackBarBehavior.floating,
       ));
   }

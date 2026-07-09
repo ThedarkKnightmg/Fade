@@ -821,10 +821,24 @@ class _BookingSheet extends StatelessWidget {
                   filled: true,
                   onTap: () {
                     HapticFeedback.mediumImpact();
+                    final messenger = ScaffoldMessenger.of(context);
                     // Verified handshake path — stamps check-in + locks the
-                    // commission (idempotent, so no double charge).
-                    AppState.instance.verifyAndComplete(b.id);
+                    // commission (idempotent, so no double charge). Blocked
+                    // before the slot or on empty credit.
+                    final blocked = AppState.instance.verifyAndComplete(b.id);
                     close();
+                    if (blocked != null) {
+                      messenger
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(SnackBar(
+                          content: Text(blocked == 'early'
+                              ? L.scanTooEarly
+                              : blocked == 'credit'
+                                  ? L.scanNeedTopUp
+                                  : L.scanAlreadyDone),
+                          behavior: SnackBarBehavior.floating,
+                        ));
+                    }
                   },
                 ),
               ),

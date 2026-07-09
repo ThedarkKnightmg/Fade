@@ -841,6 +841,15 @@ class AppState extends ChangeNotifier {
     }
   }
   void completeBooking(String id) {
+    final b = _bookingById(id);
+    if (b == null) return;
+    // Terminal states are mutually exclusive — never resurrect a finished booking.
+    if (b.status == BookingStatus.completed ||
+        b.status == BookingStatus.noShow ||
+        b.status == BookingStatus.cancelled ||
+        b.status == BookingStatus.declined) {
+      return;
+    }
     _setBookingStatus(id, BookingStatus.completed);
     _chargeCommission(id); // the app delivered this client → small fee
   }
@@ -911,6 +920,8 @@ class AppState extends ChangeNotifier {
     final i = _bookings.indexWhere((b) => b.id == id);
     if (i == -1) return;
     final b = _bookings[i];
+    // A served (verified/completed) booking can't be flipped to a no-show.
+    if (b.verifiedAt != null || b.status == BookingStatus.completed) return;
     _bookings[i] = b.copyWith(
       status: BookingStatus.noShow,
       chargeIntent: ChargeIntent.forFee(
@@ -1113,7 +1124,6 @@ class AppState extends ChangeNotifier {
   // ledger — real top-ups + settlement hand off to a payment provider.
 
   static const int newClientFeePercent = 5;
-  static const int regularFlatFeeSom = 500;
 
   // VIP barbers pay HALF the new-client fee (2.5%) — the headline VIP perk.
   // The platform gives up 2.5 points here, but the give-back stays SMALL by
@@ -1133,7 +1143,8 @@ class AppState extends ChangeNotifier {
 
   // ── The three "coins" in the skeuomorphic wallet ──────────────────────
   // Credit = the prepaid spendable balance (walletSom; top-up refills it,
-  // fees/boosts draw from it). Earned = money made from completed cuts (real,
+  // commission fees draw from it). Boost packs & VIP settle via an external
+  // provider, not this balance. Earned = money made from completed cuts (real,
   // lifetime). Tips = a modest mock (~12% of earned). Total = the sum shown in
   // the wallet pocket; the week-gain drives the "▲ this week" delta line.
   int get walletEarnedSom => Money.toSom(barberTotalEarned);
@@ -1173,18 +1184,6 @@ class AppState extends ChangeNotifier {
     ]);
   }
 
-  /// True if this barber has already completed a cut for this named client
-  /// before — a returning "regular" the app must NOT keep charging for (Tier 3).
-  bool isReturningClient(Booking b) {
-    final name = b.clientName;
-    if (name == null || name.isEmpty) return false;
-    return _bookings.any((x) =>
-        x.id != b.id &&
-        !x.isWalkIn &&
-        x.clientName == name &&
-        x.barber.id == b.barber.id &&
-        x.status == BookingStatus.completed);
-  }
 
   /// Flat commission: every Fade booking pays the platform rate — 5% standard,
   /// 2.5% for VIP. Only manually-logged walk-ins (the barber's own off-platform
@@ -1208,6 +1207,7 @@ class AppState extends ChangeNotifier {
     final fee = commissionSomFor(b);
     if (fee <= 0) return;
     _walletSom -= fee;
+    if (_walletSom < 0) _walletSom = 0; // never show a negative balance
     final vip = barberVip;
     if (vip) {
       final saved = commissionFullSomFor(b) - fee;
@@ -1442,22 +1442,41 @@ class AppState extends ChangeNotifier {
 
   /// The verified handshake — the ONLY completion path the scan uses. Idempotent
   /// (guards on verifiedAt/completed) so the commission is charged at most once.
-  void verifyAndComplete(String id) {
+  /// Verify + complete a booking. Returns null on success, or a short reason
+  /// key when blocked: 'done' (already finished), 'early' (before the slot),
+  /// 'credit' (wallet can't cover the fee).
+  String? verifyAndComplete(String id) {
     final i = _bookings.indexWhere((b) => b.id == id);
-    if (i == -1) return;
+    if (i == -1) return 'done';
     final b = _bookings[i];
-    if (b.verifiedAt != null || b.status == BookingStatus.completed) return;
+    if (b.verifiedAt != null ||
+        b.status == BookingStatus.completed ||
+        b.status == BookingStatus.noShow ||
+        b.status == BookingStatus.cancelled ||
+        b.status == BookingStatus.declined) {
+      return 'done';
+    }
+    // Can't complete before the appointment (15-min grace).
+    if (DateTime.now()
+        .isBefore(b.dateTime.subtract(const Duration(minutes: 15)))) {
+      return 'early';
+    }
+    // Prepaid credit must cover the platform fee.
+    if (_walletSom < commissionSomFor(b)) return 'credit';
     _bookings[i] = b.copyWith(verifiedAt: DateTime.now());
     final name = _bookings[i].clientName;
     if (name != null && !_bookings[i].isWalkIn) {
       _verifiedScanStreak[name] = (_verifiedScanStreak[name] ?? 0) + 1;
     }
     completeBooking(id); // → completed + _chargeCommission, exactly once
+    return null;
   }
 
-  /// Today's not-yet-checked-in upcoming bookings the barber can scan.
+  /// Today's not-yet-checked-in upcoming bookings the barber can scan. Only
+  /// confirmed (upcoming) bookings — a no-showed/cancelled one can't be re-scanned.
   List<Booking> get todayScannable => barberToday
-      .where((b) => b.verifiedAt == null)
+      .where((b) =>
+          b.verifiedAt == null && b.status == BookingStatus.upcoming)
       .toList()
     ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
@@ -2067,6 +2086,60 @@ class AppState extends ChangeNotifier {
         // Corrupt cache — fall back to the seeded bookings.
       }
     }
+    // ── Wallet / boosts / VIP / loyalty — durable, like bookings. ──
+    _walletSom = sp.getInt('walletSom') ?? _walletSom;
+    _boosts = sp.getInt('boosts') ?? _boosts;
+    _vipCommissionSavedSom = sp.getInt('vipSaved') ?? _vipCommissionSavedSom;
+    _vipUntil = _readEpoch(sp, 'vipUntil');
+    _boostActiveUntil = _readEpoch(sp, 'boostUntil');
+    final mbShop = sp.getString('myBarberShop');
+    if (mbShop != null) _myBarberShopId = mbShop.isEmpty ? null : mbShop;
+    final mbId = sp.getString('myBarberId');
+    if (mbId != null) _myBarberId = mbId.isEmpty ? null : mbId;
+    final vscan = sp.getString('vscan');
+    if (vscan != null && vscan.isNotEmpty) {
+      try {
+        _verifiedScanStreak
+          ..clear()
+          ..addAll((jsonDecode(vscan) as Map)
+              .map((k, v) => MapEntry(k as String, (v as num).toInt())));
+      } catch (_) {}
+    }
+    _ledgerSeeded = sp.getBool('ledgerSeeded') ?? _ledgerSeeded;
+    final ledgerRaw = sp.getString('ledger');
+    if (ledgerRaw != null && ledgerRaw.isNotEmpty) {
+      try {
+        _ledger
+          ..clear()
+          ..addAll((jsonDecode(ledgerRaw) as List)
+              .cast<Map<String, dynamic>>()
+              .map(_txFromMap));
+      } catch (_) {}
+    }
+    final svcRaw = sp.getString('services');
+    if (svcRaw != null && svcRaw.isNotEmpty) {
+      try {
+        final list = (jsonDecode(svcRaw) as List)
+            .cast<Map<String, dynamic>>()
+            .map(_serviceFromMap)
+            .toList();
+        if (list.isNotEmpty) {
+          _myServices
+            ..clear()
+            ..addAll(list);
+        }
+      } catch (_) {}
+    }
+    final brkRaw = sp.getString('breaks');
+    if (brkRaw != null && brkRaw.isNotEmpty) {
+      try {
+        _breaks
+          ..clear()
+          ..addAll((jsonDecode(brkRaw) as List)
+              .cast<Map<String, dynamic>>()
+              .map(_breakFromMap));
+      } catch (_) {}
+    }
     _loaded = true;
     notifyListeners();
   }
@@ -2135,7 +2208,106 @@ class AppState extends ChangeNotifier {
     final mine =
         _bookings.where((b) => b.clientName == null).map(_bookingToMap).toList();
     await sp.setString('bookings', jsonEncode(mine));
+    // ── Wallet / boosts / VIP / loyalty — durable, like bookings. ──
+    await sp.setInt('walletSom', _walletSom);
+    await sp.setInt('boosts', _boosts);
+    await sp.setInt('vipSaved', _vipCommissionSavedSom);
+    await _putEpoch(sp, 'vipUntil', _vipUntil);
+    await _putEpoch(sp, 'boostUntil', _boostActiveUntil);
+    await sp.setString('myBarberShop', _myBarberShopId ?? '');
+    await sp.setString('myBarberId', _myBarberId ?? '');
+    await sp.setString('vscan', jsonEncode(_verifiedScanStreak));
+    await sp.setBool('ledgerSeeded', _ledgerSeeded);
+    await sp.setString('ledger', jsonEncode(_ledger.map(_txToMap).toList()));
+    await sp.setString(
+        'services', jsonEncode(_myServices.map(_serviceToMap).toList()));
+    await sp.setString('breaks', jsonEncode(_breaks.map(_breakToMap).toList()));
   }
+
+  static Future<void> _putEpoch(
+      SharedPreferences sp, String key, DateTime? d) async {
+    if (d == null) {
+      await sp.remove(key);
+    } else {
+      await sp.setInt(key, d.millisecondsSinceEpoch);
+    }
+  }
+
+  static DateTime? _readEpoch(SharedPreferences sp, String key) {
+    final v = sp.getInt(key);
+    return v == null ? null : DateTime.fromMillisecondsSinceEpoch(v);
+  }
+
+  static Map<String, dynamic> _txToMap(WalletTx t) => {
+        'l': t.label,
+        'a': t.amountSom,
+        'c': t.credit,
+        't': t.at.millisecondsSinceEpoch,
+        's': t.sub,
+      };
+  static WalletTx _txFromMap(Map<String, dynamic> m) => WalletTx(
+        label: m['l'] as String,
+        amountSom: (m['a'] as num).toInt(),
+        credit: m['c'] as bool,
+        at: DateTime.fromMillisecondsSinceEpoch((m['t'] as num).toInt()),
+        sub: m['s'] as String?,
+      );
+
+  static Map<String, dynamic> _serviceToMap(BarberService s) => {
+        'id': s.id,
+        'n': s.name,
+        'd': s.description,
+        'p': s.price,
+        'm': s.durationMinutes,
+        'i': s.icon.codePoint,
+        'e': s.enabled,
+      };
+  static BarberService _serviceFromMap(Map<String, dynamic> m) => BarberService(
+        id: m['id'] as String,
+        name: m['n'] as String,
+        description: (m['d'] as String?) ?? '',
+        price: (m['p'] as num).toDouble(),
+        durationMinutes: (m['m'] as num).toInt(),
+        // Map the stored codepoint back to a CONST icon so release-mode icon
+        // tree-shaking still works (a runtime IconData(...) breaks the build).
+        icon: _iconForCode((m['i'] as num).toInt()),
+        enabled: (m['e'] as bool?) ?? true,
+      );
+
+  // The fixed palette of service icons used across the app.
+  static const List<IconData> _serviceIconPalette = [
+    Icons.content_cut_rounded,
+    Icons.face_retouching_natural_rounded,
+    Icons.water_drop_rounded,
+    Icons.palette_rounded,
+    Icons.child_care_rounded,
+    Icons.auto_awesome_rounded,
+  ];
+  static IconData _iconForCode(int code) {
+    for (final ic in _serviceIconPalette) {
+      if (ic.codePoint == code) return ic;
+    }
+    return Icons.content_cut_rounded;
+  }
+
+  static Map<String, dynamic> _breakToMap(BarberBreak b) => {
+        'id': b.id,
+        'l': b.label,
+        's': b.startMinutes,
+        'm': b.durationMinutes,
+        'daily': b.daily,
+        'date': b.date?.millisecondsSinceEpoch,
+      };
+  static BarberBreak _breakFromMap(Map<String, dynamic> m) => BarberBreak(
+        id: m['id'] as String,
+        label: m['l'] as String,
+        startMinutes: (m['s'] as num).toInt(),
+        durationMinutes: (m['m'] as num).toInt(),
+        daily: m['daily'] as bool,
+        date: m['date'] == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch((m['date'] as num).toInt()),
+      );
 
   static Map<String, dynamic> _bookingToMap(Booking b) => {
         'id': b.id,

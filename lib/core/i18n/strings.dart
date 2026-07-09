@@ -1062,6 +1062,16 @@ class L {
       "That QR isn't a Fade barber link",
       'Это не ссылка барбера Fade',
       'Bu Fade barber havolasi emas');
+  static String get scanTooEarly => _t(
+      'Too early — verify at the appointment time',
+      'Рано — подтвердите ко времени записи',
+      'Erta — yozuv vaqtida tasdiqlang');
+  static String get scanNeedTopUp => _t(
+      'Top up your wallet to complete this cut',
+      'Пополните кошелёк, чтобы завершить',
+      "Yakunlash uchun hamyonni to'ldiring");
+  static String get scanAlreadyDone => _t(
+      'Already checked in', 'Уже отмечен', 'Allaqachon belgilangan');
   static String get linkCopiedToast =>
       _t('Link copied ✓', 'Ссылка скопирована ✓', 'Havola nusxalandi ✓');
   static String get getVipBoost => _t('Get VIP Boost', 'Купить VIP', 'VIP olish');
