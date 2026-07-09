@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
+import '../../../core/supabase/auth_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/validators.dart';
@@ -13,6 +14,7 @@ import '../../widgets/app_text_field.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../root_shell.dart';
+import 'phone_verify_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -61,7 +63,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _passwordError != null) {
       return;
     }
-    // Persist the validated, trimmed profile into app state.
+    HapticFeedback.selectionClick();
+    // Persist the validated, trimmed profile; the phone is confirmed by an SMS
+    // code before we actually land inside the app.
     AppState.instance.updateUser(
       AppUser(
         id: 'u_local',
@@ -70,10 +74,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone: _phone.text.trim(),
       ),
     );
-    AppState.instance.signIn();
-    Navigator.of(context).pushAndRemoveUntil(
-      FadeThroughPageRoute(child: const RootShell()),
-      (route) => false,
+    final phoneE164 = AuthService.normalizePhone(_phone.text.trim());
+    Navigator.of(context).push(
+      FadeThroughPageRoute(
+        child: PhoneVerifyScreen(
+          phoneE164: phoneE164,
+          onVerified: () {
+            AppState.instance.signIn();
+            if (!mounted) return;
+            Navigator.of(context).pushAndRemoveUntil(
+              FadeThroughPageRoute(child: const RootShell()),
+              (route) => false,
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -96,7 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onTap: () => Navigator.of(context).maybePop(),
                   ),
                   const Spacer(),
-                  const BarberLogo(size: 30),
+                  const ScaleIn(child: BarberLogo(size: 30)),
                 ],
               ),
               const SizedBox(height: 26),

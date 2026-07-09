@@ -346,6 +346,10 @@ class L {
       "$target raqamiga yuborilgan 4 xonali kodni kiriting");
   static String get demoCodeLabel =>
       _t('Demo code', 'Демо-код', 'Demo kod');
+  static String get otpSending =>
+      _t('Sending your code…', 'Отправляем код…', 'Kod yuborilmoqda…');
+  static String get otpVerified =>
+      _t('Verified ✓', 'Подтверждено ✓', 'Tasdiqlandi ✓');
   static String get verifyWord => _t('Verify', 'Подтвердить', 'Tasdiqlash');
   static String get resendCode =>
       _t('Resend code', 'Отправить снова', 'Qayta yuborish');
