@@ -750,6 +750,7 @@ class _QuickActions extends StatelessWidget {
                   label: L.quickBook,
                   sub: L.quickBookSub,
                   asset: 'assets/tiles/book.png',
+                  stickerScale: 1.6,
                   onTap: onBook,
                 ),
               ),
@@ -787,6 +788,7 @@ class _QuickActions extends StatelessWidget {
                   label: L.quickCuts,
                   sub: L.quickCutsSub,
                   asset: 'assets/tiles/cuts.png',
+                  stickerScale: 1.25,
                   onTap: onCuts,
                 ),
               ),
@@ -806,6 +808,7 @@ class _QuickTile extends StatelessWidget {
     required this.sub,
     required this.onTap,
     this.asset,
+    this.stickerScale = 1.0,
   });
 
   final IconData icon;
@@ -813,6 +816,10 @@ class _QuickTile extends StatelessWidget {
   final String label;
   final String sub;
   final VoidCallback onTap;
+
+  /// Per-tile sticker size multiplier (1.0 = default). Bigger stickers pop
+  /// further above the platform.
+  final double stickerScale;
 
   /// Optional 3D sticker PNG (assets/tiles/…). Falls back to [icon] if missing.
   final String? asset;
@@ -859,8 +866,8 @@ class _QuickTile extends StatelessWidget {
     // phase (from the label) desyncs the hover so they don't bob in lockstep.
     final phase = (label.hashCode.abs() % 100) / 100.0;
     final Widget stickerBox = SizedBox(
-      width: 96,
-      height: 100,
+      width: 96 * stickerScale,
+      height: 100 * stickerScale,
       child: FittedBox(fit: BoxFit.contain, child: sticker),
     );
     return PressableScale(
