@@ -755,7 +755,7 @@ class _QuickActions extends StatelessWidget {
                   sub: L.quickBookSub,
                   asset: 'assets/tiles/book.png',
                   stickerScale: 1.5,
-                  stickerDy: 12,
+                  stickerDy: 22,
                   onTap: onBook,
                 ),
               ),
