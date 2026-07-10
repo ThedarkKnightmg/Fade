@@ -793,7 +793,7 @@ class _QuickActions extends StatelessWidget {
                   label: L.quickCuts,
                   sub: L.quickCutsSub,
                   asset: 'assets/tiles/cuts.png',
-                  framed: true,
+                  stickerScale: 1.25,
                   onTap: onCuts,
                 ),
               ),
@@ -815,7 +815,6 @@ class _QuickTile extends StatelessWidget {
     this.asset,
     this.stickerScale = 1.0,
     this.stickerDy = 0,
-    this.framed = false,
   });
 
   final IconData icon;
@@ -830,11 +829,6 @@ class _QuickTile extends StatelessWidget {
 
   /// Extra downward nudge (px) for the sticker — positive sits it lower.
   final double stickerDy;
-
-  /// Render the asset as a contained rounded thumbnail CARD instead of a
-  /// popping sticker — for artwork that has its own (non-transparent) backdrop,
-  /// so the backdrop reads as a neat card rather than a block sticking out.
-  final bool framed;
 
   /// Optional 3D sticker PNG (assets/tiles/…). Falls back to [icon] if missing.
   final String? asset;
@@ -864,11 +858,12 @@ class _QuickTile extends StatelessWidget {
                 width: s,
                 height: s,
                 fit: BoxFit.contain,
-                // Decode down to display size so it never janks. Width ONLY —
-                // giving both cacheWidth+cacheHeight force-decodes to a square
-                // and stretches any non-square sticker.
-                cacheWidth: 330,
-                filterQuality: FilterQuality.medium,
+                // Decode at a resolution that matches the ON-SCREEN size (bigger
+                // stickers + high-DPI screens need more pixels or they look
+                // blurry). Width ONLY — a cacheHeight too would force a square
+                // decode and stretch non-square stickers.
+                cacheWidth: (480 * stickerScale).round(),
+                filterQuality: FilterQuality.high,
                 // Missing PNG → fall back to the vector sticker.
                 errorBuilder: (_, __, ___) => SvgPicture.asset(
                   asset!.replaceFirst('.png', '.svg'),
@@ -888,51 +883,6 @@ class _QuickTile extends StatelessWidget {
         color: p.text,
       ),
     );
-
-    // Framed mode: the whole tile IS a rounded photo card (backdrop and all),
-    // so nothing sticks out above a platform. Used for artwork that carries its
-    // own background.
-    if (framed && asset != null && !asset!.endsWith('.svg')) {
-      return PressableScale(
-        onTap: onTap,
-        pressedScale: 0.96,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: 98,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: p.shadow,
-                      blurRadius: 18,
-                      spreadRadius: -6,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
-                  child: Image.asset(
-                    asset!,
-                    fit: BoxFit.cover,
-                    alignment: const Alignment(0, -0.15),
-                    cacheWidth: 460,
-                    filterQuality: FilterQuality.medium,
-                    errorBuilder: (_, __, ___) => sticker,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            labelText,
-          ],
-        ),
-      );
-    }
 
     // Big 3D sticker that sits on the box (static — no hover/float).
     final Widget stickerBox = SizedBox(
