@@ -754,7 +754,8 @@ class _QuickActions extends StatelessWidget {
                   label: L.quickBook,
                   sub: L.quickBookSub,
                   asset: 'assets/tiles/book.png',
-                  stickerScale: 1.4,
+                  stickerScale: 1.5,
+                  stickerDy: 12,
                   onTap: onBook,
                 ),
               ),
@@ -792,7 +793,7 @@ class _QuickActions extends StatelessWidget {
                   label: L.quickCuts,
                   sub: L.quickCutsSub,
                   asset: 'assets/tiles/cuts.png',
-                  stickerScale: 1.25,
+                  framed: true,
                   onTap: onCuts,
                 ),
               ),
@@ -813,6 +814,8 @@ class _QuickTile extends StatelessWidget {
     required this.onTap,
     this.asset,
     this.stickerScale = 1.0,
+    this.stickerDy = 0,
+    this.framed = false,
   });
 
   final IconData icon;
@@ -824,6 +827,14 @@ class _QuickTile extends StatelessWidget {
   /// Per-tile sticker size multiplier (1.0 = default). Bigger stickers pop
   /// further above the platform.
   final double stickerScale;
+
+  /// Extra downward nudge (px) for the sticker — positive sits it lower.
+  final double stickerDy;
+
+  /// Render the asset as a contained rounded thumbnail CARD instead of a
+  /// popping sticker — for artwork that has its own (non-transparent) backdrop,
+  /// so the backdrop reads as a neat card rather than a block sticking out.
+  final bool framed;
 
   /// Optional 3D sticker PNG (assets/tiles/…). Falls back to [icon] if missing.
   final String? asset;
@@ -866,6 +877,63 @@ class _QuickTile extends StatelessWidget {
                 ),
               );
 
+    final Widget labelText = Text(
+      label,
+      textAlign: TextAlign.center,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: GoogleFonts.nunito(
+        fontSize: 13.5,
+        fontWeight: FontWeight.w800,
+        color: p.text,
+      ),
+    );
+
+    // Framed mode: the whole tile IS a rounded photo card (backdrop and all),
+    // so nothing sticks out above a platform. Used for artwork that carries its
+    // own background.
+    if (framed && asset != null && !asset!.endsWith('.svg')) {
+      return PressableScale(
+        onTap: onTap,
+        pressedScale: 0.96,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 98,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: p.shadow,
+                      blurRadius: 18,
+                      spreadRadius: -6,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: Image.asset(
+                    asset!,
+                    fit: BoxFit.cover,
+                    alignment: const Alignment(0, -0.15),
+                    cacheWidth: 460,
+                    filterQuality: FilterQuality.medium,
+                    errorBuilder: (_, __, ___) => sticker,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            labelText,
+          ],
+        ),
+      );
+    }
+
     // Big 3D sticker that sits on the box (static — no hover/float).
     final Widget stickerBox = SizedBox(
       width: 96 * stickerScale,
@@ -899,25 +967,15 @@ class _QuickTile extends StatelessWidget {
                   left: 0,
                   right: 0,
                   // Bigger stickers sit a touch lower so they don't pop up as
-                  // high above the box (kept above the label, never over it).
-                  bottom: 4 - (stickerScale - 1.0) * 22,
+                  // high above the box; stickerDy nudges it further down.
+                  bottom: 4 - (stickerScale - 1.0) * 22 - stickerDy,
                   child: Center(child: stickerBox),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.nunito(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w800,
-              color: p.text,
-            ),
-          ),
+          labelText,
         ],
       ),
     );
