@@ -26,6 +26,11 @@ class _BarberShellState extends State<BarberShell> {
   int _index = 0;
   final Set<int> _built = {0};
 
+  // Armed only once per app session — switching client->barber re-creates this
+  // State and would otherwise schedule a fresh demo timer (and pop a new sheet)
+  // on every re-entry.
+  static bool _demoArmed = false;
+
   Timer? _demoTimer;
   bool _popupShowing = false;
 
@@ -33,12 +38,15 @@ class _BarberShellState extends State<BarberShell> {
   void initState() {
     super.initState();
     AppState.instance.addListener(_onState);
-    // Simulate a client booking arriving a few seconds after the barber opens
-    // the app, so the live request pop-up is demoable. (In production this is
-    // driven by a realtime Supabase booking insert.)
-    _demoTimer = Timer(const Duration(seconds: 5), () {
-      if (mounted) AppState.instance.simulateIncomingRequest();
-    });
+    // Simulate a client booking arriving a few seconds after the barber first
+    // opens the app, so the live request pop-up is demoable. (In production this
+    // is driven by a realtime Supabase booking insert.)
+    if (!_demoArmed) {
+      _demoArmed = true;
+      _demoTimer = Timer(const Duration(seconds: 5), () {
+        if (mounted) AppState.instance.simulateIncomingRequest();
+      });
+    }
   }
 
   @override

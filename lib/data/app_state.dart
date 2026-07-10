@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/format/money.dart';
 import '../core/i18n/app_language.dart';
@@ -299,6 +300,10 @@ class AppState extends ChangeNotifier {
     _activeRole = AppRole.barber;
     _hasCompletedOnboarding = true;
     _isAuthenticated = true;
+    // Any completed barber sign-up (existing shop OR Leader Loop, which
+    // delegates here) counts as onboarded, so a later client<->barber switch is
+    // an instant setRole — not a forced re-run of the "become a barber" intro.
+    _barberOnboarded = true;
     _reseedBarberDemoForRegistered();
     notifyListeners();
   }
@@ -812,10 +817,12 @@ class AppState extends ChangeNotifier {
       .length;
 
   // Barber actions on a booking.
-  void _setBookingStatus(String id, BookingStatus status) {
+  void _setBookingStatus(String id, BookingStatus status,
+      {DateTime? completedAt}) {
     final i = _bookings.indexWhere((b) => b.id == id);
     if (i == -1) return;
-    _bookings[i] = _bookings[i].copyWith(status: status);
+    _bookings[i] =
+        _bookings[i].copyWith(status: status, completedAt: completedAt);
     notifyListeners();
   }
 
@@ -850,7 +857,8 @@ class AppState extends ChangeNotifier {
         b.status == BookingStatus.declined) {
       return;
     }
-    _setBookingStatus(id, BookingStatus.completed);
+    _setBookingStatus(id, BookingStatus.completed,
+        completedAt: DateTime.now());
     _chargeCommission(id); // the app delivered this client → small fee
     if (b.clientName == null) _awardVisitPerk(b); // loyalty pass earned by visit
   }
@@ -1124,8 +1132,12 @@ class AppState extends ChangeNotifier {
         blockSpan(b.dateTime, b.service.durationMinutes);
       }
     }
-    // The barber's breaks (lunch, etc.) block their own shop's client slots too.
-    if (shopId == meBarber.shop.id) {
+    // The signed-in barber's breaks (lunch, etc.) block only THEIR OWN chair —
+    // breaks are stored per-barber (the me-barber), so a colleague at the same
+    // shop must not inherit them. Apply when no specific barber is requested or
+    // when it's the me-barber being viewed.
+    if (shopId == meBarber.shop.id &&
+        (barberId == null || barberId == meBarber.barber.id)) {
       for (final br in barberBreaksOn(day)) {
         blockSpan(br.startOn(day), br.durationMinutes);
       }
@@ -1346,9 +1358,17 @@ class AppState extends ChangeNotifier {
   // not a tax: you also get visibility fuel every month.
   static const int vipMonthlyBoosts = 5;
   DateTime? _vipUntil;
+  // When the CURRENT continuous VIP period began. "Saved this month" only counts
+  // bookings on/after this, so bookings charged the full 5% BEFORE subscribing
+  // aren't mis-counted as savings.
+  DateTime? _vipSince;
   bool get barberVip =>
       _vipUntil != null && _vipUntil!.isAfter(DateTime.now());
   DateTime? get vipUntil => _vipUntil;
+
+  /// The day a booking counts toward "this month" metrics — its completion day,
+  /// falling back to the appointment date for older records with no completedAt.
+  DateTime _completionDate(Booking b) => b.completedAt ?? b.dateTime;
 
   // Running total of what the 2.5% VIP rate saved this barber vs. the full 5%.
   // A small, honest reinforcement — the real VIP payoff is more bookings, not
@@ -1360,12 +1380,19 @@ class AppState extends ChangeNotifier {
   /// month. (Break-even vs. the 200k subscription is ~8M so'm of monthly
   /// bookings — above that the barber comes out ahead on fees alone.)
   int get vipMonthlyFeeSavingEstSom {
-    final start = DateTime(DateTime.now().year, DateTime.now().month, 1);
+    if (!barberVip) return 0; // no VIP → nothing was discounted
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month, 1);
+    // Only bookings actually charged the 2.5% rate count — completed this month
+    // AND on/after the VIP subscription began (pre-subscription cuts paid 5%).
+    final from = (_vipSince != null && _vipSince!.isAfter(monthStart))
+        ? _vipSince!
+        : monthStart;
     final bookedSomThisMonth = _bookings
         .where((b) =>
             !b.isWalkIn &&
             b.status == BookingStatus.completed &&
-            !b.dateTime.isBefore(start))
+            !_completionDate(b).isBefore(from))
         .fold<int>(0, (sum, b) => sum + Money.toSom(b.service.price));
     return (bookedSomThisMonth * 2.5 / 100).round();
   }
@@ -1376,12 +1403,13 @@ class AppState extends ChangeNotifier {
   // doesn't auto-grant VIP; it's the psychological trigger to subscribe.
   static const int vipMilestoneGoal = 20;
   int get completedBookingsThisMonth {
-    final start = DateTime(DateTime.now().year, DateTime.now().month, 1);
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, 1);
     return _bookings
         .where((b) =>
             !b.isWalkIn &&
             b.status == BookingStatus.completed &&
-            !b.dateTime.isBefore(start))
+            !_completionDate(b).isBefore(start))
         .length;
   }
 
@@ -1391,9 +1419,12 @@ class AppState extends ChangeNotifier {
   /// Per-service profitability for the analytics view (a VIP perk): completed
   /// Fade bookings grouped by service, richest first.
   List<({String name, int count, int revenueSom})> serviceBreakdown() {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, 1);
     final byName = <String, ({int count, int revenueSom})>{};
     for (final b in _bookings) {
       if (b.isWalkIn || b.status != BookingStatus.completed) continue;
+      if (_completionDate(b).isBefore(start)) continue; // "This month" only
       final cur = byName[b.service.name] ?? (count: 0, revenueSom: 0);
       byName[b.service.name] = (
         count: cur.count + 1,
@@ -1411,8 +1442,12 @@ class AppState extends ChangeNotifier {
   /// Provider-handoff stub: pretend the provider confirmed the subscription.
   /// Bundles [vipMonthlyBoosts] visibility boosts into the month.
   void activateVipBoost() {
-    final base = barberVip ? _vipUntil! : DateTime.now();
+    final wasVip = barberVip;
+    final base = wasVip ? _vipUntil! : DateTime.now();
     _vipUntil = base.add(const Duration(days: 30));
+    // Mark the start of a fresh subscription period (renewing while still VIP
+    // keeps the original start, so the savings window doesn't reset).
+    if (!wasVip) _vipSince = DateTime.now();
     _boosts += vipMonthlyBoosts;
     notifyListeners();
   }
@@ -1903,6 +1938,9 @@ class AppState extends ChangeNotifier {
   AppLanguage get language => _language;
   void setLanguage(AppLanguage value) {
     _language = value;
+    // Keep date/time formatting in step with the UI language (weekday/month
+    // names) — otherwise dates stay in whatever locale was set at startup.
+    Intl.defaultLocale = value.name;
     notifyListeners();
     _save();
   }
@@ -2063,7 +2101,13 @@ class AppState extends ChangeNotifier {
   // so we only auto-prompt once.
   bool _locationPromptShown = false;
   bool get locationPromptShown => _locationPromptShown;
-  void markLocationPromptShown() => _locationPromptShown = true; // no notify
+  void markLocationPromptShown() {
+    if (_locationPromptShown) return;
+    _locationPromptShown = true;
+    // Persist without a UI rebuild (no notify) so the explainer only auto-shows
+    // once, ever — not once per cold start.
+    _save();
+  }
 
   // === Persistence (shared_preferences) ===
   // Saves the profile + key prefs so the barber never re-enters their details
@@ -2238,6 +2282,27 @@ class AppState extends ChangeNotifier {
               .map(_breakFromMap));
       } catch (_) {}
     }
+    // Favourites — honor a stored (possibly empty) list over the seed defaults.
+    final fav = sp.getStringList('favShops');
+    if (fav != null) {
+      _favouriteShopIds
+        ..clear()
+        ..addAll(fav);
+    }
+    _readReviewMap(_shopReviews, sp.getString('shopReviews'));
+    _readReviewMap(_barberReviews, sp.getString('barberReviews'));
+    final photos = sp.getStringList('shopPhotos');
+    if (photos != null) {
+      try {
+        _shopPhotos
+          ..clear()
+          ..addAll(photos.map(base64Decode));
+      } catch (_) {}
+    }
+    _locationPromptShown = sp.getBool('locPrompt') ?? _locationPromptShown;
+    final ds = sp.getString('desiredStyle');
+    if (ds != null) _desiredStyleId = ds.isEmpty ? null : ds;
+    _vipSince = _readEpoch(sp, 'vipSince');
     _loaded = true;
     notifyListeners();
   }
@@ -2321,6 +2386,36 @@ class AppState extends ChangeNotifier {
         'services', jsonEncode(_myServices.map(_serviceToMap).toList()));
     await sp.setString('breaks', jsonEncode(_breaks.map(_breakToMap).toList()));
     await sp.setStringList('awardedPerks', _awardedPerkBookings.toList());
+    // Favourites, user reviews, shop gallery photos, the one-time location
+    // prompt flag, the pending desired style, and the VIP-since marker — all
+    // durable so they survive a relaunch like the rest of the user's content.
+    await sp.setStringList('favShops', _favouriteShopIds.toList());
+    await sp.setString(
+        'shopReviews',
+        jsonEncode(_shopReviews
+            .map((k, v) => MapEntry(k, v.map((r) => r.toMap()).toList()))));
+    await sp.setString(
+        'barberReviews',
+        jsonEncode(_barberReviews
+            .map((k, v) => MapEntry(k, v.map((r) => r.toMap()).toList()))));
+    await sp.setStringList(
+        'shopPhotos', _shopPhotos.map(base64Encode).toList());
+    await sp.setBool('locPrompt', _locationPromptShown);
+    await sp.setString('desiredStyle', _desiredStyleId ?? '');
+    await _putEpoch(sp, 'vipSince', _vipSince);
+  }
+
+  static void _readReviewMap(Map<String, List<Review>> target, String? raw) {
+    if (raw == null || raw.isEmpty) return;
+    try {
+      final decoded = jsonDecode(raw) as Map;
+      target.clear();
+      decoded.forEach((k, v) {
+        target[k as String] = (v as List)
+            .map((m) => Review.fromMap((m as Map).cast<String, dynamic>()))
+            .toList();
+      });
+    } catch (_) {}
   }
 
   static Future<void> _putEpoch(
@@ -2345,10 +2440,12 @@ class AppState extends ChangeNotifier {
         's': t.sub,
       };
   static WalletTx _txFromMap(Map<String, dynamic> m) => WalletTx(
-        label: m['l'] as String,
-        amountSom: (m['a'] as num).toInt(),
-        credit: m['c'] as bool,
-        at: DateTime.fromMillisecondsSinceEpoch((m['t'] as num).toInt()),
+        // Tolerant casts: a single malformed/partial row must not throw and
+        // discard the ENTIRE saved ledger (the decode runs inside one try).
+        label: (m['l'] as String?) ?? '',
+        amountSom: (m['a'] as num?)?.toInt() ?? 0,
+        credit: (m['c'] as bool?) ?? false,
+        at: DateTime.fromMillisecondsSinceEpoch((m['t'] as num?)?.toInt() ?? 0),
         sub: m['s'] as String?,
       );
 
@@ -2419,6 +2516,7 @@ class AppState extends ChangeNotifier {
         'at': b.dateTime.millisecondsSinceEpoch,
         'st': b.status.index,
         'note': b.note,
+        'ca': b.completedAt?.millisecondsSinceEpoch,
       };
 
   /// Rehydrate a stored booking, resolving the shop/barber from mock data by id.
@@ -2451,6 +2549,9 @@ class AppState extends ChangeNotifier {
             DateTime.fromMillisecondsSinceEpoch((m['at'] as num).toInt()),
         status: BookingStatus.values[(m['st'] as num).toInt()],
         note: m['note'] as String?,
+        completedAt: m['ca'] == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch((m['ca'] as num).toInt()),
       );
     } catch (_) {
       return null;
@@ -2485,6 +2586,7 @@ class AppState extends ChangeNotifier {
   void signOut() {
     _isAuthenticated = false;
     _hasCompletedOnboarding = false;
+    _barberOnboarded = false;
     _registeredBarber = null;
     _user = MockData.currentUser;
     _userPhoto = null;
@@ -2494,6 +2596,53 @@ class AppState extends ChangeNotifier {
     _barberChats.clear();
     _replyIx = 0;
     _clientReplyIx = 0;
+    // Reset every durable per-user field to its default so the next person to
+    // register on this device does NOT inherit the previous user's wallet, VIP,
+    // ledger, menu, reviews, favourites, etc. (the auto-save then persists the
+    // clean slate).
+    _walletSom = 42000;
+    _boosts = 2;
+    _vipUntil = null;
+    _vipSince = null;
+    _vipCommissionSavedSom = 0;
+    _boostActiveUntil = null;
+    _ledger.clear();
+    _ledgerSeeded = false;
+    _myServices
+      ..clear()
+      ..addAll(MockData.barbershops.first.services);
+    _breaks
+      ..clear()
+      ..add(const BarberBreak(
+        id: 'brk_lunch',
+        label: 'Lunch',
+        startMinutes: 13 * 60,
+        durationMinutes: 60,
+        daily: true,
+      ));
+    _perks.clear();
+    _awardedPerkBookings.clear();
+    _verifiedScanStreak.clear();
+    _shopReviews.clear();
+    _barberReviews.clear();
+    _favouriteShopIds
+      ..clear()
+      ..addAll({'shop2', 'shop5'});
+    _shopPhotos.clear();
+    _myBarberId = null;
+    _myBarberShopId = null;
+    _offDays.clear();
+    _workStart = 9;
+    _workEnd = 21;
+    _weeklyGoalSom = 2800000;
+    _shopDescription = '';
+    _shopLat = null;
+    _shopLng = null;
+    _shopAddr = null;
+    _hasCardOnFile = false;
+    _desiredStyleId = null;
+    _locationPromptShown = false;
+    _address = null;
     _seedBookings();
     _seedChats();
     notifyListeners();
@@ -2551,7 +2700,20 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addBooking(Booking booking) {
+  /// Add a client booking. Re-checks availability at commit time (the slot may
+  /// have been taken — e.g. by a walk-in — while the review screen was open) and
+  /// returns false without booking if the slot is no longer free, so no entry
+  /// path can silently double-book. Mirrors [addWalkIn]'s guard.
+  bool addBooking(Booking booking) {
+    final at = booking.dateTime;
+    final slot = DateTime(
+        at.year, at.month, at.day, at.hour, at.minute >= 30 ? 30 : 0);
+    final blocked = blockedSlotsFor(
+      shopId: booking.barbershop.id,
+      barberId: booking.barber.id,
+      day: at,
+    );
+    if (blocked.contains(slot)) return false; // slot just taken → reject
     _bookings.add(booking);
     // Booking unlocks messaging with this barber — drop in a welcome note so
     // the conversation is ready the moment they want to text.
@@ -2567,6 +2729,7 @@ class AppState extends ChangeNotifier {
       ],
     );
     notifyListeners();
+    return true;
   }
 
   void cancelBooking(String id) {

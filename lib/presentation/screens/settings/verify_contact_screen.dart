@@ -82,6 +82,11 @@ class _VerifyContactScreenState extends State<VerifyContactScreen> {
       _focus.requestFocus();
       return;
     }
+    // DEMO VERIFICATION ONLY — there is no SMS/email backend yet. The code is
+    // generated and checked entirely on-device, so this proves nothing about
+    // ownership of the target address/number. It exists to exercise the UX flow
+    // and MUST be replaced by a real server-side OTP check (e.g. Supabase
+    // `verifyOtp`) before this is treated as genuine verification.
     if (_ctrl.text == _code) {
       HapticFeedback.lightImpact();
       Navigator.of(context).pop(true);
@@ -178,6 +183,9 @@ class _VerifyContactScreenState extends State<VerifyContactScreen> {
                         size: 16, color: AppColors.accentDeep),
                     const SizedBox(width: 8),
                     Expanded(
+                      // Honestly labelled "Demo code" so it's never mistaken for
+                      // a real delivered OTP — but the value stays visible so the
+                      // demo flow still works until a real backend OTP lands.
                       child: Text(
                         '${L.demoCodeLabel}: $_code',
                         style: GoogleFonts.nunito(

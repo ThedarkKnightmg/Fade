@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
@@ -16,9 +17,11 @@ import '../../widgets/primary_button.dart';
 /// Animated phone-OTP verification for sign-up.
 ///
 /// Sends a real SMS via Supabase (`AuthService.sendCode` → your SMS provider).
-/// If the Supabase project doesn't have Phone auth + an SMS gateway configured
-/// yet, it falls back to a locally-generated demo code (clearly labelled) so the
-/// flow still works — real texts arrive the moment Twilio is enabled in Supabase.
+/// In DEBUG/PROFILE builds only, if the Supabase project doesn't have Phone auth
+/// + an SMS gateway configured yet, it falls back to a locally-generated demo
+/// code (clearly labelled) so the flow still works — real texts arrive the
+/// moment Twilio is enabled in Supabase. Release builds never show a demo code;
+/// a failed send surfaces a retryable error instead.
 class PhoneVerifyScreen extends StatefulWidget {
   const PhoneVerifyScreen({
     super.key,
@@ -81,19 +84,82 @@ class _PhoneVerifyScreenState extends State<PhoneVerifyScreen>
         _sending = false;
         _demoMode = false;
       });
-    } catch (_) {
-      // Phone auth / SMS provider not configured — demo fallback so the flow
-      // still works; real SMS flows once Twilio is enabled in Supabase.
+    } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _sending = false;
-        _demoMode = true;
-        _demoCode = (100000 + Random().nextInt(900000)).toString();
-      });
+      // Only fall back to a self-verifiable demo code when the error means the
+      // Phone/SMS provider simply isn't wired up yet — NOT on a transient
+      // network / rate-limit error (those must surface a retry, never a bypass).
+      // Once a real SMS gateway (Twilio) is enabled in Supabase this branch stops
+      // firing, so live verification can never be short-circuited by a hiccup.
+      if (_isProviderUnconfigured(e)) {
+        // Phone auth / SMS provider not configured — demo fallback so the flow
+        // still works; real SMS flows once Twilio is enabled in Supabase.
+        setState(() {
+          _sending = false;
+          _demoMode = true;
+          _demoCode = (100000 + Random().nextInt(900000)).toString();
+        });
+      } else {
+        // Real, retryable failure (network / rate-limit / release build):
+        // surface it and let the user tap Resend — do NOT sign anyone in.
+        setState(() {
+          _sending = false;
+          _demoMode = false;
+          _error = L.wrongCode;
+        });
+        return;
+      }
     }
     _startCountdown();
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _focus.requestFocus());
+  }
+
+  // ── Error classification (Supabase AuthException) ──────────────────────
+  // These read the exception's message/statusCode without assuming a concrete
+  // type, so they stay correct whether Supabase throws an AuthException,
+  // AuthApiException, or a plain error.
+
+  int? _statusCode(Object e) {
+    if (e is AuthException) {
+      final raw = e.statusCode;
+      return raw == null ? null : int.tryParse(raw);
+    }
+    return null;
+  }
+
+  String _message(Object e) =>
+      (e is AuthException ? e.message : e.toString()).toLowerCase();
+
+  /// Phone provider / SMS gateway simply isn't wired up yet — safe (in dev) to
+  /// fall back to a demo code. Deliberately excludes network / rate-limit.
+  bool _isProviderUnconfigured(Object e) {
+    if (_isRateLimited(e)) return false;
+    final m = _message(e);
+    return m.contains('not enabled') ||
+        m.contains('disabled') ||
+        m.contains('not configured') ||
+        m.contains('unsupported phone provider') ||
+        m.contains('provider') ||
+        m.contains('sms');
+  }
+
+  /// The code was correct-looking but the token has expired or is otherwise
+  /// invalid — the user should request a fresh one.
+  bool _isExpiredCode(Object e) {
+    final m = _message(e);
+    return m.contains('expired') ||
+        m.contains('invalid') ||
+        m.contains('token has expired');
+  }
+
+  /// Rate limited / too many attempts — the user must wait before retrying.
+  bool _isRateLimited(Object e) {
+    if (_statusCode(e) == 429) return true;
+    final m = _message(e);
+    return m.contains('rate limit') ||
+        m.contains('too many') ||
+        m.contains('over_request_rate_limit');
   }
 
   void _startCountdown() {
@@ -118,14 +184,24 @@ class _PhoneVerifyScreenState extends State<PhoneVerifyScreen>
     }
     setState(() => _verifying = true);
     bool ok;
+    // Distinct message per failure kind so a correct-but-expired or
+    // rate-limited code no longer collapses to a misleading "wrong code".
+    String failMsg = L.wrongCode;
     if (_demoMode) {
       ok = _ctrl.text == _demoCode;
     } else {
       try {
         await AuthService.verifyCode(widget.phoneE164, _ctrl.text);
         ok = true;
-      } catch (_) {
+      } catch (e) {
         ok = false;
+        if (_isExpiredCode(e)) {
+          // A valid-looking but stale code — point them at Resend.
+          failMsg = L.resendCode;
+        } else if (_isRateLimited(e)) {
+          // Too many attempts — ask them to wait before retrying.
+          failMsg = L.resendInSec(_resendIn > 0 ? _resendIn : 45);
+        }
       }
     }
     if (!mounted) return;
@@ -143,7 +219,7 @@ class _PhoneVerifyScreenState extends State<PhoneVerifyScreen>
       _shake.forward(from: 0);
       setState(() {
         _verifying = false;
-        _error = L.wrongCode;
+        _error = failMsg;
         _ctrl.clear();
       });
     }

@@ -29,12 +29,13 @@ dependencies:
   qr_flutter: ^4.1.0
   flutter_local_notifications: ^18.0.1
   mobile_scanner: ^5.2.3
+  # Used at runtime to downscale AI-studio selfies before upload (and by tools).
+  image: ^4.3.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  image: ^4.3.0
   flutter_launcher_icons: ^0.14.1
 
 flutter:

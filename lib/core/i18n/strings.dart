@@ -1892,9 +1892,9 @@ class L {
       'Добавьте фото и примерьте каждую стрижку на своём лице.',
       "Suratingizni qo'shing va har bir soch turini o'z yuzingizda ko'ring.");
   static String get stPhotoStaysOnDevice => _t(
-      'Your photo stays on your device — nothing is uploaded.',
-      'Фото остаётся на устройстве — ничего не загружается.',
-      "Surat qurilmangizda qoladi — hech narsa yuklanmaydi.");
+      'Your face is analysed on your device; your photo is used only to create your preview.',
+      'Анализ лица — на устройстве; фото используется только для создания превью.',
+      "Yuz qurilmada tahlil qilinadi; surat faqat namuna yaratish uchun ishlatiladi.");
   static String get stFaceTheCamera => _t(
       'Face the camera, good light, hair off your forehead.',
       'Смотрите в камеру, хороший свет, волосы убраны со лба.',

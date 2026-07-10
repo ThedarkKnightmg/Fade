@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image/image.dart' as img;
 
 import '../../../core/ai/ai_config.dart';
 import '../../../core/ai/face_analyzer.dart';
@@ -59,6 +60,28 @@ String _aiHairDescription(Hairstyle style, String color) {
   // keep the same person (the mask is what truly protects the face).
   return '$desc, $c hair, photorealistic, sharp detail, natural hair texture, '
       'same person, same face, unchanged facial features';
+}
+
+/// Caps the longest edge of [photo] at 768px (aspect-ratio preserved) before
+/// an AI upload. The free worker route already normalises via
+/// [preparePhotoSquare]; Gemini gets this so it never receives a full-res
+/// selfie. 768 is a hard ceiling — SD-1.5 inpainting returns all-black output
+/// above it. Returns the original bytes unchanged if it's already small enough
+/// or can't be decoded.
+Uint8List _downscaleForAi(Uint8List photo, {int maxEdge = 768}) {
+  try {
+    final decoded = img.decodeImage(photo);
+    if (decoded == null) return photo;
+    final longest =
+        decoded.width > decoded.height ? decoded.width : decoded.height;
+    if (longest <= maxEdge) return photo;
+    final resized = decoded.width >= decoded.height
+        ? img.copyResize(decoded, width: maxEdge)
+        : img.copyResize(decoded, height: maxEdge);
+    return img.encodeJpg(resized, quality: 90);
+  } catch (_) {
+    return photo;
+  }
 }
 
 /// AI Hair Studio — take a selfie, watch the AI "read" your face, then see
@@ -191,9 +214,12 @@ class _AiHairScreenState extends State<AiHairScreen> {
         mask: mask,
       );
     } else if (key.trim().isNotEmpty) {
-      // Premium route — Google Gemini image editing.
+      // Premium route — Google Gemini image editing. Downscale first (longest
+      // edge ≤ 768px) so we never upload a full-res selfie, mirroring the
+      // worker route's normalisation.
+      final scaled = _downscaleForAi(photo);
       res = await _gemini.generate(
-        photo: photo,
+        photo: scaled,
         apiKey: key,
         prompt: 'Change only the hair to $desc. Keep the exact same face, '
             'skin, identity, expression, lighting and background. '
@@ -236,92 +262,97 @@ class _AiHairScreenState extends State<AiHairScreen> {
           ),
         );
 
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: p.card,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(L.connectAi, style: AppTypography.h3(context)),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    const Icon(Icons.bolt_rounded,
-                        size: 16, color: AppColors.green),
-                    const SizedBox(width: 6),
-                    Text(L.stFreeWorkerUrl,
-                        style: AppTypography.h4(context)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: urlCtrl,
-                  maxLines: 1,
-                  style: GoogleFonts.nunito(
-                      fontWeight: FontWeight.w700, color: p.text),
-                  decoration: deco('https://barber-ai.<you>.workers.dev'),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  L.stFreeWorkerHint,
-                  style: AppTypography.caption(context),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Icon(Icons.workspace_premium_rounded,
-                        size: 16, color: p.textSecondary),
-                    const SizedBox(width: 6),
-                    Text(L.stPremiumGeminiKey,
-                        style: AppTypography.h4(context)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: keyCtrl,
-                  maxLines: 1,
-                  style: GoogleFonts.nunito(
-                      fontWeight: FontWeight.w700, color: p.text),
-                  decoration: deco('AIza…  ${L.stNeedsBilling}'),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: PrimaryButton(
-                        label: L.cancel,
-                        height: 48,
-                        style: PrimaryButtonStyle.ghost,
-                        onPressed: () => Navigator.pop(ctx),
+    final bool? saved;
+    try {
+      saved = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => Dialog(
+          backgroundColor: p.card,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(L.connectAi, style: AppTypography.h3(context)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(Icons.bolt_rounded,
+                          size: 16, color: AppColors.green),
+                      const SizedBox(width: 6),
+                      Text(L.stFreeWorkerUrl, style: AppTypography.h4(context)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: urlCtrl,
+                    maxLines: 1,
+                    style: GoogleFonts.nunito(
+                        fontWeight: FontWeight.w700, color: p.text),
+                    decoration: deco('https://barber-ai.<you>.workers.dev'),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    L.stFreeWorkerHint,
+                    style: AppTypography.caption(context),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Icon(Icons.workspace_premium_rounded,
+                          size: 16, color: p.textSecondary),
+                      const SizedBox(width: 6),
+                      Text(L.stPremiumGeminiKey,
+                          style: AppTypography.h4(context)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: keyCtrl,
+                    maxLines: 1,
+                    style: GoogleFonts.nunito(
+                        fontWeight: FontWeight.w700, color: p.text),
+                    decoration: deco('AIza…  ${L.stNeedsBilling}'),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: PrimaryButton(
+                          label: L.cancel,
+                          height: 48,
+                          style: PrimaryButtonStyle.ghost,
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: PrimaryButton(
-                        label: L.stSave,
-                        height: 48,
-                        onPressed: () {
-                          AppState.instance.setAiEndpoint(urlCtrl.text);
-                          AppState.instance.setGeminiKey(keyCtrl.text);
-                          Navigator.pop(ctx, true);
-                        },
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: PrimaryButton(
+                          label: L.stSave,
+                          height: 48,
+                          onPressed: () {
+                            AppState.instance.setAiEndpoint(urlCtrl.text);
+                            AppState.instance.setGeminiKey(keyCtrl.text);
+                            Navigator.pop(ctx, true);
+                          },
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    } finally {
+      urlCtrl.dispose();
+      keyCtrl.dispose();
+    }
     if (saved == true && mounted && _photo != null) _generate();
   }
 
@@ -432,8 +463,8 @@ class _IntroView extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           L.stAiHairIntro,
-          style: AppTypography.bodyLarge(context)
-              .copyWith(color: p.textSecondary),
+          style:
+              AppTypography.bodyLarge(context).copyWith(color: p.textSecondary),
         ),
         const SizedBox(height: 28),
         // Glowing hero orb, gently floating.
@@ -485,8 +516,7 @@ class _IntroView extends StatelessWidget {
             onTap: onDemo,
             behavior: HitTestBehavior.opaque,
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 L.stTryDemoFace,
                 style: GoogleFonts.nunito(
@@ -504,8 +534,7 @@ class _IntroView extends StatelessWidget {
           children: [
             Icon(Icons.lock_outline_rounded, size: 14, color: p.textTertiary),
             const SizedBox(width: 5),
-            Text(L.photoPrivacy,
-                style: AppTypography.caption(context)),
+            Text(L.photoPrivacy, style: AppTypography.caption(context)),
           ],
         ),
       ],
@@ -770,8 +799,7 @@ class _FaceReadCard extends StatelessWidget {
                   style: AppTypography.h4(context)),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppColors.accentSoft,
                   borderRadius: BorderRadius.circular(999),
@@ -811,8 +839,8 @@ class _ConnectAiBanner extends StatelessWidget {
     final p = Paper.of(context);
     final hasKey = AppState.instance.hasAiKey;
     final title = hasKey ? L.aiRenderFailed : L.connectAiForHair;
-    final body = message ??
-        (hasKey ? L.stTapCheckKey : L.stStylisedPreviewTapAddKey);
+    final body =
+        message ?? (hasKey ? L.stTapCheckKey : L.stStylisedPreviewTapAddKey);
     return GestureDetector(
       onTap: onConnect,
       behavior: HitTestBehavior.opaque,

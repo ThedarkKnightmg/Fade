@@ -239,9 +239,11 @@ class HomeScreen extends StatelessWidget {
     final controller =
         TextEditingController(text: AppState.instance.address ?? '');
     final p = Paper.of(context);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => Dialog(
+    final String? result;
+    try {
+      result = await showDialog<String>(
+        context: context,
+        builder: (ctx) => Dialog(
         backgroundColor: p.card,
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -293,7 +295,10 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
+      );
+    } finally {
+      controller.dispose();
+    }
     if (result != null) {
       AppState.instance.setAddress(result);
       if (context.mounted && result.trim().isNotEmpty) {

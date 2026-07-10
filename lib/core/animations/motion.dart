@@ -188,7 +188,7 @@ class _RadarPulseState extends State<RadarPulse>
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2800),
-  )..repeat();
+  );
 
   @override
   void dispose() {
@@ -198,6 +198,17 @@ class _RadarPulseState extends State<RadarPulse>
 
   @override
   Widget build(BuildContext context) {
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    // Honor "reduce motion": don't run the perpetual repeat — render a single
+    // resting frame with the rings at rest instead.
+    if (reduce) {
+      if (_c.isAnimating) _c.stop();
+      return CustomPaint(
+        painter: _RingsPainter(0, widget.color, widget.maxRadius),
+        child: widget.child,
+      );
+    }
+    if (!_c.isAnimating) _c.repeat();
     return AnimatedBuilder(
       animation: _c,
       builder: (context, child) => CustomPaint(

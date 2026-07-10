@@ -38,4 +38,31 @@ class Review {
 
   double get shopRating => rating;
   String get shopComment => comment;
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'a': author,
+        'r': rating,
+        'c': comment,
+        'd': date.millisecondsSinceEpoch,
+        'av': avatarUrl,
+        'bid': barberId,
+        'bn': barberName,
+        'br': barberRating,
+        'bc': barberComment,
+      };
+
+  static Review fromMap(Map<String, dynamic> m) => Review(
+        id: (m['id'] as String?) ?? '',
+        author: (m['a'] as String?) ?? '',
+        rating: (m['r'] as num?)?.toDouble() ?? 0,
+        comment: (m['c'] as String?) ?? '',
+        date: DateTime.fromMillisecondsSinceEpoch(
+            (m['d'] as num?)?.toInt() ?? 0),
+        avatarUrl: m['av'] as String?,
+        barberId: (m['bid'] as String?) ?? '',
+        barberName: (m['bn'] as String?) ?? '',
+        barberRating: (m['br'] as num?)?.toDouble(),
+        barberComment: m['bc'] as String?,
+      );
 }

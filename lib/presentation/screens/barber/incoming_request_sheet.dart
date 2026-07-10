@@ -191,19 +191,21 @@ class _RequestDetailSheet extends StatelessWidget {
               ),
               const SizedBox(height: 14),
             ],
-            // Meta chips: when · service length · distance.
-            Row(
+            // Meta chips: when · service length · distance. Wrap so longer
+            // localized date/distance text can flow onto a second line instead
+            // of overflowing on narrow screens.
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 _Chip(
                   icon: Icons.schedule_rounded,
                   text: DateFormat('EEE d MMM · HH:mm').format(b.dateTime),
                 ),
-                const SizedBox(width: 8),
                 _Chip(
                   icon: Icons.timer_outlined,
                   text: b.service.formattedDuration,
                 ),
-                const SizedBox(width: 8),
                 _Chip(
                   icon: Icons.near_me_rounded,
                   text: L.kmAway(km.toStringAsFixed(1)),

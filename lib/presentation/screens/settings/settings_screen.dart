@@ -34,10 +34,11 @@ class SettingsScreen extends StatelessWidget {
     required String initial,
     TextInputType? keyboard,
     String? helper,
-  }) {
+  }) async {
     final ctrl = TextEditingController(text: initial);
     final p = Paper.of(context);
-    return showModalBottomSheet<String>(
+    try {
+      return await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -92,7 +93,10 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
+      );
+    } finally {
+      ctrl.dispose();
+    }
   }
 
   Future<void> _editName(BuildContext context) async {

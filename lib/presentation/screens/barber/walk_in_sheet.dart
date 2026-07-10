@@ -39,9 +39,15 @@ class _WalkInSheetState extends State<_WalkInSheet> {
     // Default to the next half-hour so it snaps to the booking grid.
     final now = DateTime.now();
     final roundUp = now.minute >= 30;
-    _time = TimeOfDay(
-        hour: (roundUp ? now.hour + 1 : now.hour) % 24,
-        minute: roundUp ? 0 : 30);
+    var h = roundUp ? now.hour + 1 : now.hour;
+    // Rounding up late in the evening must not wrap past midnight — that would
+    // land the walk-in at 00:00 of *today* (~24h in the past, off the grid).
+    // Clamp to the last valid slot on the same day instead.
+    if (h >= 24) {
+      _time = const TimeOfDay(hour: 23, minute: 30);
+    } else {
+      _time = TimeOfDay(hour: h, minute: roundUp ? 0 : 30);
+    }
     final svcs = AppState.instance.barberServices;
     if (svcs.isNotEmpty) _service = svcs.first;
   }

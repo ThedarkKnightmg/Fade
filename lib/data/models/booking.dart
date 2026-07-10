@@ -22,6 +22,7 @@ class Booking {
     this.authRequired = false,
     this.isWalkIn = false,
     this.verifiedAt,
+    this.completedAt,
   });
 
   final String id;
@@ -51,6 +52,10 @@ class Booking {
   /// Null = not yet checked in. Only ever set forward, never cleared.
   final DateTime? verifiedAt;
 
+  /// When the booking was marked completed. Used to bucket "this month" metrics
+  /// by the DAY OF COMPLETION rather than the appointment date. Null until done.
+  final DateTime? completedAt;
+
   bool get isVerified => verifiedAt != null;
 
   /// Overdue: an upcoming, unverified real booking whose slot passed 15+ min ago
@@ -67,6 +72,7 @@ class Booking {
     bool? authRequired,
     bool? isWalkIn,
     DateTime? verifiedAt,
+    DateTime? completedAt,
   }) =>
       Booking(
         id: id,
@@ -81,5 +87,6 @@ class Booking {
         authRequired: authRequired ?? this.authRequired,
         isWalkIn: isWalkIn ?? this.isWalkIn,
         verifiedAt: verifiedAt ?? this.verifiedAt,
+        completedAt: completedAt ?? this.completedAt,
       );
 }

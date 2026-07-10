@@ -30,7 +30,16 @@ class BookingReviewScreen extends StatelessWidget {
     final needsAuth =
         AppState.instance.slotNeedsAuthorization(booking.service.price);
     final toBook = needsAuth ? booking.copyWith(authRequired: true) : booking;
-    AppState.instance.addBooking(toBook);
+    // Re-check availability at commit time — the slot may have been taken (e.g.
+    // a walk-in) while this screen was open. Never silently double-book.
+    final ok = AppState.instance.addBooking(toBook);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(L.slotTakenWarn)),
+      );
+      Navigator.of(context).maybePop();
+      return;
+    }
     Navigator.of(context).pushReplacement(
       FadeThroughPageRoute(child: BookingConfirmationScreen(booking: toBook)),
     );

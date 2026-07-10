@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/format/money.dart';
+import '../../core/i18n/strings.dart';
 
 class BarberService {
   const BarberService({
@@ -26,7 +27,7 @@ class BarberService {
   final bool enabled;
 
   String get formattedPrice => Money.som(price);
-  String get formattedDuration => '$durationMinutes min';
+  String get formattedDuration => '$durationMinutes ${L.minShort}';
 
   BarberService copyWith({
     String? id,

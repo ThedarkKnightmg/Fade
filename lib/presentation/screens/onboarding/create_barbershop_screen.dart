@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/location/location_service.dart';
 import '../../../core/map/fast_tiles.dart';
@@ -13,6 +14,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
+import '../root_shell.dart';
 
 /// Create a brand-new barbershop when yours isn't on the map: pin the location,
 /// name it, add photos + info, set working hours + days off — then it's live on
@@ -94,6 +96,16 @@ class _CreateBarbershopScreenState extends State<CreateBarbershopScreen> {
     s.markBarberOnboarded();
     HapticFeedback.mediumImpact();
     // Role has flipped → RootShell now shows the barber side.
+    if (!mounted) {
+      _busy = false;
+      return;
+    }
+    // Never leave the button dead: clear busy before we (re)build or navigate.
+    setState(() => _busy = false);
+    Navigator.of(context).pushAndRemoveUntil(
+      FadeThroughPageRoute(child: const RootShell()),
+      (r) => false,
+    );
   }
 
   @override

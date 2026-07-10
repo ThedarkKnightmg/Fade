@@ -14,6 +14,7 @@ import '../../../data/mock_data.dart';
 import '../../../data/models/barbershop.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
+import '../root_shell.dart';
 import 'create_barbershop_screen.dart';
 
 /// Choose the barbershop you'll work at from the map — or create a new one.
@@ -51,6 +52,11 @@ class _BarberWorkplaceScreenState extends State<BarberWorkplaceScreen> {
       ..workAtExistingShop(shop.id)
       ..markBarberOnboarded();
     // Role flipped → RootShell swaps to the barber side.
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      FadeThroughPageRoute(child: const RootShell()),
+      (r) => false,
+    );
   }
 
   void _createNew() {

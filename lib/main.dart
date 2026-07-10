@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 
 import 'core/i18n/strings.dart';
 import 'core/notifications/notify.dart';
@@ -21,6 +23,10 @@ Future<void> main() async {
   await Notify.init();
   // Restore the saved profile + prefs so signed-in users skip onboarding.
   await AppState.instance.load();
+  // Localize dates/times to the saved language — without this every DateFormat
+  // (weekday/month names) renders in English even in RU/UZ.
+  await initializeDateFormatting();
+  Intl.defaultLocale = AppState.instance.language.name; // en / ru / uz
   // One-time proof ping (after load so it speaks the saved language).
   await Notify.welcomeOnce(L.notifHelloTitle, L.notifHelloBody);
   SystemChrome.setSystemUIOverlayStyle(
