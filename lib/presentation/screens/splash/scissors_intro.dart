@@ -7,11 +7,18 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// A cinematic launch intro. It opens in DEEP SPACE and jumps to light-speed —
-/// stars streak into long radial lines (a Star-Wars hyperspace jump) — then
-/// punches through a bright arrival flash out of which the Fade badge bursts,
-/// flowing into the brand reveal (wordmark + accent line + tagline) and finally
-/// a circular reveal that OPENS into the app underneath.
+/// A cinematic launch intro — a proper Star-Wars hyperspace jump:
+///
+///  1. Deep space. A scattered starfield twinkles, holding still (the pause
+///     before the jump).
+///  2. PUNCH — every star stretches into a long radial light-speed streak.
+///     Near stars whip past long/bright/thick, far ones stay short and dim
+///     (parallax); everything blue-shifts as speed builds, a tunnel bloom
+///     swells at the vanishing point and the camera rumbles.
+///  3. Arrival flash — a white/blue punch as we drop out of light-speed…
+///  4. …and the Fade badge bursts out of it: glow + glint, the FADE wordmark,
+///     accent line and tagline settle in, then a circular reveal OPENS into
+///     the app underneath.
 class ScissorsCutIntro extends StatefulWidget {
   const ScissorsCutIntro({super.key, required this.onDone});
 
@@ -25,7 +32,7 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 3800),
+    duration: const Duration(milliseconds: 5600),
   );
   bool _done = false;
 
@@ -45,13 +52,17 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
 
   static List<_Star> _makeStars() {
     final rnd = math.Random(7);
-    return List.generate(200, (i) {
+    return List.generate(340, (i) {
       return _Star(
         angle: rnd.nextDouble() * math.pi * 2,
-        r0: rnd.nextDouble() * 0.14, // start clustered near the vanishing point
-        speed: 0.75 + rnd.nextDouble() * 0.95, // 0.75 – 1.70
-        bright: 0.45 + rnd.nextDouble() * 0.55,
-        blue: rnd.nextDouble() < 0.28, // a few Fade-blue stars
+        // Area-uniform spread across the whole sky, so the hold phase reads
+        // as a real starfield (not a cluster at the vanishing point).
+        r0: math.sqrt(rnd.nextDouble()) * 0.95,
+        speed: 0.6 + rnd.nextDouble() * 1.1,
+        depth: rnd.nextDouble(), // 0 = far … 1 = near (parallax layer)
+        bright: 0.35 + rnd.nextDouble() * 0.65,
+        blue: rnd.nextDouble() < 0.30, // some Fade-blue stars
+        tw: rnd.nextDouble() * math.pi * 2,
       );
     });
   }
@@ -69,7 +80,7 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
       if (!mounted) return;
       final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
       // Reduced motion: skip the hyperspace jump + flash, straight to the brand.
-      _c.forward(from: reduce ? 0.60 : 0.0);
+      _c.forward(from: reduce ? 0.62 : 0.0);
     });
   }
 
@@ -90,25 +101,32 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
         final t = _c.value;
 
         // ── Hyperspace jump ──────────────────────────────────────────────
-        final warp = _seg(t, 0.0, 0.44); // 0→1 across the jump
+        final warp = _seg(t, 0.0, 0.46); // 0→1 across the jump
+        // How hard the drive is pushing (0 during the starfield hold, ramps
+        // to 1 at full light-speed) — drives the rumble + camera zoom.
+        final drive = math.pow(_seg(warp, 0.20, 1.0), 1.5).toDouble();
         // The deep-space blackout covers the navy stage during the jump, then
-        // dissolves to reveal the brand stage as we "drop out" of light-speed.
-        final space = 1 - _seg(t, 0.44, 0.62);
+        // dissolves to reveal the brand stage as we drop out of light-speed.
+        final space = 1 - _seg(t, 0.46, 0.64);
         // Arrival flash — punch of white/blue as we exit the jump.
-        final flash = _seg(t, 0.40, 0.50);
-        final flashOut = _seg(t, 0.46, 0.60);
+        final flash = _seg(t, 0.42, 0.52);
+        final flashOut = _seg(t, 0.48, 0.62);
         final flashOp = (flash * (1 - flashOut)).clamp(0.0, 1.0);
+        // Camera rumble while the drive spools up; dies with the flash.
+        final rumble = 3.0 * drive * (1 - flashOut);
+        final rx = rumble * math.sin(t * 230);
+        final ry = rumble * math.cos(t * 181);
 
-        // ── Brand reveal (remapped to play AFTER the jump) ────────────────
-        final glow = _seg(t, 0.46, 0.72);
-        final badge = _expo.transform(_seg(t, 0.46, 0.64));
-        final ping = _seg(t, 0.50, 0.74);
-        final shimmer = _seg(t, 0.58, 0.74);
-        final word = _quart.transform(_seg(t, 0.66, 0.80));
-        final line = _quart.transform(_seg(t, 0.72, 0.86));
-        final tag = _seg(t, 0.80, 0.92);
+        // ── Brand reveal (plays AFTER the jump) ───────────────────────────
+        final glow = _seg(t, 0.48, 0.74);
+        final badge = _expo.transform(_seg(t, 0.48, 0.66));
+        final ping = _seg(t, 0.52, 0.76);
+        final shimmer = _seg(t, 0.60, 0.76);
+        final word = _quart.transform(_seg(t, 0.68, 0.82));
+        final line = _quart.transform(_seg(t, 0.75, 0.88));
+        final tag = _seg(t, 0.82, 0.93);
         // Exit: the app colour opens from the logo in a circular reveal.
-        final exit = _inOut.transform(_seg(t, 0.88, 1.0));
+        final exit = _inOut.transform(_seg(t, 0.90, 1.0));
 
         // Energy glow swells then settles (triangle peak in the middle).
         final glowOpacity = (1 - (2 * glow - 1).abs()) * 0.55;
@@ -136,12 +154,20 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
                     ),
                   ),
                 ),
-              // The hyperspace streaks.
+              // The hyperspace starfield → streaks, with rumble + a slight
+              // camera pull-in as the drive engages.
               if (warp > 0 && space > 0.02)
                 Positioned.fill(
                   child: IgnorePointer(
-                    child: CustomPaint(
-                      painter: _HyperspacePainter(warp: warp, stars: _stars),
+                    child: Transform.translate(
+                      offset: Offset(rx, ry),
+                      child: Transform.scale(
+                        scale: 1 + 0.07 * drive,
+                        child: CustomPaint(
+                          painter:
+                              _HyperspacePainter(warp: warp, stars: _stars),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -158,10 +184,10 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
                             radius: 1.0,
                             colors: [
                               Colors.white,
-                              Color(0x8C2E8BFF),
+                              Color(0xB32E8BFF),
                               Color(0x002E8BFF),
                             ],
-                            stops: [0.0, 0.35, 1.0],
+                            stops: [0.0, 0.30, 1.0],
                           ),
                         ),
                       ),
@@ -350,65 +376,130 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
   }
 }
 
-/// One star in the hyperspace field: a fixed [angle] from the vanishing point,
-/// a small starting radius, and a per-star [speed] so they don't all streak in
-/// lockstep. [blue] tints a few of them Fade-blue.
+/// One star in the hyperspace field.
 class _Star {
   const _Star({
     required this.angle,
     required this.r0,
     required this.speed,
+    required this.depth,
     required this.bright,
     required this.blue,
+    required this.tw,
   });
+
   final double angle;
-  final double r0;
+  final double r0; // starting radius, fraction of maxR
   final double speed;
+  final double depth; // 0 far … 1 near — parallax layer
   final double bright;
   final bool blue;
+  final double tw; // twinkle phase
 }
 
-/// Paints the jump-to-light-speed streaks: each star accelerates OUT from the
-/// centre (ease-in, so it leaps to speed) and stretches from a dot into a long
-/// radial line with a comet-tail fade. The whole field fades in at the start
-/// and washes out into the arrival flash at the end.
+/// Paints the jump: stars hold as twinkling dots (~first 20% of the warp),
+/// then every one of them stretches into a radial light-speed streak. Near
+/// stars (depth→1) streak longer/brighter/thicker; a tunnel bloom builds at
+/// the vanishing point; streaks blue-shift with speed, get a white-hot leading
+/// tip, and wrap around so fresh streaks keep pouring out of the tunnel — a
+/// sustained jump, not a single burst. The field fades in fast and washes out
+/// into the arrival flash.
 class _HyperspacePainter extends CustomPainter {
   _HyperspacePainter({required this.warp, required this.stars});
   final double warp; // 0 → 1 across the jump
   final List<_Star> stars;
 
+  static const _blue = Color(0xFF8CC6FF);
+
   @override
   void paint(Canvas canvas, Size size) {
     if (warp <= 0) return;
-    final cx = size.width / 2, cy = size.height / 2;
-    final maxR = math.sqrt(cx * cx + cy * cy) * 1.15;
+    final cx = size.width / 2, cy = size.height * 0.44;
+    final maxR = math.sqrt(cx * cx +
+            math.max(cy, size.height - cy) * math.max(cy, size.height - cy)) *
+        1.06;
 
-    // Accelerate to light-speed (ease-in); streaks grow from dots to lines.
-    final accel = math.pow(warp, 2.3).toDouble();
-    final streakF = math.pow(warp, 1.7).toDouble();
-    // Fade the field in quickly, then out into the flash near the end.
-    final fadeIn = (warp / 0.12).clamp(0.0, 1.0);
-    final fadeOut = warp > 0.86 ? (1 - (warp - 0.86) / 0.14).clamp(0.0, 1.0) : 1.0;
+    // Hold as dots first, then launch (ease-in, so it LEAPS to speed).
+    const launch = 0.20;
+    final driveT = ((warp - launch) / (1 - launch)).clamp(0.0, 1.0);
+    final accel = math.pow(driveT, 2.1).toDouble();
+    final streakF = math.pow(driveT, 1.5).toDouble();
+
+    // Field fades in quickly, then washes out into the flash near the end.
+    final fadeIn = (warp / 0.08).clamp(0.0, 1.0);
+    final fadeOut =
+        warp > 0.88 ? (1 - (warp - 0.88) / 0.12).clamp(0.0, 1.0) : 1.0;
     final field = fadeIn * fadeOut;
     if (field <= 0) return;
 
+    // Tunnel bloom at the vanishing point — swells as we reach light-speed.
+    final bloom = streakF * field;
+    if (bloom > 0.02) {
+      final r = maxR * 0.85;
+      canvas.drawCircle(
+        Offset(cx, cy),
+        r,
+        Paint()
+          ..shader = ui.Gradient.radial(Offset(cx, cy), r, [
+            const Color(0xFFDCEBFF).withValues(alpha: 0.34 * bloom),
+            _blue.withValues(alpha: 0.10 * bloom),
+            _blue.withValues(alpha: 0),
+          ], const [
+            0.0,
+            0.42,
+            1.0,
+          ]),
+      );
+    }
+
     for (final s in stars) {
-      final lead = (s.r0 + accel * s.speed) * maxR;
-      if (lead > maxR * 1.28) continue; // already shot off-screen
-      final streak = (streakF * s.speed * 0.55 * maxR).clamp(0.0, lead);
+      final sp = s.speed * (0.5 + 0.9 * s.depth);
+      // Wrap so streaks keep flowing out of the tunnel (sustained travel).
+      final total = s.r0 + accel * sp * 2.4;
+      final lead = (total % 1.3) * maxR;
+      final streak = (streakF * sp * (0.28 + 0.62 * s.depth) * maxR)
+          .clamp(0.0, lead * 0.92);
       final dx = math.cos(s.angle), dy = math.sin(s.angle);
-      final p1 = Offset(cx + dx * (lead - streak), cy + dy * (lead - streak));
       final p2 = Offset(cx + dx * lead, cy + dy * lead);
-      final base = s.blue ? const Color(0xFF8CC6FF) : Colors.white;
-      final op = (s.bright * field).clamp(0.0, 1.0);
-      final paint = Paint()
-        ..strokeCap = StrokeCap.round
-        ..strokeWidth = 1.1 + s.bright * 1.7
-        ..shader = ui.Gradient.linear(p1, p2, [
-          base.withValues(alpha: 0),
-          base.withValues(alpha: op),
-        ]);
-      canvas.drawLine(p1, p2, paint);
+
+      // Blue-shift as speed builds; deep-in-the-tunnel streaks are dimmer,
+      // ones whipping past the edges brighter.
+      final shifted = Color.lerp(Colors.white, _blue, 0.30 * driveT)!;
+      final base = s.blue ? _blue : shifted;
+      final centerDim = (0.35 + 0.65 * (lead / maxR)).clamp(0.0, 1.0);
+      final op = (s.bright * field * centerDim).clamp(0.0, 1.0);
+      final w = (0.9 + s.bright * 1.5) * (0.6 + 0.55 * s.depth);
+
+      if (streak < 2.0) {
+        // Still a star — twinkle while we hold before the jump.
+        final twinkle = 0.72 + 0.28 * math.sin(warp * 90 + s.tw);
+        canvas.drawCircle(p2, w * 0.7,
+            Paint()..color = base.withValues(alpha: op * twinkle));
+      } else {
+        final p1 =
+            Offset(cx + dx * (lead - streak), cy + dy * (lead - streak));
+        canvas.drawLine(
+          p1,
+          p2,
+          Paint()
+            ..strokeCap = StrokeCap.round
+            ..strokeWidth = w
+            ..shader = ui.Gradient.linear(p1, p2, [
+              base.withValues(alpha: 0),
+              base.withValues(alpha: op),
+            ]),
+        );
+        // White-hot leading tip.
+        if (streak > 6) {
+          canvas.drawCircle(
+            p2,
+            w * 0.62,
+            Paint()
+              ..color =
+                  Color.lerp(base, Colors.white, 0.6)!.withValues(alpha: op),
+          );
+        }
+      }
     }
   }
 
