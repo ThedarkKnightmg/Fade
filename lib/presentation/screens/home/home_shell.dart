@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 
 import '../../../core/animations/motion.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../widgets/paper_kit.dart';
 import '../ai/ai_hair_screen.dart';
 import '../bookings/my_bookings_screen.dart';
 import '../chat/messages_screen.dart';
@@ -193,11 +192,24 @@ class _HomiesNav extends StatelessWidget {
               child: child,
             ),
           ),
-          // Clean clay pill — icons with a glowing active-dot underneath, and
-          // the AI orb popping up in the centre. No per-tab circles.
+          // Reference layout — a minimal floating pill with each tab in its own
+          // circular slot and the AI orb inline — but THEME-coloured (light
+          // card on the light theme), not black.
           child: Container(
-            height: 68,
-            decoration: clayDecoration(p, radius: 26),
+            height: 72,
+            decoration: BoxDecoration(
+              color: p.card,
+              borderRadius: BorderRadius.circular(36),
+              border: Border.all(color: p.border),
+              boxShadow: [
+                BoxShadow(
+                  color: p.shadow,
+                  blurRadius: 24,
+                  spreadRadius: -4,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
             // Bookings lives on the Home card now; the bar is
             // Home + Map · AI (centre) · Chat + Profile.
             child: Row(
@@ -256,52 +268,42 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // Clean tab: just the glyph, with a glowing accent dot that grows in
-    // underneath the active one. No circular slot behind it.
+    // Reference look, theme-coloured: every tab sits in its own circular slot.
+    // Inactive = faint grey circle + grey glyph; active = accent-tinted circle
+    // + accent glyph. Nothing else — no ring, no glow, no under-dot.
     return PressableScale(
       onTap: onTap,
       pressedScale: 0.85,
       child: SizedBox(
-        width: 50,
-        height: 68,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedScale(
-              scale: active ? 1.18 : 1.0,
+        width: 56,
+        height: 72,
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: active
+                  ? AppColors.accent.withValues(alpha: 0.14)
+                  : p.textTertiary.withValues(alpha: 0.08),
+            ),
+            child: AnimatedScale(
+              scale: active ? 1.08 : 1.0,
               duration: const Duration(milliseconds: 320),
               curve: Curves.easeOutCubic,
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 280),
+                duration: const Duration(milliseconds: 260),
                 child: Icon(
                   icon,
                   key: ValueKey(active),
-                  size: 25,
+                  size: 24,
                   color: active ? AppColors.accent : p.textTertiary,
                 ),
               ),
             ),
-            const SizedBox(height: 5),
-            // A glowing dot slides/grows in under the active tab.
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 260),
-              curve: Curves.easeOut,
-              width: active ? 6 : 0,
-              height: 6,
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                shape: BoxShape.circle,
-                boxShadow: active
-                    ? [
-                        BoxShadow(
-                          color: AppColors.accent.withValues(alpha: 0.7),
-                          blurRadius: 8,
-                        )
-                      ]
-                    : null,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -348,7 +350,6 @@ class _AiButtonState extends State<_AiButton>
         builder: (_, __) => Container(
           width: 58,
           height: 58,
-          transform: Matrix4.translationValues(0, -8, 0),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             // A lit sphere: bright highlight top-left → deep blue bottom-right.
@@ -358,15 +359,12 @@ class _AiButtonState extends State<_AiButton>
               colors: [Color(0xFF8CC6FF), Color(0xFF3E8DF0), Color(0xFF1E6FE0)],
               stops: [0.0, 0.55, 1.0],
             ),
-            border: Border.all(
-                color: Colors.white.withValues(alpha: 0.35), width: 1),
             boxShadow: [
               BoxShadow(
                 color: AppColors.accent
-                    .withValues(alpha: 0.4 + _breathe.value * 0.4),
-                blurRadius: 16 + _breathe.value * 12,
-                spreadRadius: 1 + _breathe.value * 2,
-                offset: const Offset(0, 5),
+                    .withValues(alpha: 0.35 + _breathe.value * 0.35),
+                blurRadius: 14 + _breathe.value * 10,
+                spreadRadius: _breathe.value * 2,
               ),
             ],
           ),
