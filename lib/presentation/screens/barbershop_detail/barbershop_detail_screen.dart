@@ -359,22 +359,37 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                   ),
                   children: [
                     PanelLabel(L.withLabel),
-                    BarberSwatchRow(
-                      barbers: _roster,
-                      tierOf: (b) =>
-                          AppState.instance.barberSpotlightTier(b.id),
-                      selectedId: _barberId,
-                      onSelect: (id) => setState(() {
-                        _barberId = id;
-                        // Availability is per-barber — drop a time that
-                        // is now taken for the newly chosen barber.
-                        if (_time != null &&
-                            _bookedSlots.contains(_time)) {
-                          _time = null;
-                        }
-                      }),
-                      dark: true,
-                    ),
+                    if (widget.initialBarberId != null)
+                      // The user came from the barber feed FOR this stylist —
+                      // the booking stays locked to them; colleagues aren't
+                      // offered (that's the whole point of the barber-centric
+                      // flow and the stylist's paid spotlight).
+                      _LockedStylistRow(
+                        barber: widget.shop.barbers.firstWhere(
+                          (b) => b.id == widget.initialBarberId,
+                          orElse: () => _roster.first,
+                        ),
+                        index: widget.shop.barbers.indexWhere(
+                          (b) => b.id == widget.initialBarberId,
+                        ),
+                      )
+                    else
+                      BarberSwatchRow(
+                        barbers: _roster,
+                        tierOf: (b) =>
+                            AppState.instance.barberSpotlightTier(b.id),
+                        selectedId: _barberId,
+                        onSelect: (id) => setState(() {
+                          _barberId = id;
+                          // Availability is per-barber — drop a time that
+                          // is now taken for the newly chosen barber.
+                          if (_time != null &&
+                              _bookedSlots.contains(_time)) {
+                            _time = null;
+                          }
+                        }),
+                        dark: true,
+                      ),
                     const SizedBox(height: 12),
                     _MyBarberToggle(
                       shopId: shop.id,
@@ -792,6 +807,79 @@ class _ScarcityChip extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The stylist the booking is locked to (arriving from the barber feed): a
+/// fixed chip — avatar in the tier ring, name + status pill, specialty, and a
+/// small lock. No colleague switching.
+class _LockedStylistRow extends StatelessWidget {
+  const _LockedStylistRow({required this.barber, required this.index});
+
+  final Barber barber;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final tier = AppState.instance.barberSpotlightTier(barber.id);
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: p.bg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: tier == 0
+              ? AppColors.gold
+              : tier == 1
+                  ? AppColors.gold.withValues(alpha: 0.5)
+                  : p.border,
+          width: tier <= 1 ? 1.6 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          InitialAvatar(
+              name: barber.name, size: 44, index: index < 0 ? 0 : index),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        barber.name,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.h4(context),
+                      ),
+                    ),
+                    if (tier == 0) ...[
+                      const SizedBox(width: 6),
+                      MiniPill('⚡ ${L.boostedPill}',
+                          style: MiniPillStyle.gold),
+                    ] else if (tier == 1) ...[
+                      const SizedBox(width: 6),
+                      const MiniPill('VIP', style: MiniPillStyle.gold),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  barber.specialty,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodySmall(context),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(Icons.lock_rounded, size: 16, color: p.textTertiary),
         ],
       ),
     );
