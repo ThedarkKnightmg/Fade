@@ -52,7 +52,7 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
 
   static List<_Star> _makeStars() {
     final rnd = math.Random(7);
-    return List.generate(340, (i) {
+    return List.generate(420, (i) {
       return _Star(
         angle: rnd.nextDouble() * math.pi * 2,
         // Area-uniform spread across the whole sky, so the hold phase reads
@@ -407,50 +407,61 @@ class _HyperspacePainter extends CustomPainter {
     // No tunnel-bloom disc — it read as a big circle behind the streaks.
     // The jump is pure star-lines on deep space.
     final isHold = driveT <= 0.001;
+    // Final lunge — right before the flash, every streak stretches extra long
+    // while the field washes out (the classic last surge into light-speed).
+    final lunge = 1 + 2.4 * ((warp - 0.86) / 0.14).clamp(0.0, 1.0);
+
     for (final s in stars) {
       final sp = s.speed * (0.5 + 0.9 * s.depth);
       // Wrap so streaks keep flowing out of the tunnel (sustained travel).
       final total = s.r0 + accel * sp * 2.4;
       final wrapped = total >= 1.3; // re-entered at the tunnel mouth
       final lead = (total % 1.3) * maxR;
-      final streak = (streakF * sp * (0.28 + 0.62 * s.depth) * maxR)
+      final frac = (lead / maxR).clamp(0.0, 1.0);
+      final streak = (streakF * sp * (0.28 + 0.62 * s.depth) * maxR * lunge)
           .clamp(0.0, lead * 0.92);
       final dx = math.cos(s.angle), dy = math.sin(s.angle);
       final p2 = Offset(cx + dx * lead, cy + dy * lead);
 
-      // Blue-shift as speed builds; deep-in-the-tunnel streaks are dimmer,
-      // ones whipping past the edges brighter.
+      // Blue-shift as speed builds. Perspective: deep in the tunnel = dim +
+      // hairline-thin; whipping past the edges = bright + bold.
       final shifted = Color.lerp(Colors.white, _blue, 0.30 * driveT)!;
       final base = s.blue ? _blue : shifted;
-      final centerDim = (0.35 + 0.65 * (lead / maxR)).clamp(0.0, 1.0);
-      final op = (s.bright * field * centerDim).clamp(0.0, 1.0);
-      final w = (0.9 + s.bright * 1.5) * (0.6 + 0.55 * s.depth);
+      final centerDim = (0.30 + 0.70 * frac).clamp(0.0, 1.0);
+      var op = (s.bright * field * centerDim).clamp(0.0, 1.0);
+      final w = (0.9 + s.bright * 1.5) *
+          (0.6 + 0.55 * s.depth) *
+          (0.4 + 0.9 * frac);
 
       if (isHold) {
         // The pause before the jump — a calm starfield, gently twinkling.
         // This is the ONLY place dots are drawn.
         final twinkle = 0.72 + 0.28 * math.sin(warp * 90 + s.tw);
-        canvas.drawCircle(p2, w * 0.7,
+        canvas.drawCircle(p2, 0.9 + s.bright * 1.2,
             Paint()..color = base.withValues(alpha: op * twinkle));
         continue;
       }
 
-      if (streak < 1.5) {
-        // Mid-jump with no real streak yet. A freshly WRAPPED star at the
-        // tunnel mouth is hidden (the bloom covers the mouth; it grows into a
-        // streak within frames) — never a stray dot. An ORIGINAL star still
-        // spooling up stays visible as a steady point so launch is seamless.
-        if (!wrapped) {
-          canvas.drawCircle(
-              p2, w * 0.7, Paint()..color = base.withValues(alpha: op));
-        }
+      if (wrapped) {
+        // A recycled streak pouring back out of the tunnel mouth: fade it in
+        // smoothly as it emerges and NEVER draw stubs — the centre shows
+        // moving lines only, no flickering dots.
+        final emerge = ((frac - 0.05) / 0.12).clamp(0.0, 1.0);
+        if (emerge <= 0 || streak < 6) continue;
+        op = (op * emerge).clamp(0.0, 1.0);
+      } else if (streak < 1.5) {
+        // Original star still spooling up — keep it as a steady point so the
+        // launch is seamless (only exists in the first beats of the jump).
+        canvas.drawCircle(p2, 0.9 + s.bright * 1.2,
+            Paint()..color = base.withValues(alpha: op));
         continue;
       }
 
       final p1 = Offset(cx + dx * (lead - streak), cy + dy * (lead - streak));
-      // Comet streak: transparent tail → body → white-hot head, all inside a
-      // single stroke — no separate tip circles (those read as stray dots).
-      final head = Color.lerp(base, Colors.white, 0.55)!;
+      // Comet streak: transparent tail → body → hot head, all inside a single
+      // stroke — no separate tip circles (those read as stray dots). Near
+      // (deep) streaks burn whiter at the head.
+      final head = Color.lerp(base, Colors.white, s.depth > 0.8 ? 0.75 : 0.55)!;
       canvas.drawLine(
         p1,
         p2,
