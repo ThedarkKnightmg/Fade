@@ -30,14 +30,15 @@ void main() {
   final h = image.height;
   stdout.writeln('src ${w}x$h');
 
-  // Background = light AND near-neutral. Threshold 198 keeps the darker silver
-  // legs/base (~179) and the navy subject; clears the ~217 floor + back wall.
+  // Remove ONLY the white studio background (and the frosted back-wall panel),
+  // keeping the floor pedestal (~217) and the whole diorama. Threshold 226
+  // clears white (255) + back wall (234) but keeps the floor + subject.
   bool isBg(int x, int y) {
     final p = image.getPixel(x, y);
     final r = p.r.toDouble(), g = p.g.toDouble(), b = p.b.toDouble();
     final lum = 0.299 * r + 0.587 * g + 0.114 * b;
     final sat = [r, g, b].reduce(max) - [r, g, b].reduce(min);
-    return lum > 184 && sat < 24;
+    return lum > 226 && sat < 20;
   }
 
   final removed = List<bool>.filled(w * h, false);
@@ -61,16 +62,8 @@ void main() {
     seed(0, y);
     seed(w - 1, y);
   }
-  // Seed points ON the floor pedestal (fractions of the image, so it scales if
-  // the source size changes). Spread across the front + mid + right floor.
-  const floorSeeds = <List<double>>[
-    [0.50, 0.88], [0.32, 0.86], [0.70, 0.85], [0.50, 0.78],
-    [0.88, 0.80], [0.80, 0.74], [0.44, 0.92], [0.63, 0.91],
-    [0.24, 0.80], [0.58, 0.83], [0.90, 0.66], [0.36, 0.90],
-  ];
-  for (final s in floorSeeds) {
-    seed((s[0] * w).round(), (s[1] * h).round());
-  }
+  // NOTE: no floor seeds — we keep the floor pedestal, only the edge-connected
+  // white/back-wall is flooded away.
 
   // 8-connected flood so thin rims/anti-aliased seams don't stop it.
   const dirs = [
