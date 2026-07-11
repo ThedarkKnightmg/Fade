@@ -85,6 +85,41 @@ void main() {
     }
   }
 
+  // Second pass — the floor reflections at the BOTTOM sit just under the main
+  // threshold, so the first flood cut them raggedly (half kept, half cleared).
+  // Flood again from the already-cleared region with a lower bar, but ONLY
+  // inside the bottom band, so the subject higher up (chair, table, tools)
+  // is untouched.
+  final bandY = (h * 0.76).round();
+  bool isBgBottom(int x, int y) {
+    if (y < bandY) return false;
+    final p = image.getPixel(x, y);
+    final r = p.r.toDouble(), g = p.g.toDouble(), b = p.b.toDouble();
+    final lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    final sat = [r, g, b].reduce(max) - [r, g, b].reduce(min);
+    return lum > 202 && sat < 18;
+  }
+
+  for (var y = bandY; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      if (removed[y * w + x]) stack.add(y * w + x);
+    }
+  }
+  while (stack.isNotEmpty) {
+    final i = stack.removeLast();
+    final x = i % w, y = i ~/ w;
+    for (final d in dirs) {
+      final nx = x + d[0], ny = y + d[1];
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+      final ni = ny * w + nx;
+      if (removed[ni]) continue;
+      if (isBgBottom(nx, ny)) {
+        removed[ni] = true;
+        stack.add(ni);
+      }
+    }
+  }
+
   for (var i = 0; i < removed.length; i++) {
     if (removed[i]) image.setPixelRgba(i % w, i ~/ w, 0, 0, 0, 0);
   }

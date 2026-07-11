@@ -794,6 +794,7 @@ class _QuickActions extends StatelessWidget {
                   sub: L.quickCutsSub,
                   asset: 'assets/tiles/cuts.png',
                   stickerScale: 1.25,
+                  stickerDy: 8,
                   onTap: onCuts,
                 ),
               ),
