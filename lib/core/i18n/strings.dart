@@ -592,6 +592,8 @@ class L {
   static String get feedShops => _t('Shops', 'Салоны', 'Salonlar');
   static String get feedBarbers => _t('Barbers', 'Барберы', 'Barberlar');
   static String get boostedPill => _t('Boosted', 'В топе', 'Topda');
+  static String get searchBarbersHint =>
+      _t('Find your barber…', 'Найти барбера…', 'Barberingizni toping…');
   static String get yourServices =>
       _t('Your services', 'Ваши услуги', 'Xizmatlaringiz');
   static String get bookingAsClient => _t('Booking as a client?',
