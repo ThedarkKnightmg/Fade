@@ -432,26 +432,8 @@ class _HyperspacePainter extends CustomPainter {
     final field = fadeIn * fadeOut;
     if (field <= 0) return;
 
-    // Tunnel bloom at the vanishing point — swells as we reach light-speed.
-    final bloom = streakF * field;
-    if (bloom > 0.02) {
-      final r = maxR * 0.85;
-      canvas.drawCircle(
-        Offset(cx, cy),
-        r,
-        Paint()
-          ..shader = ui.Gradient.radial(Offset(cx, cy), r, [
-            const Color(0xFFDCEBFF).withValues(alpha: 0.34 * bloom),
-            _blue.withValues(alpha: 0.10 * bloom),
-            _blue.withValues(alpha: 0),
-          ], const [
-            0.0,
-            0.42,
-            1.0,
-          ]),
-      );
-    }
-
+    // No tunnel-bloom disc — it read as a big circle behind the streaks.
+    // The jump is pure star-lines on deep space.
     final isHold = driveT <= 0.001;
     for (final s in stars) {
       final sp = s.speed * (0.5 + 0.9 * s.depth);
