@@ -1492,57 +1492,15 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Boost approval — the platform's control panel owns promotion ──
-  // A barber can't push themselves to the top directly: tapping Boost files a
-  // REQUEST (the Up is escrowed) that the panel operator must approve before
-  // the promotion goes live. Mock: a simulated moderator approves after a few
-  // seconds; with Supabase this becomes a boost_requests row that the admin
-  // dashboard flips to approved/rejected (the app listens for the change).
-  DateTime? _boostPendingAt;
-  bool get boostRequestPending => _boostPendingAt != null;
-
-  /// File a Boost request: 1 Up is escrowed and the hour of promotion starts
-  /// ONLY when the control panel approves. Returns false when out of Ups or a
-  /// request is already under review.
-  bool requestBoost() {
-    if (_boosts <= 0 || _boostPendingAt != null) return false;
-    _boosts -= 1; // escrow — refunded if the panel rejects
-    _boostPendingAt = DateTime.now();
-    _scheduleBoostReview();
-    notifyListeners();
-    return true;
-  }
-
-  /// The mock panel moderator: reviews the pending request a few seconds after
-  /// it's filed. (In production the review happens on the admin dashboard and
-  /// arrives as a realtime status change.)
-  void _scheduleBoostReview() {
-    Timer(const Duration(seconds: 10), () {
-      if (_boostPendingAt == null) return;
-      approveBoostRequest();
-    });
-  }
-
-  /// Panel approved → the promotion goes live for [boostDuration] (stacking
-  /// extends an already-live boost).
-  void approveBoostRequest() {
-    if (_boostPendingAt == null) return;
-    _boostPendingAt = null;
+  /// Spend one Up to fill a dead hour — promotes the chair for [boostDuration].
+  /// Returns false when out of Ups.
+  bool useBoost() {
+    if (_boosts <= 0) return false;
+    _boosts -= 1;
     final base = boostActive ? _boostActiveUntil! : DateTime.now();
     _boostActiveUntil = base.add(boostDuration);
-    if (_remindersOn) {
-      Notify.show(L.boostApprovedTitle, L.boostApprovedBody);
-    }
     notifyListeners();
-  }
-
-  /// Panel rejected → the escrowed Up returns to the wallet. (The mock
-  /// moderator never rejects; wired for the real panel.)
-  void rejectBoostRequest() {
-    if (_boostPendingAt == null) return;
-    _boostPendingAt = null;
-    _boosts += 1;
-    notifyListeners();
+    return true;
   }
 
   // ═══════════════════ QR check-in handshake ═══════════════════════════════
@@ -2277,10 +2235,6 @@ class AppState extends ChangeNotifier {
     _vipCommissionSavedSom = sp.getInt('vipSaved') ?? _vipCommissionSavedSom;
     _vipUntil = _readEpoch(sp, 'vipUntil');
     _boostActiveUntil = _readEpoch(sp, 'boostUntil');
-    // A pending Boost request survives a relaunch; the mock moderator's timer
-    // died with the old process, so re-arm the review.
-    _boostPendingAt = _readEpoch(sp, 'boostReqAt');
-    if (_boostPendingAt != null) _scheduleBoostReview();
     final mbShop = sp.getString('myBarberShop');
     if (mbShop != null) _myBarberShopId = mbShop.isEmpty ? null : mbShop;
     final mbId = sp.getString('myBarberId');
@@ -2424,7 +2378,6 @@ class AppState extends ChangeNotifier {
     await sp.setInt('vipSaved', _vipCommissionSavedSom);
     await _putEpoch(sp, 'vipUntil', _vipUntil);
     await _putEpoch(sp, 'boostUntil', _boostActiveUntil);
-    await _putEpoch(sp, 'boostReqAt', _boostPendingAt);
     await sp.setString('myBarberShop', _myBarberShopId ?? '');
     await sp.setString('myBarberId', _myBarberId ?? '');
     await sp.setString('vscan', jsonEncode(_verifiedScanStreak));
@@ -2654,7 +2607,6 @@ class AppState extends ChangeNotifier {
     _vipSince = null;
     _vipCommissionSavedSom = 0;
     _boostActiveUntil = null;
-    _boostPendingAt = null;
     _ledger.clear();
     _ledgerSeeded = false;
     _myServices
