@@ -16,7 +16,7 @@ import 'package:image/image.dart' as img;
 ///
 /// Run:  dart run tool/strip_floor.dart
 void main() {
-  const src = r'C:\Users\Victus\Downloads\Gemini_Generated_Image_3bxk2i3bxk2i3bxk.jpg';
+  const src = r'C:\Users\Victus\Downloads\Gemini_Generated_Image_fkakk0fkakk0fkak.png';
   const out = 'assets/tiles/cuts.png';
 
   final bytes = File(src).readAsBytesSync();
@@ -30,15 +30,15 @@ void main() {
   final h = image.height;
   stdout.writeln('src ${w}x$h');
 
-  // Remove ONLY the white studio background (and the frosted back-wall panel),
-  // keeping the floor pedestal (~217) and the whole diorama. Threshold 226
-  // clears white (255) + back wall (234) but keeps the floor + subject.
+  // Cut the light-gray studio background (~229-235). The chair/table subject and
+  // even the silver legs (124-161) sit well below 221, so the flood strips the
+  // bg + soft contact shadow but keeps the whole chair/table/tools intact.
   bool isBg(int x, int y) {
     final p = image.getPixel(x, y);
     final r = p.r.toDouble(), g = p.g.toDouble(), b = p.b.toDouble();
     final lum = 0.299 * r + 0.587 * g + 0.114 * b;
     final sat = [r, g, b].reduce(max) - [r, g, b].reduce(min);
-    return lum > 226 && sat < 20;
+    return lum > 221 && sat < 14;
   }
 
   final removed = List<bool>.filled(w * h, false);
