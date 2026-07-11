@@ -452,10 +452,12 @@ class _HyperspacePainter extends CustomPainter {
       );
     }
 
+    final isHold = driveT <= 0.001;
     for (final s in stars) {
       final sp = s.speed * (0.5 + 0.9 * s.depth);
       // Wrap so streaks keep flowing out of the tunnel (sustained travel).
       final total = s.r0 + accel * sp * 2.4;
+      final wrapped = total >= 1.3; // re-entered at the tunnel mouth
       final lead = (total % 1.3) * maxR;
       final streak = (streakF * sp * (0.28 + 0.62 * s.depth) * maxR)
           .clamp(0.0, lead * 0.92);
@@ -470,36 +472,47 @@ class _HyperspacePainter extends CustomPainter {
       final op = (s.bright * field * centerDim).clamp(0.0, 1.0);
       final w = (0.9 + s.bright * 1.5) * (0.6 + 0.55 * s.depth);
 
-      if (streak < 2.0) {
-        // Still a star — twinkle while we hold before the jump.
+      if (isHold) {
+        // The pause before the jump — a calm starfield, gently twinkling.
+        // This is the ONLY place dots are drawn.
         final twinkle = 0.72 + 0.28 * math.sin(warp * 90 + s.tw);
         canvas.drawCircle(p2, w * 0.7,
             Paint()..color = base.withValues(alpha: op * twinkle));
-      } else {
-        final p1 =
-            Offset(cx + dx * (lead - streak), cy + dy * (lead - streak));
-        canvas.drawLine(
-          p1,
-          p2,
-          Paint()
-            ..strokeCap = StrokeCap.round
-            ..strokeWidth = w
-            ..shader = ui.Gradient.linear(p1, p2, [
-              base.withValues(alpha: 0),
-              base.withValues(alpha: op),
-            ]),
-        );
-        // White-hot leading tip.
-        if (streak > 6) {
-          canvas.drawCircle(
-            p2,
-            w * 0.62,
-            Paint()
-              ..color =
-                  Color.lerp(base, Colors.white, 0.6)!.withValues(alpha: op),
-          );
-        }
+        continue;
       }
+
+      if (streak < 1.5) {
+        // Mid-jump with no real streak yet. A freshly WRAPPED star at the
+        // tunnel mouth is hidden (the bloom covers the mouth; it grows into a
+        // streak within frames) — never a stray dot. An ORIGINAL star still
+        // spooling up stays visible as a steady point so launch is seamless.
+        if (!wrapped) {
+          canvas.drawCircle(
+              p2, w * 0.7, Paint()..color = base.withValues(alpha: op));
+        }
+        continue;
+      }
+
+      final p1 = Offset(cx + dx * (lead - streak), cy + dy * (lead - streak));
+      // Comet streak: transparent tail → body → white-hot head, all inside a
+      // single stroke — no separate tip circles (those read as stray dots).
+      final head = Color.lerp(base, Colors.white, 0.55)!;
+      canvas.drawLine(
+        p1,
+        p2,
+        Paint()
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = w
+          ..shader = ui.Gradient.linear(p1, p2, [
+            base.withValues(alpha: 0),
+            base.withValues(alpha: op),
+            head.withValues(alpha: op),
+          ], const [
+            0.0,
+            0.72,
+            1.0,
+          ]),
+      );
     }
   }
 
