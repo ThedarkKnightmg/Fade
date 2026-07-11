@@ -35,10 +35,12 @@ class _BoostScreenState extends State<BoostScreen> {
       ));
   }
 
-  void _useBoost() {
-    if (AppState.instance.useBoost()) {
+  void _requestBoost() {
+    // Boosts aren't self-serve: this files a request the platform's control
+    // panel must approve before the promotion goes live.
+    if (AppState.instance.requestBoost()) {
       HapticFeedback.mediumImpact();
-      _toast(L.boostOnToast);
+      _toast(L.boostRequestedToast);
     }
   }
 
@@ -105,7 +107,10 @@ class _BoostScreenState extends State<BoostScreen> {
                           boosts: s.boosts,
                           active: s.boostActive,
                           activeUntil: s.boostActiveUntil,
-                          onUse: s.boosts > 0 ? _useBoost : null,
+                          pending: s.boostRequestPending,
+                          onUse: s.boosts > 0 && !s.boostRequestPending
+                              ? _requestBoost
+                              : null,
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -550,12 +555,14 @@ class _BoostBalanceCard extends StatelessWidget {
     required this.boosts,
     required this.active,
     required this.activeUntil,
+    required this.pending,
     required this.onUse,
   });
 
   final int boosts;
   final bool active;
   final DateTime? activeUntil;
+  final bool pending;
   final VoidCallback? onUse;
 
   @override
@@ -609,13 +616,59 @@ class _BoostBalanceCard extends StatelessWidget {
                 ),
               ),
             )
+          else if (pending)
+            // Filed and escrowed — the platform's control panel reviews it
+            // before the promotion goes live.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Breathe(
+                    period: const Duration(milliseconds: 1400),
+                    // Triangle wave so the pulse loops smoothly (no snap).
+                    builder: (context, v) => Opacity(
+                      opacity: 0.55 + 0.45 * (1 - (2 * v - 1).abs()),
+                      child: const Icon(Icons.hourglass_top_rounded,
+                          size: 18, color: AppColors.gold),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    L.boostPendingLabel,
+                    style: GoogleFonts.nunito(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.gold,
+                    ),
+                  ),
+                ],
+              ),
+            )
           else
             PrimaryButton(
-              label: onUse == null ? L.outOfUps : L.useBoostNow,
+              label: onUse == null ? L.outOfUps : L.requestBoost,
               icon: Icons.bolt_rounded,
               height: 52,
               onPressed: onUse,
             ),
+          if (!active) ...[
+            const SizedBox(height: 10),
+            Text(
+              L.boostPendingHint,
+              style: GoogleFonts.nunito(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: p.textSecondary,
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -1204,6 +1204,25 @@ class L {
       'Нет Up — купите пакет ниже', 'Up tugadi — quyidan paket oling');
   static String get boostOnToast => _t("Boost on — you're at the top 🚀",
       'Boost включён — вы в топе 🚀', 'Boost yoqildi — tepadasiz 🚀');
+  // ── Boost approval — requests go through the platform's control panel ──
+  static String get requestBoost =>
+      _t('Request a boost', 'Запросить Boost', "Boost so'rash");
+  static String get boostRequestedToast => _t(
+      'Request sent — the platform reviews it shortly ⏳',
+      'Запрос отправлен — платформа скоро рассмотрит ⏳',
+      "So'rov yuborildi — platforma tez orada ko'rib chiqadi ⏳");
+  static String get boostPendingLabel => _t('Waiting for approval…',
+      'Ожидает одобрения…', 'Tasdiq kutilmoqda…');
+  static String get boostPendingHint => _t(
+      'Every boost is reviewed by the platform before it goes live.',
+      'Каждый Boost проверяется платформой перед запуском.',
+      'Har bir Boost jonli efirga chiqishidan oldin platforma tekshiradi.');
+  static String get boostApprovedTitle =>
+      _t('Boost approved ⚡', 'Boost одобрен ⚡', 'Boost tasdiqlandi ⚡');
+  static String get boostApprovedBody => _t(
+      "You're at the top of search for the next hour.",
+      'Вы в топе поиска на ближайший час.',
+      'Siz keyingi bir soat qidiruv tepasidasiz.');
   static String upsUnit(int n) => _t('$n Ups', '$n Up', '$n Up');
   static String perBoostLabel(String som) =>
       _t('$som / boost', '$som / Boost', '$som / Boost');
