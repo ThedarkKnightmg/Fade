@@ -27,9 +27,16 @@ import '../chat/chat_screen.dart';
 /// price), the "inside the shop" gallery, the service checklist, reviews,
 /// the booking cockpit, and a sticky Book bar pinned to the bottom.
 class BarbershopDetailScreen extends StatefulWidget {
-  const BarbershopDetailScreen({super.key, required this.shop});
+  const BarbershopDetailScreen({
+    super.key,
+    required this.shop,
+    this.initialBarberId,
+  });
 
   final Barbershop shop;
+
+  /// Pre-select this stylist (e.g. arriving from the barber-centric feed).
+  final String? initialBarberId;
 
   @override
   State<BarbershopDetailScreen> createState() =>
@@ -44,6 +51,21 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
   int _dateIndex = 0;
   DateTime? _time;
 
+  /// The shop's stylists grouped by spotlight tier — boosted first (their
+  /// paid spotlight), then VIP, then standard; rating breaks ties. The
+  /// hierarchy belongs to individuals: a colleague's boost moves only THEM.
+  late final List<Barber> _roster = () {
+    final st = AppState.instance;
+    final xs = [...widget.shop.barbers];
+    xs.sort((a, b) {
+      final t =
+          st.barberSpotlightTier(a.id).compareTo(st.barberSpotlightTier(b.id));
+      if (t != 0) return t;
+      return b.rating.compareTo(a.rating);
+    });
+    return xs;
+  }();
+
   late final List<DateTime> _days = List.generate(7, (i) {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day).add(Duration(days: i));
@@ -53,10 +75,14 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
   void initState() {
     super.initState();
     final my = AppState.instance.myBarber;
-    if (my != null && my.shop.id == widget.shop.id) {
+    if (widget.initialBarberId != null &&
+        widget.shop.barbers.any((b) => b.id == widget.initialBarberId)) {
+      // Arrived from the barber feed — keep that exact stylist selected.
+      _barberId = widget.initialBarberId;
+    } else if (my != null && my.shop.id == widget.shop.id) {
       _barberId = my.barber.id;
     } else {
-      _barberId = widget.shop.barbers.first.id;
+      _barberId = _roster.first.id; // the top-tier stylist leads
     }
     final now = DateTime.now();
     final (startHour, endHour) =
@@ -334,7 +360,9 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                   children: [
                     PanelLabel(L.withLabel),
                     BarberSwatchRow(
-                      barbers: shop.barbers,
+                      barbers: _roster,
+                      tierOf: (b) =>
+                          AppState.instance.barberSpotlightTier(b.id),
                       selectedId: _barberId,
                       onSelect: (id) => setState(() {
                         _barberId = id;

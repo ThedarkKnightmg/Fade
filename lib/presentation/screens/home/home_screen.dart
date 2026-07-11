@@ -15,8 +15,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../../data/mock_data.dart';
+import '../../../data/models/barber.dart';
 import '../../../data/models/barbershop.dart';
 import '../../../data/models/booking.dart';
+import '../../widgets/barber_card.dart';
 import '../../widgets/barbershop_card.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
@@ -587,32 +589,45 @@ class _ShopsSection extends StatefulWidget {
 class _ShopsSectionState extends State<_ShopsSection> {
   _HomeFilter _f = _HomeFilter.all;
 
+  /// false = the grid ranks SHOPS; true = it ranks individual BARBERS.
+  bool _barbersMode = false;
+
   List<Barbershop> _list() {
     final s = widget.shops;
-    // A boosted/VIP barber's own shop floats to the very top (perk made real).
-    List<Barbershop> boostedFirst(List<Barbershop> xs) {
-      final st = AppState.instance;
-      return [
-        ...xs.where((x) => st.shopIsBoosted(x.id)),
-        ...xs.where((x) => !st.shopIsBoosted(x.id)),
-      ];
-    }
-
+    // Spotlight isolation: shop ranking is PAYMENT-BLIND. A boosted/VIP barber
+    // rises in the Barbers view only — their shop never floats, so paying
+    // never benefits non-paying colleagues at the same address.
     switch (_f) {
       case _HomeFilter.all:
-        return boostedFirst([
+        return [
           ...s.where((x) => x.isPremium),
           ...s.where((x) => !x.isPremium),
-        ]);
+        ];
       case _HomeFilter.premium:
-        return boostedFirst(s.where((x) => x.isPremium).toList());
+        return s.where((x) => x.isPremium).toList();
       case _HomeFilter.top:
-        return boostedFirst(
-            [...s]..sort((a, b) => b.rating.compareTo(a.rating)));
+        return [...s]..sort((a, b) => b.rating.compareTo(a.rating));
       case _HomeFilter.budget:
-        return boostedFirst(
-            [...s]..sort((a, b) => a.priceLevel.compareTo(b.priceLevel)));
+        return [...s]..sort((a, b) => a.priceLevel.compareTo(b.priceLevel));
     }
+  }
+
+  /// Every stylist across every shop, ranked by spotlight tier (boosted →
+  /// VIP → standard), then rating. Strictly per-barber.
+  List<(Barbershop, Barber)> _barberList() {
+    final st = AppState.instance;
+    final all = <(Barbershop, Barber)>[
+      for (final shop in widget.shops)
+        for (final b in shop.barbers) (shop, b),
+    ];
+    all.sort((a, b) {
+      final t = st
+          .barberSpotlightTier(a.$2.id)
+          .compareTo(st.barberSpotlightTier(b.$2.id));
+      if (t != 0) return t;
+      return b.$2.rating.compareTo(a.$2.rating);
+    });
+    return all;
   }
 
   @override
@@ -621,32 +636,48 @@ class _ShopsSectionState extends State<_ShopsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Filter chips.
+        // Shops | Barbers — the main grid ranks either whole shops or the
+        // individual stylists (spotlight isolation: a boosted/VIP barber rises
+        // alone, never dragging their colleagues up with them).
         ScrollReveal(
-          child: SizedBox(
-            height: 40,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.zero,
-              children: [
-                for (final f in _HomeFilter.values) ...[
-                  _HomeFilterChip(
-                    label: _homeFilterLabel(f),
-                    selected: f == _f,
-                    onTap: () => setState(() => _f = f),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ],
-            ),
+          child: _FeedModeSwitch(
+            barbersMode: _barbersMode,
+            onChanged: (v) => setState(() => _barbersMode = v),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
+        if (!_barbersMode) ...[
+          // Filter chips (shop-specific — hidden in Barbers mode).
+          ScrollReveal(
+            child: SizedBox(
+              height: 40,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.zero,
+                children: [
+                  for (final f in _HomeFilter.values) ...[
+                    _HomeFilterChip(
+                      label: _homeFilterLabel(f),
+                      selected: f == _f,
+                      onTap: () => setState(() => _f = f),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         ScrollReveal(
           child: Row(
             children: [
               Text(
-                _f == _HomeFilter.all ? L.barbershops : _homeFilterLabel(_f),
+                _barbersMode
+                    ? L.feedBarbers
+                    : _f == _HomeFilter.all
+                        ? L.barbershops
+                        : _homeFilterLabel(_f),
                 style: AppTypography.h2(context),
               ),
               const Spacer(),
@@ -666,11 +697,143 @@ class _ShopsSectionState extends State<_ShopsSection> {
           ),
         ),
         const SizedBox(height: 14),
-        for (final shop in list) ...[
-          ScrollReveal(child: widget.card(shop)),
-          const SizedBox(height: 12),
-        ],
+        if (_barbersMode)
+          for (final (i, e) in _barberList().indexed) ...[
+            ScrollReveal(
+              child: _SpotlightBarberCard(shop: e.$1, barber: e.$2, index: i),
+            ),
+            const SizedBox(height: 12),
+          ]
+        else
+          for (final shop in list) ...[
+            ScrollReveal(child: widget.card(shop)),
+            const SizedBox(height: 12),
+          ],
       ],
+    );
+  }
+}
+
+/// The two-button feed switch: Shops ⇄ Barbers.
+class _FeedModeSwitch extends StatelessWidget {
+  const _FeedModeSwitch({required this.barbersMode, required this.onChanged});
+
+  final bool barbersMode;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    Widget seg(String label, IconData icon, bool selected, bool value) {
+      return Expanded(
+        child: GestureDetector(
+          onTap: () {
+            if (selected) return;
+            HapticFeedback.selectionClick();
+            onChanged(value);
+          },
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.accent : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon,
+                    size: 17,
+                    color: selected ? Colors.white : p.textTertiary),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: GoogleFonts.nunito(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: selected ? Colors.white : p.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: clayDecoration(p, radius: 20),
+      child: Row(
+        children: [
+          seg(L.feedShops, Icons.storefront_rounded, !barbersMode, false),
+          seg(L.feedBarbers, Icons.face_rounded, barbersMode, true),
+        ],
+      ),
+    );
+  }
+}
+
+/// A stylist in the barber-centric feed. Tier 0 (boosted) gets the premium
+/// breathing aura + "Boosted" pill, tier 1 a gold VIP pill, tier 2 is plain.
+/// The glow belongs to THIS barber only — never their shop.
+class _SpotlightBarberCard extends StatelessWidget {
+  const _SpotlightBarberCard({
+    required this.shop,
+    required this.barber,
+    required this.index,
+  });
+
+  final Barbershop shop;
+  final Barber barber;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final st = AppState.instance;
+    final tier = st.barberSpotlightTier(barber.id);
+    final card = BarberCard(
+      barber: barber,
+      index: index,
+      subtitle: shop.name,
+      isMyBarber: st.myBarber?.barber.id == barber.id,
+      badge: tier == 0
+          ? MiniPill('⚡ ${L.boostedPill}', style: MiniPillStyle.gold)
+          : tier == 1
+              ? const MiniPill('VIP', style: MiniPillStyle.gold)
+              : null,
+      onTap: () => Navigator.of(context).push(
+        FadeThroughPageRoute(
+          child: BarbershopDetailScreen(
+            shop: shop,
+            initialBarberId: barber.id,
+          ),
+        ),
+      ),
+    );
+    if (tier != 0) return card;
+    // The premium glowing aura — breathes softly around the boosted stylist.
+    return Breathe(
+      period: const Duration(milliseconds: 2600),
+      builder: (context, t) {
+        final pulse = 1 - (2 * t - 1).abs(); // smooth 0→1→0 loop
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.gold.withValues(alpha: 0.22 + 0.18 * pulse),
+                blurRadius: 22 + 6 * pulse,
+                spreadRadius: -2,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: card,
+        );
+      },
     );
   }
 }

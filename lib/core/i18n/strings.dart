@@ -587,6 +587,11 @@ class L {
   static String get navToday => _t('Today', 'Сегодня', 'Bugun');
   static String get navRequests => _t('Requests', 'Заявки', "So'rovlar");
   static String get navSchedule => _t('Schedule', 'График', 'Jadval');
+
+  // ── Home feed mode toggle (Shops | Barbers) + spotlight badges ──
+  static String get feedShops => _t('Shops', 'Салоны', 'Salonlar');
+  static String get feedBarbers => _t('Barbers', 'Барберы', 'Barberlar');
+  static String get boostedPill => _t('Boosted', 'В топе', 'Topda');
   static String get yourServices =>
       _t('Your services', 'Ваши услуги', 'Xizmatlaringiz');
   static String get bookingAsClient => _t('Booking as a client?',

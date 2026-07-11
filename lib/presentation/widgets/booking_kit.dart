@@ -69,10 +69,15 @@ class BarberSwatchRow extends StatelessWidget {
     required this.barbers,
     required this.selectedId,
     required this.onSelect,
+    this.tierOf,
     this.dark = false,
   });
 
   final List<Barber> barbers;
+
+  /// Spotlight tier per barber (0 boosted · 1 VIP · 2 standard) — boosted
+  /// stylists get a gold ring + bolt, VIP a gold border. Null = no tiers.
+  final int Function(Barber)? tierOf;
 
   /// null means "any barber".
   final String? selectedId;
@@ -92,6 +97,7 @@ class BarberSwatchRow extends StatelessWidget {
       required String label,
       required bool active,
       required VoidCallback onTap,
+      int tier = 2,
     }) {
       return GestureDetector(
         onTap: onTap,
@@ -108,13 +114,36 @@ class BarberSwatchRow extends StatelessWidget {
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
+                      // Spotlight ring: boosted = solid gold, VIP = soft gold.
                       border: Border.all(
-                        color: active ? AppColors.accent : p.border,
-                        width: active ? 2.4 : 1,
+                        color: active
+                            ? AppColors.accent
+                            : tier == 0
+                                ? AppColors.gold
+                                : tier == 1
+                                    ? AppColors.gold.withValues(alpha: 0.55)
+                                    : p.border,
+                        width: active ? 2.4 : (tier <= 1 ? 2 : 1),
                       ),
                     ),
                     child: circle,
                   ),
+                  if (tier == 0 && !active)
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: AppColors.gold,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: p.card, width: 2),
+                        ),
+                        child: const Icon(Icons.bolt_rounded,
+                            size: 11, color: Colors.white),
+                      ),
+                    ),
                   if (active)
                     Positioned(
                       right: -2,
@@ -165,6 +194,7 @@ class BarberSwatchRow extends StatelessWidget {
               ),
               label: barbers[i].name.split(' ').first,
               active: selectedId == barbers[i].id,
+              tier: tierOf?.call(barbers[i]) ?? 2,
               onTap: () => onSelect(barbers[i].id),
             ),
           // The "whoever's free" swatch — plain blue.

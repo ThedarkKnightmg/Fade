@@ -1478,11 +1478,43 @@ class AppState extends ChangeNotifier {
   /// gold-pin + float them to the top.)
   bool get barberBoosted => boostActive || barberVip;
 
-  /// A shop the client should see floated to the top of lists + gold-pinned on
-  /// the map — the signed-in barber's own shop while they have an active Boost
-  /// or VIP. Makes the placement perk observable in-app.
+  /// Kept ONLY for the map's gold pin (wayfinding to your own boosted chair).
+  /// Ranking no longer uses shop-level boost — the spotlight is isolated to
+  /// the individual barber (see [barberSpotlightTier]), so a paying barber
+  /// never floats their non-paying colleagues.
   bool shopIsBoosted(String shopId) =>
       barberBoosted && _registeredBarber?.shopId == shopId;
+
+  // ── Spotlight isolation — status belongs to the individual STYLIST ──
+  // The feed and rosters rank barbers, not shops. Demo seed below gives some
+  // mock stylists VIP/boost so the hierarchy is visible; the signed-in
+  // barber's own profile id reads their REAL wallet state instead (instant,
+  // wallet-triggered — no admin in the loop).
+  static const Set<String> _seedVipBarbers = {
+    'shop1_b3', 'shop2_b1', 'shop4_b2', // demo stylists with a VIP sub
+  };
+  static const Set<String> _seedBoostedBarbers = {
+    'shop2_b1', // demo Tier-1: VIP + live boost (spotlight card)
+  };
+
+  /// Does this stylist have an active VIP subscription?
+  bool barberIsVip(String barberId) => barberId == meBarber.barber.id
+      ? barberVip
+      : _seedVipBarbers.contains(barberId);
+
+  /// Is this stylist's own profile boosted right now?
+  bool barberIsBoosted(String barberId) => barberId == meBarber.barber.id
+      ? boostActive
+      : _seedBoostedBarbers.contains(barberId);
+
+  /// Spotlight tier for ranking: 0 = boosted (glowing aura, top),
+  /// 1 = VIP, 2 = standard. Strictly per-barber — never inherited by
+  /// colleagues at the same shop.
+  int barberSpotlightTier(String barberId) => barberIsBoosted(barberId)
+      ? 0
+      : barberIsVip(barberId)
+          ? 1
+          : 2;
 
   /// Buy a Fuel pack — provider-handoff stub; adds Ups to the wallet.
   void buyBoostPack(String packId) {

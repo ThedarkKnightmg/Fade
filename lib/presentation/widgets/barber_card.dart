@@ -15,6 +15,7 @@ class BarberCard extends StatelessWidget {
     required this.index,
     this.subtitle,
     this.isMyBarber = false,
+    this.badge,
     this.onTap,
   });
 
@@ -22,6 +23,10 @@ class BarberCard extends StatelessWidget {
   final int index;
   final String? subtitle;
   final bool isMyBarber;
+
+  /// Optional status pill next to the name (e.g. VIP / Boosted spotlight).
+  final Widget? badge;
+
   final VoidCallback? onTap;
 
   @override
@@ -51,6 +56,10 @@ class BarberCard extends StatelessWidget {
                     if (isMyBarber) ...[
                       const SizedBox(width: 6),
                       MiniPill(L.wdMyBarber),
+                    ],
+                    if (badge != null) ...[
+                      const SizedBox(width: 6),
+                      badge!,
                     ],
                   ],
                 ),
