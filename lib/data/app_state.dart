@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
@@ -2728,8 +2729,26 @@ class AppState extends ChangeNotifier {
         ),
       ],
     );
+    // Demo: the booked barber "replies" a few seconds later, so a client's
+    // request doesn't sit at "Waiting for reply" forever (in production the
+    // barber accepts/declines from their own device). Only the user's own
+    // bookings auto-confirm.
+    if (booking.status == BookingStatus.requested && booking.clientName == null) {
+      _scheduleClientBookingAutoConfirm(booking.id);
+    }
     notifyListeners();
     return true;
+  }
+
+  /// Simulate the booked barber accepting a client's request after a short
+  /// delay, so the home card advances requested → upcoming on its own.
+  void _scheduleClientBookingAutoConfirm(String id) {
+    Timer(const Duration(seconds: 4), () {
+      final b = _bookingById(id);
+      // Only if it's still pending — the user may have cancelled meanwhile.
+      if (b == null || b.status != BookingStatus.requested) return;
+      confirmBooking(id); // → upcoming + a "confirmed" notification
+    });
   }
 
   void cancelBooking(String id) {
