@@ -2,8 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/animations/motion.dart';
+import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../ai/ai_hair_screen.dart';
 import '../bookings/my_bookings_screen.dart';
@@ -218,15 +220,21 @@ class _HomiesNav extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _NavItem(
-                      icon: Icons.home_rounded,
-                      active: index == 0,
-                      onTap: () => onTap(0),
+                    Flexible(
+                      child: _NavItem(
+                        icon: Icons.home_rounded,
+                        label: L.navHome,
+                        active: index == 0,
+                        onTap: () => onTap(0),
+                      ),
                     ),
-                    _NavItem(
-                      icon: Icons.explore_rounded,
-                      active: index == 4,
-                      onTap: () => onTap(4),
+                    Flexible(
+                      child: _NavItem(
+                        icon: Icons.explore_rounded,
+                        label: L.navExplore,
+                        active: index == 4,
+                        onTap: () => onTap(4),
+                      ),
                     ),
                   ],
                 ),
@@ -236,15 +244,21 @@ class _HomiesNav extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _NavItem(
-                      icon: Icons.forum_rounded,
-                      active: index == 2,
-                      onTap: () => onTap(2),
+                    Flexible(
+                      child: _NavItem(
+                        icon: Icons.forum_rounded,
+                        label: L.navChats,
+                        active: index == 2,
+                        onTap: () => onTap(2),
+                      ),
                     ),
-                    _NavItem(
-                      icon: Icons.face_rounded,
-                      active: index == 3,
-                      onTap: () => onTap(3),
+                    Flexible(
+                      child: _NavItem(
+                        icon: Icons.face_rounded,
+                        label: L.navProfile,
+                        active: index == 3,
+                        onTap: () => onTap(3),
+                      ),
                     ),
                   ],
                 ),
@@ -259,50 +273,75 @@ class _HomiesNav extends StatelessWidget {
 }
 
 class _NavItem extends StatelessWidget {
-  const _NavItem({required this.icon, required this.active, required this.onTap});
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
 
   final IconData icon;
+  final String label;
   final bool active;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // Reference look, theme-coloured: every tab sits in its own circular slot.
-    // Inactive = faint grey circle + grey glyph; active = accent-tinted circle
-    // + accent glyph. Nothing else — no ring, no glow, no under-dot.
+    // The active tab BLOOMS into a soft accent chip with its label sliding
+    // open; inactive tabs are quiet glyphs. One clear "you are here" — no
+    // heavy circle behind every icon, and the labels teach the icons.
     return PressableScale(
-      onTap: onTap,
-      pressedScale: 0.85,
-      child: SizedBox(
-        width: 56,
-        height: 72,
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: active
-                  ? AppColors.accent.withValues(alpha: 0.14)
-                  : p.textTertiary.withValues(alpha: 0.08),
-            ),
-            child: AnimatedScale(
-              scale: active ? 1.08 : 1.0,
-              duration: const Duration(milliseconds: 320),
-              curve: Curves.easeOutCubic,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      pressedScale: 0.9,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+            horizontal: active ? 13 : 9, vertical: 10),
+        decoration: BoxDecoration(
+          color: active
+              ? AppColors.accent.withValues(alpha: 0.13)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
+                scale: active ? 1.06 : 1.0,
+                duration: const Duration(milliseconds: 320),
+                curve: Curves.easeOutCubic,
                 child: Icon(
                   icon,
-                  key: ValueKey(active),
                   size: 24,
-                  color: active ? AppColors.accent : p.textTertiary,
+                  color: active ? AppColors.accentDeep : p.textTertiary,
                 ),
               ),
-            ),
+              if (active) ...[
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.fade,
+                    style: GoogleFonts.nunito(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.accentDeep,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),

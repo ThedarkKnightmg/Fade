@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/app_state.dart';
 import 'barber_dashboard_screen.dart';
@@ -154,23 +156,35 @@ class _BarberNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _NavItem(
-                  icon: Icons.today_rounded,
-                  selected: index == 0,
-                  onTap: () => onTap(0)),
-              _NavItem(
-                  icon: Icons.inbox_rounded,
-                  selected: index == 1,
-                  badge: pending,
-                  onTap: () => onTap(1)),
-              _NavItem(
-                  icon: Icons.calendar_month_rounded,
-                  selected: index == 2,
-                  onTap: () => onTap(2)),
-              _NavItem(
-                  icon: Icons.person_rounded,
-                  selected: index == 3,
-                  onTap: () => onTap(3)),
+              Flexible(
+                child: _NavItem(
+                    icon: Icons.today_rounded,
+                    label: L.navToday,
+                    selected: index == 0,
+                    onTap: () => onTap(0)),
+              ),
+              Flexible(
+                child: _NavItem(
+                    icon: Icons.inbox_rounded,
+                    label: L.navRequests,
+                    selected: index == 1,
+                    badge: pending,
+                    onTap: () => onTap(1)),
+              ),
+              Flexible(
+                child: _NavItem(
+                    icon: Icons.calendar_month_rounded,
+                    label: L.navSchedule,
+                    selected: index == 2,
+                    onTap: () => onTap(2)),
+              ),
+              Flexible(
+                child: _NavItem(
+                    icon: Icons.person_rounded,
+                    label: L.navProfile,
+                    selected: index == 3,
+                    onTap: () => onTap(3)),
+              ),
             ],
           ),
         );
@@ -182,12 +196,14 @@ class _BarberNav extends StatelessWidget {
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.icon,
+    required this.label,
     required this.selected,
     required this.onTap,
     this.badge = 0,
   });
 
   final IconData icon;
+  final String label;
   final bool selected;
   final VoidCallback onTap;
   final int badge;
@@ -195,66 +211,90 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // Same slot treatment as the client bar: a circle that lights up with the
-    // accent when selected, grey glyph otherwise. Minimal — no label.
+    // Same treatment as the client bar: the selected tab blooms into a soft
+    // accent chip with its label sliding open; the rest are quiet glyphs.
+    // The Requests badge rides on the icon in both states.
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 56,
-        height: 72,
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: selected
-                  ? AppColors.accent.withValues(alpha: 0.14)
-                  : p.textTertiary.withValues(alpha: 0.08),
-            ),
-            child: Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
-              children: [
-                AnimatedScale(
-                  scale: selected ? 1.08 : 1.0,
-                  duration: const Duration(milliseconds: 320),
-                  curve: Curves.easeOutCubic,
-                  child: Icon(
-                    icon,
-                    size: 24,
-                    color: selected ? AppColors.accent : p.textTertiary,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+            horizontal: selected ? 13 : 9, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.accent.withValues(alpha: 0.13)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  AnimatedScale(
+                    scale: selected ? 1.06 : 1.0,
+                    duration: const Duration(milliseconds: 320),
+                    curve: Curves.easeOutCubic,
+                    child: Icon(
+                      icon,
+                      size: 24,
+                      color: selected ? AppColors.accentDeep : p.textTertiary,
+                    ),
                   ),
-                ),
-                if (badge > 0)
-                  Positioned(
-                    right: 4,
-                    top: 6,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      constraints:
-                          const BoxConstraints(minWidth: 16, minHeight: 16),
-                      decoration: const BoxDecoration(
-                        color: AppColors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        '$badge',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.nunito(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          height: 1,
+                  if (badge > 0)
+                    Positioned(
+                      right: -8,
+                      top: -8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        constraints:
+                            const BoxConstraints(minWidth: 16, minHeight: 16),
+                        decoration: const BoxDecoration(
+                          color: AppColors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '$badge',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.nunito(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            height: 1,
+                          ),
                         ),
                       ),
                     ),
+                ],
+              ),
+              if (selected) ...[
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.fade,
+                    style: GoogleFonts.nunito(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.accentDeep,
+                    ),
                   ),
+                ),
               ],
-            ),
+            ],
           ),
         ),
       ),

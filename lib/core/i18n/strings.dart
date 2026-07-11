@@ -578,6 +578,15 @@ class L {
   // ── Barber: Profile ───────────────────────────────────
   static String get barberTag => _t('BARBER', 'БАРБЕР', 'BARBER');
   static String get profileTab => _t('Profile', 'Профиль', 'Profil');
+
+  // ── Bottom nav labels (short — they live inside the active chip) ──
+  static String get navHome => _t('Home', 'Главная', 'Bosh');
+  static String get navExplore => _t('Explore', 'Обзор', 'Kashf');
+  static String get navChats => _t('Chats', 'Чаты', 'Chatlar');
+  static String get navProfile => _t('Profile', 'Профиль', 'Profil');
+  static String get navToday => _t('Today', 'Сегодня', 'Bugun');
+  static String get navRequests => _t('Requests', 'Заявки', "So'rovlar");
+  static String get navSchedule => _t('Schedule', 'График', 'Jadval');
   static String get yourServices =>
       _t('Your services', 'Ваши услуги', 'Xizmatlaringiz');
   static String get bookingAsClient => _t('Booking as a client?',
