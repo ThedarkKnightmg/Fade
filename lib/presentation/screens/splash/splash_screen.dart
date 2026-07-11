@@ -30,7 +30,9 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF13233F),
+      // Deep space — the intro opens with a hyperspace jump, so the very first
+      // frame must be near-black (not the navy stage) to avoid a colour flash.
+      backgroundColor: const Color(0xFF03060E),
       body: ScissorsCutIntro(onDone: _navigateNext),
     );
   }
