@@ -120,7 +120,6 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
         // ── Brand reveal (plays AFTER the jump) ───────────────────────────
         final glow = _seg(t, 0.48, 0.74);
         final badge = _expo.transform(_seg(t, 0.48, 0.66));
-        final ping = _seg(t, 0.52, 0.76);
         final shimmer = _seg(t, 0.60, 0.76);
         final word = _quart.transform(_seg(t, 0.68, 0.82));
         final line = _quart.transform(_seg(t, 0.75, 0.88));
@@ -171,26 +170,14 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
                     ),
                   ),
                 ),
-              // Arrival flash.
+              // Arrival flash — a clean full-screen white punch (no radial
+              // shape, so nothing reads as a circle).
               if (flashOp > 0.001)
                 Positioned.fill(
                   child: IgnorePointer(
                     child: Opacity(
                       opacity: flashOp,
-                      child: const DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: Alignment(0, -0.10),
-                            radius: 1.0,
-                            colors: [
-                              Colors.white,
-                              Color(0xB32E8BFF),
-                              Color(0x002E8BFF),
-                            ],
-                            stops: [0.0, 0.30, 1.0],
-                          ),
-                        ),
-                      ),
+                      child: const ColoredBox(color: Colors.white),
                     ),
                   ),
                 ),
@@ -229,21 +216,6 @@ class _ScissorsCutIntroState extends State<ScissorsCutIntro>
                                         ],
                                       ),
                                     ),
-                                  ),
-                                ),
-                              ),
-                              // Single clean ping ring.
-                              Opacity(
-                                opacity: (0.5 * (1 - ping)).clamp(0.0, 1.0),
-                                child: Container(
-                                  width: 112 + 84 * ping,
-                                  height: 112 + 84 * ping,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: AppColors.accent
-                                            .withValues(alpha: 0.7),
-                                        width: 2),
                                   ),
                                 ),
                               ),
