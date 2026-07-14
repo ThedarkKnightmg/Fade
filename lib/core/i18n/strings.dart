@@ -594,6 +594,22 @@ class L {
   static String get boostedPill => _t('Boosted', 'В топе', 'Topda');
   static String get searchBarbersHint =>
       _t('Find your barber…', 'Найти барбера…', 'Barberingizni toping…');
+
+  // ── "Continue with Telegram" (the market-native primary sign-in) ──
+  static String get tgContinue => _t('Continue with Telegram',
+      'Войти через Telegram', 'Telegram orqali kirish');
+  static String get tgWaiting => _t(
+      'Confirm in Telegram, then come back…',
+      'Подтвердите в Telegram и вернитесь…',
+      'Telegramda tasdiqlang va qayting…');
+  static String get tgFailed => _t(
+      "Telegram sign-in didn't complete — try again",
+      'Вход через Telegram не завершён — попробуйте ещё раз',
+      "Telegram orqali kirish yakunlanmadi — qayta urining");
+  static String get tgOr =>
+      _t('or sign up with details', 'или по данным', "yoki ma'lumotlar bilan");
+  static String get tgDefaultName => _t('Telegram user',
+      'Пользователь Telegram', 'Telegram foydalanuvchisi');
   static String get yourServices =>
       _t('Your services', 'Ваши услуги', 'Xizmatlaringiz');
   static String get bookingAsClient => _t('Booking as a client?',
