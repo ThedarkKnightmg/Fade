@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../ai/ai_hair_screen.dart';
@@ -226,13 +227,7 @@ class _HomiesNav extends StatelessWidget {
                   active: index == 4,
                   onTap: () => onTap(4),
                 ),
-                _NavItem(
-                  icon: Icons.auto_awesome_outlined,
-                  activeIcon: Icons.auto_awesome,
-                  label: 'AI',
-                  active: false,
-                  onTap: onAi,
-                ),
+                _AiNavItem(onTap: onAi),
                 _NavItem(
                   icon: Icons.chat_bubble_outline_rounded,
                   activeIcon: Icons.chat_bubble_rounded,
@@ -319,6 +314,79 @@ class _NavItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The AI tab — the bar's centerpiece. Instead of a quiet glyph it wears a
+/// lit gradient badge (the AI orb's blues in tile form) with a soft breathing
+/// glow, so the signature feature reads as special without breaking the flat
+/// reference layout.
+class _AiNavItem extends StatelessWidget {
+  const _AiNavItem({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Breathe(
+              period: const Duration(milliseconds: 2400),
+              builder: (context, t) {
+                final pulse = 1 - (2 * t - 1).abs(); // smooth 0→1→0 loop
+                return Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF8CC6FF),
+                        Color(0xFF2E8BFF),
+                        Color(0xFF1E6FE0),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.accent
+                            .withValues(alpha: 0.30 + 0.20 * pulse),
+                        blurRadius: 10 + 4 * pulse,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.auto_awesome,
+                      color: Colors.white, size: 19),
+                );
+              },
+            ),
+            const SizedBox(height: 3),
+            Text(
+              'AI',
+              style: GoogleFonts.nunito(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                color: AppColors.accent,
+              ),
+            ),
+            // Keep the same bottom rhythm as the other tabs (5px gap + the
+            // 3.5px indicator slot, which the AI tab never fills).
+            const SizedBox(height: 5),
+            const SizedBox(height: 3.5),
           ],
         ),
       ),
