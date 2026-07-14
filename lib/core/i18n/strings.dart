@@ -610,6 +610,100 @@ class L {
       _t('or sign up with details', 'или по данным', "yoki ma'lumotlar bilan");
   static String get tgDefaultName => _t('Telegram user',
       'Пользователь Telegram', 'Telegram foydalanuvchisi');
+
+  // ── Display-time translation for CATALOGUE text ─────────────────────────
+  // The mock data ships English (service names, specialties, taglines, tags).
+  // tr() localizes them at display time; unknown strings pass through
+  // unchanged, so user-created services etc. are always safe to wrap. Real
+  // backend data will arrive localized and simply flow through.
+  static String tr(String s) {
+    final m = _dataTr[s];
+    if (m == null) return s;
+    return _t(s, m.$1, m.$2);
+  }
+
+  static const Map<String, (String, String)> _dataTr = {
+    // Services
+    'Classic Haircut': ('Классическая стрижка', 'Klassik soch olish'),
+    'Beard Trim': ('Оформление бороды', 'Soqolga shakl berish'),
+    'Hot Towel Shave': (
+      'Бритьё с горячим полотенцем',
+      'Issiq sochiqli soqol olish'
+    ),
+    'Hair & Beard Combo': ('Стрижка + борода', 'Soch + soqol kombo'),
+    'Kids Cut': ('Детская стрижка', 'Bolalar soch olishi'),
+    'Hair Color': ('Окрашивание', "Soch bo'yash"),
+    // Service descriptions
+    'Precision cut tailored to your style and face shape.': (
+      'Точная стрижка под ваш стиль и форму лица.',
+      "Uslubingiz va yuz shaklingizga mos aniq soch olish."
+    ),
+    'Shaping, lining, and conditioning for a defined look.': (
+      'Форма, контуры и уход для чёткого образа.',
+      "Shakl, kontur va parvarish — aniq ko'rinish uchun."
+    ),
+    'Traditional straight-razor shave with hot towel finish.': (
+      'Классическое бритьё опасной бритвой, финиш — горячее полотенце.',
+      "An'anaviy ustara bilan, yakunida issiq sochiq."
+    ),
+    'Full service: haircut plus beard shaping and styling.': (
+      'Полный сервис: стрижка плюс оформление бороды.',
+      "To'liq xizmat: soch olish va soqolga shakl berish."
+    ),
+    'Patient, careful cuts for kids under 12.': (
+      'Терпеливо и аккуратно — детям до 12 лет.',
+      "12 yoshgacha bolalarga sabr bilan, ehtiyotkorona."
+    ),
+    'Single-process color, gloss, or grey blending.': (
+      'Окрашивание, глянец или маскировка седины.',
+      "Bo'yash, jilo yoki oq sochlarni tekislash."
+    ),
+    // Barber specialties
+    'Fades & textures': ('Фейды и текстуры', 'Feyd va tekstura'),
+    'Classic & beard': ('Классика и борода', 'Klassika va soqol'),
+    'Modern styles': ('Современные стили', 'Zamonaviy uslublar'),
+    'Kids & families': ('Дети и семьи', 'Bolalar va oilalar'),
+    // Shop taglines
+    'Premium cuts, classic vibes': (
+      'Премиум-стрижки, классический вайб',
+      'Premium soch olish, klassik ruh'
+    ),
+    'Neighborhood cuts since 2008': (
+      'Стрижки по-соседски с 2008 года',
+      '2008 yildan beri mahalla sartaroshi'
+    ),
+    "Modern men's grooming": (
+      'Современный мужской груминг',
+      'Zamonaviy erkaklar parvarishi'
+    ),
+    'Sharp cuts, sharper attitude': (
+      'Острые стрижки, дерзкий характер',
+      "O'tkir soch olish, o'tkir xarakter"
+    ),
+    'Traditional barbering reimagined': (
+      'Традиции барберинга по-новому',
+      "An'anaviy sartaroshlik yangicha"
+    ),
+    // Shop tags
+    'Premium': ('Премиум', 'Premium'),
+    'Beard expert': ('Эксперт по бороде', 'Soqol ustasi'),
+    'Fades': ('Фейды', 'Feyd'),
+    'Family-friendly': ('Для всей семьи', 'Oilaviy'),
+    'Classic': ('Классика', 'Klassika'),
+    'Walk-ins': ('Без записи', 'Navbatsiz'),
+    'Color': ('Окрашивание', "Bo'yash"),
+    'Skincare': ('Уход за кожей', 'Teri parvarishi'),
+    'Modern': ('Модерн', 'Zamonaviy'),
+    'Lineups': ('Контуры', 'Konturlar'),
+    'Trendy': ('В тренде', 'Trendda'),
+    'Traditional': ('Традиции', "An'anaviy"),
+    'Hot towel': ('Горячее полотенце', 'Issiq sochiq'),
+    // Categories
+    'Haircut': ('Стрижка', 'Soch olish'),
+    'Beard': ('Борода', 'Soqol'),
+    'Shave': ('Бритьё', 'Soqol olish'),
+    'Kids': ('Детям', 'Bolalar'),
+  };
   static String get yourServices =>
       _t('Your services', 'Ваши услуги', 'Xizmatlaringiz');
   static String get bookingAsClient => _t('Booking as a client?',

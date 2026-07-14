@@ -511,7 +511,7 @@ class _ShopHero extends StatelessWidget {
             const SizedBox(height: 10),
           ],
           Text(
-            shop.tagline,
+            L.tr(shop.tagline),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.nunito(
@@ -870,7 +870,7 @@ class _LockedStylistRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  barber.specialty,
+                  L.tr(barber.specialty),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.bodySmall(context),

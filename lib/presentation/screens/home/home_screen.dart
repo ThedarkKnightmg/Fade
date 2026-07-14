@@ -2180,7 +2180,7 @@ class _NextVisitPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  booking.service.name,
+                  L.tr(booking.service.name),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.nunito(

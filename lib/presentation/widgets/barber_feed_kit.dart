@@ -181,7 +181,7 @@ class SpotlightBarberCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        barber.specialty,
+                        L.tr(barber.specialty),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.bodySmall(context),

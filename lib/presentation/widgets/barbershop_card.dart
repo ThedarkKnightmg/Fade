@@ -126,7 +126,7 @@ class BarbershopCard extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  shop.tagline,
+                                  L.tr(shop.tagline),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: GoogleFonts.nunito(

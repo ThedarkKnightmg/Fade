@@ -289,7 +289,7 @@ class _BarberChatScreenState extends State<BarberChatScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(_client, style: AppTypography.h4(context)),
-                        Text(widget.booking.service.name,
+                        Text(L.tr(widget.booking.service.name),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.bodySmall(context)),

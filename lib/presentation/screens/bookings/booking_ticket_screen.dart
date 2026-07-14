@@ -104,7 +104,7 @@ class BookingTicketScreen extends StatelessWidget {
                       _Row(
                           icon: Icons.content_cut_rounded,
                           label: L.serviceLabel,
-                          value: booking.service.name),
+                          value: L.tr(booking.service.name)),
                       const SizedBox(height: 10),
                       _Row(
                           icon: Icons.event_rounded,

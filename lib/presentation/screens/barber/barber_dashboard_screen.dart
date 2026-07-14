@@ -746,7 +746,7 @@ class _NextBookingCardState extends State<_NextBookingCard> {
                           height: 1.15,
                           color: Colors.white)),
                   const SizedBox(height: 3),
-                  Text(b.service.name,
+                  Text(L.tr(b.service.name),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.nunito(

@@ -162,7 +162,7 @@ class BookingReviewScreen extends StatelessWidget {
                             icon: Icons.content_cut_rounded,
                             label: L.serviceLabel,
                             value:
-                                '${b.service.name} · ${b.service.formattedDuration}',
+                                '${L.tr(b.service.name)} · ${b.service.formattedDuration}',
                           ),
                           _divider(p),
                           _DetailRow(

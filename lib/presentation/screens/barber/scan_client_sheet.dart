@@ -231,7 +231,7 @@ class _ScanRow extends StatelessWidget {
                     Text(booking.clientName ?? 'Client',
                         style: AppTypography.h4(context)),
                     Text(
-                        '${DateFormat('HH:mm').format(booking.dateTime)} · ${booking.service.name}',
+                        '${DateFormat('HH:mm').format(booking.dateTime)} · ${L.tr(booking.service.name)}',
                         style: AppTypography.caption(context)),
                   ],
                 ),
@@ -300,7 +300,7 @@ class _OverdueRow extends StatelessWidget {
                   Text(booking.clientName ?? 'Client',
                       style: AppTypography.h4(context)),
                   Text(
-                      '${DateFormat('HH:mm').format(booking.dateTime)} · ${booking.service.name}',
+                      '${DateFormat('HH:mm').format(booking.dateTime)} · ${L.tr(booking.service.name)}',
                       style: AppTypography.caption(context)),
                 ],
               ),

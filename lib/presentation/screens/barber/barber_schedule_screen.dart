@@ -604,7 +604,7 @@ class _DayGrid extends StatelessWidget {
               if (tall) ...[
                 const SizedBox(height: 2),
                 Text(
-                  '${b.service.name} · ${b.service.formattedPrice}',
+                  '${L.tr(b.service.name)} · ${b.service.formattedPrice}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.nunito(
@@ -751,7 +751,7 @@ class _BookingSheet extends StatelessWidget {
           _SheetRow(
             icon: Icons.content_cut_rounded,
             text:
-                '${b.service.name}  ·  ${b.service.formattedDuration}  ·  ${b.service.formattedPrice}',
+                '${L.tr(b.service.name)}  ·  ${b.service.formattedDuration}  ·  ${b.service.formattedPrice}',
           ),
           if (b.note != null && b.note!.isNotEmpty)
             _SheetRow(icon: Icons.sticky_note_2_rounded, text: b.note!),

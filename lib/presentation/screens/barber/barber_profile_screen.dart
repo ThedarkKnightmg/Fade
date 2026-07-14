@@ -700,7 +700,7 @@ class _ServiceRow extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              svc.name,
+                              L.tr(svc.name),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppTypography.h4(context).copyWith(

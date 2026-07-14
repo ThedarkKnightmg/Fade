@@ -139,7 +139,7 @@ class _AtelierScreenState extends State<AtelierScreen> {
                         barber: pairs[i].barber,
                         index: i,
                         subtitle:
-                            '${pairs[i].barber.specialty} · ${pairs[i].shop.name}',
+                            '${L.tr(pairs[i].barber.specialty)} · ${pairs[i].shop.name}',
                         isMyBarber:
                             AppState.instance.isMyBarber(pairs[i].barber.id),
                         onTap: () => showBarberProfileSheet(

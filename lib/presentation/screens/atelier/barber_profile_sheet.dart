@@ -96,7 +96,7 @@ class _BarberProfileSheet extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    barber.specialty,
+                                    L.tr(barber.specialty),
                                     style: AppTypography.bodySmall(context),
                                   ),
                                 ],

@@ -215,7 +215,7 @@ class _WalkInSheetState extends State<_WalkInSheet> {
             children: [
               for (final svc in svcs)
                 _ServiceChip(
-                  label: svc.name,
+                  label: L.tr(svc.name),
                   selected: _service?.id == svc.id,
                   onTap: () => setState(() => _service = svc),
                 ),

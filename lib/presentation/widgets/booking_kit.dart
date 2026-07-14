@@ -44,7 +44,7 @@ class ServiceCheckRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(service.name, style: AppTypography.h4(context)),
+                Text(L.tr(service.name), style: AppTypography.h4(context)),
                 const SizedBox(height: 1),
                 Text(
                   service.formattedDuration,

@@ -389,7 +389,8 @@ class _BookingNote extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(b.service.name, style: AppTypography.h4(context)),
+                    Text(L.tr(b.service.name),
+                        style: AppTypography.h4(context)),
                     const SizedBox(height: 2),
                     Text(
                       '${b.barber.name} · ${b.barbershop.name}',

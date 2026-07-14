@@ -344,7 +344,7 @@ class _CardBody extends StatelessWidget {
                     ],
                   ),
                 ),
-                Text('${b.service.name} · ${b.service.formattedDuration}',
+                Text('${L.tr(b.service.name)} · ${b.service.formattedDuration}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.nunito(

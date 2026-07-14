@@ -103,7 +103,7 @@ class _Breakdown extends StatelessWidget {
           FadeSlideIn(
             delay: Duration(milliseconds: 120 + i * 60),
             child: _ServiceBar(
-              name: r.name,
+              name: L.tr(r.name),
               revenueSom: r.revenueSom,
               count: r.count,
               fraction: maxRev == 0 ? 0 : r.revenueSom / maxRev,

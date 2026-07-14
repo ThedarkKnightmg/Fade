@@ -149,7 +149,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                           const SizedBox(height: 14),
                           _Line(
                             icon: Icons.content_cut_rounded,
-                            title: b.service.name,
+                            title: L.tr(b.service.name),
                             sub:
                                 '${b.service.formattedDuration} · ${b.service.formattedPrice}',
                           ),
@@ -157,7 +157,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                           _Line(
                             icon: Icons.person_rounded,
                             title: b.barber.name,
-                            sub: b.barber.specialty,
+                            sub: L.tr(b.barber.specialty),
                           ),
                           if (_look != null) ...[
                             const SizedBox(height: 14),

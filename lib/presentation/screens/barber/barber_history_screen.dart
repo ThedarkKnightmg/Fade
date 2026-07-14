@@ -51,7 +51,7 @@ class _BarberHistoryScreenState extends State<BarberHistoryScreen> {
       c.totalSom += Money.toSom(b.service.price);
       if (c.last == null || b.dateTime.isAfter(c.last!)) {
         c.last = b.dateTime;
-        c.lastService = b.service.name;
+        c.lastService = L.tr(b.service.name);
       }
     }
     final out = map.values.toList()
@@ -684,7 +684,7 @@ class _HistoryRow extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 3),
-                Text('${b.service.name} · $when',
+                Text('${L.tr(b.service.name)} · $when',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.bodySmall(context)),

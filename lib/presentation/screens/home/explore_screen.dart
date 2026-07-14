@@ -62,7 +62,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
           .where((s) =>
               s.name.toLowerCase().contains(q) ||
               s.tagline.toLowerCase().contains(q) ||
-              s.tags.any((t) => t.toLowerCase().contains(q)))
+              L.tr(s.tagline).toLowerCase().contains(q) ||
+              s.tags.any((t) =>
+                  t.toLowerCase().contains(q) ||
+                  L.tr(t).toLowerCase().contains(q)))
           .toList();
     }
     return list;
@@ -90,6 +93,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           .where((e) =>
               e.$2.name.toLowerCase().contains(q) ||
               e.$2.specialty.toLowerCase().contains(q) ||
+              L.tr(e.$2.specialty).toLowerCase().contains(q) ||
               e.$1.name.toLowerCase().contains(q))
           .toList();
     }

@@ -65,7 +65,7 @@ class BarberCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  subtitle ?? barber.specialty,
+                  subtitle ?? L.tr(barber.specialty),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.bodySmall(context),

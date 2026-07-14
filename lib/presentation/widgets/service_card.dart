@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/service.dart';
@@ -39,10 +40,10 @@ class ServiceCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(service.name, style: AppTypography.h4(context)),
+                Text(L.tr(service.name), style: AppTypography.h4(context)),
                 const SizedBox(height: 2),
                 Text(
-                  '${service.formattedDuration} · ${service.description}',
+                  '${service.formattedDuration} · ${L.tr(service.description)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.bodySmall(context),
