@@ -1,10 +1,7 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../core/animations/motion.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../ai/ai_hair_screen.dart';
@@ -194,14 +191,15 @@ class _HomiesNav extends StatelessWidget {
               child: child,
             ),
           ),
-          // Reference layout — a minimal floating pill with each tab in its own
-          // circular slot and the AI orb inline — but THEME-coloured (light
-          // card on the light theme), not black.
+          // Reference look: a flat rounded bar — glyph above an always-visible
+          // label on every tab, the active one in accent with a short
+          // indicator bar at the bottom edge. AI rides as a uniform middle
+          // tab (no raised orb).
           child: Container(
-            height: 72,
+            height: 66,
             decoration: BoxDecoration(
               color: p.card,
-              borderRadius: BorderRadius.circular(36),
+              borderRadius: BorderRadius.circular(22),
               border: Border.all(color: p.border),
               boxShadow: [
                 BoxShadow(
@@ -212,59 +210,45 @@ class _HomiesNav extends StatelessWidget {
                 ),
               ],
             ),
-            // Bookings lives on the Home card now; the bar is
-            // Home + Map · AI (centre) · Chat + Profile.
             child: Row(
-            children: [
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Flexible(
-                      child: _NavItem(
-                        icon: Icons.home_rounded,
-                        label: L.navHome,
-                        active: index == 0,
-                        onTap: () => onTap(0),
-                      ),
-                    ),
-                    Flexible(
-                      child: _NavItem(
-                        icon: Icons.explore_rounded,
-                        label: L.navExplore,
-                        active: index == 4,
-                        onTap: () => onTap(4),
-                      ),
-                    ),
-                  ],
+              children: [
+                _NavItem(
+                  icon: Icons.home_outlined,
+                  activeIcon: Icons.home_rounded,
+                  label: L.navHome,
+                  active: index == 0,
+                  onTap: () => onTap(0),
                 ),
-              ),
-              _AiButton(onTap: onAi),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Flexible(
-                      child: _NavItem(
-                        icon: Icons.forum_rounded,
-                        label: L.navChats,
-                        active: index == 2,
-                        onTap: () => onTap(2),
-                      ),
-                    ),
-                    Flexible(
-                      child: _NavItem(
-                        icon: Icons.face_rounded,
-                        label: L.navProfile,
-                        active: index == 3,
-                        onTap: () => onTap(3),
-                      ),
-                    ),
-                  ],
+                _NavItem(
+                  icon: Icons.search_rounded,
+                  activeIcon: Icons.search_rounded,
+                  label: L.navExplore,
+                  active: index == 4,
+                  onTap: () => onTap(4),
                 ),
-              ),
-            ],
-          ),
+                _NavItem(
+                  icon: Icons.auto_awesome_outlined,
+                  activeIcon: Icons.auto_awesome,
+                  label: 'AI',
+                  active: false,
+                  onTap: onAi,
+                ),
+                _NavItem(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  activeIcon: Icons.chat_bubble_rounded,
+                  label: L.navChats,
+                  active: index == 2,
+                  onTap: () => onTap(2),
+                ),
+                _NavItem(
+                  icon: Icons.person_outline_rounded,
+                  activeIcon: Icons.person_rounded,
+                  label: L.navProfile,
+                  active: index == 3,
+                  onTap: () => onTap(3),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -275,12 +259,14 @@ class _HomiesNav extends StatelessWidget {
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.icon,
+    required this.activeIcon,
     required this.label,
     required this.active,
     required this.onTap,
   });
 
   final IconData icon;
+  final IconData activeIcon;
   final String label;
   final bool active;
   final VoidCallback onTap;
@@ -288,181 +274,56 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // The active tab BLOOMS into a soft accent chip with its label sliding
-    // open; inactive tabs are quiet glyphs. One clear "you are here" — no
-    // heavy circle behind every icon, and the labels teach the icons.
-    return PressableScale(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      pressedScale: 0.9,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 320),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.symmetric(
-            horizontal: active ? 13 : 9, vertical: 10),
-        decoration: BoxDecoration(
-          color: active
-              ? AppColors.accent.withValues(alpha: 0.13)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: AnimatedSize(
-          duration: const Duration(milliseconds: 320),
-          curve: Curves.easeOutCubic,
-          alignment: Alignment.centerLeft,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedScale(
-                scale: active ? 1.06 : 1.0,
-                duration: const Duration(milliseconds: 320),
-                curve: Curves.easeOutCubic,
-                child: Icon(
-                  icon,
-                  size: 24,
-                  color: active ? AppColors.accentDeep : p.textTertiary,
-                ),
+    // Reference look: outlined glyph above a small always-visible label; the
+    // active tab turns accent (filled glyph) and a short indicator bar slides
+    // in at the bottom edge.
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                active ? activeIcon : icon,
+                key: ValueKey(active),
+                size: 23,
+                color: active ? AppColors.accent : p.textTertiary,
               ),
-              if (active) ...[
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.fade,
-                    style: GoogleFonts.nunito(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.accentDeep,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.nunito(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: active ? AppColors.accent : p.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 5),
+            // The short accent bar under the active tab (reference style).
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+              width: active ? 26 : 0,
+              height: 3.5,
+              decoration: BoxDecoration(
+                color: AppColors.accent,
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
-
-/// The bright AI button — breathes a soft glow to draw the eye, dips on press.
-class _AiButton extends StatefulWidget {
-  const _AiButton({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  State<_AiButton> createState() => _AiButtonState();
-}
-
-class _AiButtonState extends State<_AiButton>
-    with TickerProviderStateMixin {
-  late final AnimationController _glow = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2600),
-  )..repeat(reverse: true);
-  late final Animation<double> _breathe =
-      CurvedAnimation(parent: _glow, curve: Curves.easeInOut);
-  // A slow, continuous spin so the sparkle feels alive without demanding notice.
-  late final AnimationController _spin = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 18),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _glow.dispose();
-    _spin.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return PressableScale(
-      onTap: widget.onTap,
-      pressedScale: 0.9,
-      child: AnimatedBuilder(
-        animation: Listenable.merge([_breathe, _spin]),
-        builder: (_, __) => Container(
-          width: 58,
-          height: 58,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            // A lit sphere: bright highlight top-left → deep blue bottom-right.
-            gradient: const RadialGradient(
-              center: Alignment(-0.3, -0.4),
-              radius: 0.95,
-              colors: [Color(0xFF8CC6FF), Color(0xFF3E8DF0), Color(0xFF1E6FE0)],
-              stops: [0.0, 0.55, 1.0],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.accent
-                    .withValues(alpha: 0.35 + _breathe.value * 0.35),
-                blurRadius: 14 + _breathe.value * 10,
-                spreadRadius: _breathe.value * 2,
-              ),
-            ],
-          ),
-          // The sparkle slowly rotates and twinkles (scale pulse) with the glow.
-          child: Center(
-            child: Transform.rotate(
-              angle: _spin.value * 2 * math.pi,
-              child: Transform.scale(
-                scale: 0.9 + _breathe.value * 0.14,
-                child: const CustomPaint(
-                  size: Size(26, 26),
-                  painter: _FourPointStarPainter(Colors.white),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A clean single 4-point star (sparkle) — there is no crisp 4-point glyph in
-/// Material Icons, so the AI orb paints its own: 4 sharp arms on the axes with
-/// concave sides, filled white over a faint bloom.
-class _FourPointStarPainter extends CustomPainter {
-  const _FourPointStarPainter(this.color);
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final r = size.width / 2;
-    final rIn = r * 0.30;
-    final path = Path();
-    for (int k = 0; k < 8; k++) {
-      final angle = -math.pi / 2 + k * math.pi / 4;
-      final rad = k.isEven ? r : rIn;
-      final x = cx + rad * math.cos(angle);
-      final y = cy + rad * math.sin(angle);
-      if (k == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color.withValues(alpha: 0.55)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-    );
-    canvas.drawPath(path, Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(_FourPointStarPainter old) => old.color != color;
 }
 
 // ============================================================

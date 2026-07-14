@@ -129,20 +129,20 @@ class _BarberNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // Reference layout, same as the client bar — a minimal floating pill with
-    // circular slots, no labels — but THEME-coloured, not black. The badge
-    // stays on Requests.
+    // Reference look, same as the client bar: flat rounded bar, glyph above
+    // an always-visible label, active tab in accent with a short indicator
+    // bar at the bottom edge. The badge stays on Requests.
     return AnimatedBuilder(
       animation: AppState.instance,
       builder: (context, _) {
         final pending = AppState.instance.incomingRequests.length;
         return Container(
-          height: 72,
+          height: 66,
           margin: EdgeInsets.fromLTRB(
               16, 0, 16, 12 + MediaQuery.of(context).padding.bottom),
           decoration: BoxDecoration(
             color: p.card,
-            borderRadius: BorderRadius.circular(36),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(color: p.border),
             boxShadow: [
               BoxShadow(
@@ -154,37 +154,32 @@ class _BarberNav extends StatelessWidget {
             ],
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Flexible(
-                child: _NavItem(
-                    icon: Icons.today_rounded,
-                    label: L.navToday,
-                    selected: index == 0,
-                    onTap: () => onTap(0)),
-              ),
-              Flexible(
-                child: _NavItem(
-                    icon: Icons.inbox_rounded,
-                    label: L.navRequests,
-                    selected: index == 1,
-                    badge: pending,
-                    onTap: () => onTap(1)),
-              ),
-              Flexible(
-                child: _NavItem(
-                    icon: Icons.calendar_month_rounded,
-                    label: L.navSchedule,
-                    selected: index == 2,
-                    onTap: () => onTap(2)),
-              ),
-              Flexible(
-                child: _NavItem(
-                    icon: Icons.person_rounded,
-                    label: L.navProfile,
-                    selected: index == 3,
-                    onTap: () => onTap(3)),
-              ),
+              _NavItem(
+                  icon: Icons.today_outlined,
+                  activeIcon: Icons.today_rounded,
+                  label: L.navToday,
+                  selected: index == 0,
+                  onTap: () => onTap(0)),
+              _NavItem(
+                  icon: Icons.inbox_outlined,
+                  activeIcon: Icons.inbox_rounded,
+                  label: L.navRequests,
+                  selected: index == 1,
+                  badge: pending,
+                  onTap: () => onTap(1)),
+              _NavItem(
+                  icon: Icons.calendar_month_outlined,
+                  activeIcon: Icons.calendar_month_rounded,
+                  label: L.navSchedule,
+                  selected: index == 2,
+                  onTap: () => onTap(2)),
+              _NavItem(
+                  icon: Icons.person_outline_rounded,
+                  activeIcon: Icons.person_rounded,
+                  label: L.navProfile,
+                  selected: index == 3,
+                  onTap: () => onTap(3)),
             ],
           ),
         );
@@ -196,6 +191,7 @@ class _BarberNav extends StatelessWidget {
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.icon,
+    required this.activeIcon,
     required this.label,
     required this.selected,
     required this.onTap,
@@ -203,6 +199,7 @@ class _NavItem extends StatelessWidget {
   });
 
   final IconData icon;
+  final IconData activeIcon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -211,91 +208,82 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // Same treatment as the client bar: the selected tab blooms into a soft
-    // accent chip with its label sliding open; the rest are quiet glyphs.
-    // The Requests badge rides on the icon in both states.
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 320),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.symmetric(
-            horizontal: selected ? 13 : 9, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.accent.withValues(alpha: 0.13)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: AnimatedSize(
-          duration: const Duration(milliseconds: 320),
-          curve: Curves.easeOutCubic,
-          alignment: Alignment.centerLeft,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: [
-                  AnimatedScale(
-                    scale: selected ? 1.06 : 1.0,
-                    duration: const Duration(milliseconds: 320),
-                    curve: Curves.easeOutCubic,
-                    child: Icon(
-                      icon,
-                      size: 24,
-                      color: selected ? AppColors.accentDeep : p.textTertiary,
-                    ),
+    // Reference look: outlined glyph above a small always-visible label; the
+    // selected tab turns accent (filled glyph) and a short indicator bar
+    // slides in at the bottom edge. The Requests badge rides on the icon.
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    selected ? activeIcon : icon,
+                    key: ValueKey(selected),
+                    size: 23,
+                    color: selected ? AppColors.accent : p.textTertiary,
                   ),
-                  if (badge > 0)
-                    Positioned(
-                      right: -8,
-                      top: -8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        constraints:
-                            const BoxConstraints(minWidth: 16, minHeight: 16),
-                        decoration: const BoxDecoration(
-                          color: AppColors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '$badge',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.nunito(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            height: 1,
-                          ),
+                ),
+                if (badge > 0)
+                  Positioned(
+                    right: -10,
+                    top: -6,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      constraints:
+                          const BoxConstraints(minWidth: 16, minHeight: 16),
+                      decoration: const BoxDecoration(
+                        color: AppColors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$badge',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.nunito(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          height: 1,
                         ),
                       ),
                     ),
-                ],
-              ),
-              if (selected) ...[
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.fade,
-                    style: GoogleFonts.nunito(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.accentDeep,
-                    ),
                   ),
-                ),
               ],
-            ],
-          ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.nunito(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: selected ? AppColors.accent : p.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 5),
+            // The short accent bar under the selected tab (reference style).
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+              width: selected ? 26 : 0,
+              height: 3.5,
+              decoration: BoxDecoration(
+                color: AppColors.accent,
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+          ],
         ),
       ),
     );
