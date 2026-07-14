@@ -16,7 +16,7 @@ class SupabaseConfig {
   /// via the telegram-login Edge Function. Empty = not configured yet — the
   /// app then demos the flow locally. Create one with @BotFather and see
   /// supabase/functions/telegram-login/index.ts for the full setup.
-  static const String telegramBot = '';
+  static const String telegramBot = 'Fade_uz_bot';
 
   static bool get isSet => url.isNotEmpty && publishableKey.isNotEmpty;
 
