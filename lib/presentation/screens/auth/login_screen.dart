@@ -10,6 +10,7 @@ import '../../../data/app_state.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
+import '../../widgets/telegram_login_button.dart';
 import '../root_shell.dart';
 import 'register_screen.dart';
 
@@ -92,7 +93,29 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: AppTypography.bodySmall(context),
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
+              // Telegram leads — the one sign-in that actually works end to end
+              // here (free, instant, familiar). Email/password stays below.
+              const FadeSlideIn(
+                delay: Duration(milliseconds: 170),
+                child: TelegramLoginButton(),
+              ),
+              const SizedBox(height: 18),
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 185),
+                child: Row(
+                  children: [
+                    Expanded(child: Divider(color: p.divider, thickness: 1.4)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(L.authOrContinue,
+                          style: AppTypography.caption(context)),
+                    ),
+                    Expanded(child: Divider(color: p.divider, thickness: 1.4)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
               FadeSlideIn(
                 delay: const Duration(milliseconds: 200),
                 child: AppTextField(
@@ -175,36 +198,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _signIn,
                 ),
               ),
-              const SizedBox(height: 26),
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 400),
-                child: Row(
-                  children: [
-                    Expanded(child: Divider(color: p.divider, thickness: 1.4)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(L.authOrContinue,
-                          style: AppTypography.caption(context)),
-                    ),
-                    Expanded(child: Divider(color: p.divider, thickness: 1.4)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 460),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _SocialCircle(label: 'G', onTap: _signIn),
-                    const SizedBox(width: 14),
-                    _SocialCircle(
-                        icon: Icons.apple_rounded, onTap: _signIn),
-                    const SizedBox(width: 14),
-                    _SocialCircle(label: 'f', onTap: _signIn),
-                  ],
-                ),
-              ),
+              // (The old Google/Apple/Facebook circles were decoration — they
+              // just called _signIn — so they're gone. Telegram above is the
+              // real social sign-in; Google/Apple can return once their OAuth
+              // providers are actually configured.)
               const SizedBox(height: 34),
               FadeSlideIn(
                 delay: const Duration(milliseconds: 520),
@@ -239,39 +236,3 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class _SocialCircle extends StatelessWidget {
-  const _SocialCircle({this.label, this.icon, this.onTap});
-
-  final String? label;
-  final IconData? icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    return Material(
-      color: p.card,
-      shape: CircleBorder(side: BorderSide(color: p.border)),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: 56,
-          height: 56,
-          child: Center(
-            child: icon != null
-                ? Icon(icon, size: 26, color: p.text)
-                : Text(
-                    label!,
-                    style: GoogleFonts.nunito(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: p.text,
-                    ),
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/supabase/auth_service.dart';
-import '../../../core/supabase/telegram_auth.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/validators.dart';
@@ -15,6 +13,7 @@ import '../../../data/models/user.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
+import '../../widgets/telegram_login_button.dart';
 import '../root_shell.dart';
 import 'phone_verify_screen.dart';
 
@@ -32,7 +31,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _password = TextEditingController();
   bool _obscure = true;
   bool _submitted = false;
-  bool _tgBusy = false;
 
   String? _nameError;
   String? _emailError;
@@ -95,74 +93,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  /// "Continue with Telegram" — the market-native primary sign-in. Opens the
-  /// bot deep link and waits for the webhook to confirm; unconfigured builds
-  /// demo the same choreography locally so the flow is testable today.
-  Future<void> _telegramLogin() async {
-    if (_tgBusy) return;
-    _tgBusy = true;
-    HapticFeedback.selectionClick();
-    final code = TelegramAuth.newCode();
-    var cancelled = false;
-    // The waiting sheet — swiping it away cancels the wait.
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _TelegramWaitSheet(),
-    ).whenComplete(() => cancelled = true);
-
-    var ok = false;
-    String? tgName;
-    if (TelegramAuth.configured) {
-      await launchUrl(TelegramAuth.deepLink(code),
-          mode: LaunchMode.externalApplication);
-      for (var i = 0; i < 30 && !cancelled; i++) {
-        await Future.delayed(const Duration(seconds: 2));
-        try {
-          final (verified, name) = await TelegramAuth.check(code);
-          if (verified) {
-            ok = true;
-            tgName = name;
-            break;
-          }
-        } catch (_) {
-          // Transient network error — keep polling.
-        }
-      }
-    } else {
-      // Demo until the bot is wired (SupabaseConfig.telegramBot).
-      await Future.delayed(const Duration(milliseconds: 2200));
-      ok = !cancelled;
-    }
-    _tgBusy = false;
-    if (!mounted) return;
-    final sheetStillOpen = !cancelled;
-    if (sheetStillOpen) Navigator.of(context).pop(); // close the wait sheet
-    if (!ok) {
-      if (sheetStillOpen) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            content: Text(L.tgFailed),
-            behavior: SnackBarBehavior.floating,
-          ));
-      }
-      return;
-    }
-    final typed = _name.text.trim();
-    final name = (tgName != null && tgName.trim().isNotEmpty)
-        ? tgName.trim()
-        : (typed.isNotEmpty ? typed : L.tgDefaultName);
-    AppState.instance.updateUser(
-      AppUser(id: 'u_tg', fullName: name, email: '', phone: ''),
-    );
-    AppState.instance.signIn();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      FadeThroughPageRoute(child: const RootShell()),
-      (route) => false,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +144,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               // (free, instant, and bots can't fake it). Form is the fallback.
               FadeSlideIn(
                 delay: const Duration(milliseconds: 110),
-                child: _TelegramButton(onTap: _telegramLogin),
+                child: TelegramLoginButton(fallbackName: _name.text),
               ),
               const SizedBox(height: 18),
               FadeSlideIn(
@@ -354,110 +284,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-/// The Telegram-blue primary sign-in button (paper-plane + label).
-class _TelegramButton extends StatelessWidget {
-  const _TelegramButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  static const _tgBlue = Color(0xFF2AABEE);
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 58,
-        decoration: BoxDecoration(
-          color: _tgBlue,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: _tgBlue.withValues(alpha: 0.35),
-              blurRadius: 16,
-              spreadRadius: -4,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-            const SizedBox(width: 10),
-            Text(
-              L.tgContinue,
-              style: AppTypography.body(context).copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 15.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The "confirm in Telegram" waiting sheet — a pulsing plane while the app
-/// polls for the bot's confirmation. Swipe down to cancel.
-class _TelegramWaitSheet extends StatelessWidget {
-  const _TelegramWaitSheet();
-
-  static const _tgBlue = Color(0xFF2AABEE);
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    return SafeArea(
-      child: Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.fromLTRB(20, 26, 20, 30),
-        decoration: BoxDecoration(
-          color: p.card,
-          borderRadius: BorderRadius.circular(26),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Breathe(
-              period: const Duration(milliseconds: 1600),
-              builder: (context, t) {
-                final pulse = 1 - (2 * t - 1).abs();
-                return Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: _tgBlue.withValues(alpha: 0.12 + 0.10 * pulse),
-                    shape: BoxShape.circle,
-                  ),
-                  child:
-                      const Icon(Icons.send_rounded, color: _tgBlue, size: 28),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            Text(
-              L.tgWaiting,
-              textAlign: TextAlign.center,
-              style: AppTypography.h4(context),
-            ),
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: const SizedBox(
-                width: 120,
-                child: LinearProgressIndicator(
-                  minHeight: 4,
-                  color: _tgBlue,
-                  backgroundColor: Color(0x1F2AABEE),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
