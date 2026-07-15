@@ -26,6 +26,10 @@ dependencies:
   image_picker: ^1.1.2
   url_launcher: ^6.3.0
   supabase_flutter: ^2.8.0
+  # One-tap Google sign-in. Pinned to 6.x: it exposes the native idToken +
+  # accessToken pair that supabase.auth.signInWithIdToken() expects, which is
+  # the flow Supabase documents. See lib/core/supabase/google_auth.dart.
+  google_sign_in: ^6.2.2
   qr_flutter: ^4.1.0
   flutter_local_notifications: ^18.0.1
   mobile_scanner: ^5.2.3

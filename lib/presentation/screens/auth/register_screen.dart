@@ -11,6 +11,7 @@ import '../../../core/utils/validators.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/user.dart';
 import '../../widgets/app_text_field.dart';
+import '../../widgets/google_login_button.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/telegram_login_button.dart';
@@ -140,12 +141,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 22),
-              // Telegram leads — the sign-in every local user already trusts
-              // (free, instant, and bots can't fake it). Form is the fallback.
+              // Both no-typing paths lead; the form below is the fallback for
+              // whoever has neither. Telegram fills in a verified phone,
+              // Google a verified email + photo — either way, no password.
               FadeSlideIn(
                 delay: const Duration(milliseconds: 110),
                 child: TelegramLoginButton(fallbackName: _name.text),
               ),
+              if (GoogleLoginButton.visible) ...[
+                const SizedBox(height: 12),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 140),
+                  child: GoogleLoginButton(fallbackName: _name.text),
+                ),
+              ],
               const SizedBox(height: 18),
               FadeSlideIn(
                 delay: const Duration(milliseconds: 125),

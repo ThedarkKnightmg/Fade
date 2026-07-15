@@ -615,6 +615,21 @@ class L {
   static String get tgDefaultName => _t('Telegram user',
       'Пользователь Telegram', 'Telegram foydalanuvchisi');
 
+  // ── "Continue with Google" (one tap, verified email, no typing) ──
+  static String get googleContinue => _t('Continue with Google',
+      'Войти через Google', 'Google orqali kirish');
+  static String get googleSigningIn =>
+      _t('Signing in…', 'Вход…', 'Kirilmoqda…');
+  static String get googleFailed => _t(
+      "Google sign-in didn't complete — try again",
+      'Вход через Google не завершён — попробуйте ещё раз',
+      'Google orqali kirish yakunlanmadi — qayta urining');
+  // Debug builds only — a real user never sees this.
+  static String get googleNotConfigured => _t(
+      'Google sign-in needs its Web client ID (SupabaseConfig)',
+      'Для входа через Google нужен Web client ID (SupabaseConfig)',
+      'Google uchun Web client ID kerak (SupabaseConfig)');
+
   // ── Display-time translation for CATALOGUE text ─────────────────────────
   // The mock data ships English (service names, specialties, taglines, tags).
   // tr() localizes them at display time; unknown strings pass through

@@ -8,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/validators.dart';
 import '../../../data/app_state.dart';
 import '../../widgets/app_text_field.dart';
+import '../../widgets/google_login_button.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/telegram_login_button.dart';
@@ -94,12 +95,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              // Telegram leads — the one sign-in that actually works end to end
-              // here (free, instant, familiar). Email/password stays below.
+              // The two no-typing paths lead. Telegram first — it proves the
+              // PHONE, which is what a barber actually calls; Google proves an
+              // email. Both are free and neither asks for a password.
               const FadeSlideIn(
                 delay: Duration(milliseconds: 170),
                 child: TelegramLoginButton(),
               ),
+              if (GoogleLoginButton.visible) ...[
+                const SizedBox(height: 12),
+                const FadeSlideIn(
+                  delay: Duration(milliseconds: 200),
+                  child: GoogleLoginButton(),
+                ),
+              ],
               const SizedBox(height: 18),
               FadeSlideIn(
                 delay: const Duration(milliseconds: 185),
@@ -198,10 +207,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _signIn,
                 ),
               ),
-              // (The old Google/Apple/Facebook circles were decoration — they
-              // just called _signIn — so they're gone. Telegram above is the
-              // real social sign-in; Google/Apple can return once their OAuth
-              // providers are actually configured.)
               const SizedBox(height: 34),
               FadeSlideIn(
                 delay: const Duration(milliseconds: 520),
