@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -27,6 +28,11 @@ class TelegramLoginButton extends StatefulWidget {
   /// Optional name typed on the register form, used only if Telegram doesn't
   /// give us one.
   final String? fallbackName;
+
+  /// Whether this build should render the button at all. Mirrors
+  /// [GoogleLoginButton.visible]: in release it appears only when the bot is
+  /// actually configured, so it can never be a button that signs nobody in.
+  static bool get visible => TelegramAuth.configured || kDebugMode;
 
   @override
   State<TelegramLoginButton> createState() => _TelegramLoginButtonState();
@@ -70,8 +76,12 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
           // Transient network error — keep polling.
         }
       }
-    } else {
-      // Demo until the bot is wired (SupabaseConfig.telegramBot).
+    } else if (kDebugMode) {
+      // Demo choreography for builds with no bot configured, so the flow stays
+      // testable. DEBUG ONLY, and deliberately so: this branch hands out a
+      // fully authenticated session with a blank phone to anyone who taps and
+      // waits. Harmless while it can never run in a shipped build — which is
+      // exactly what the kDebugMode gate guarantees.
       await Future.delayed(const Duration(milliseconds: 2200));
       ok = !cancelled;
     }
