@@ -51,16 +51,19 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
 
     var ok = false;
     String? tgName;
+    String? tgPhone;
     if (TelegramAuth.configured) {
       await launchUrl(TelegramAuth.deepLink(code),
           mode: LaunchMode.externalApplication);
-      for (var i = 0; i < 30 && !cancelled; i++) {
+      // Give them time to tap START *and* the share-contact button.
+      for (var i = 0; i < 60 && !cancelled; i++) {
         await Future.delayed(const Duration(seconds: 2));
         try {
-          final (verified, name) = await TelegramAuth.check(code);
+          final (verified, name, phone) = await TelegramAuth.check(code);
           if (verified) {
             ok = true;
             tgName = name;
+            tgPhone = phone;
             break;
           }
         } catch (_) {
@@ -91,8 +94,10 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
     final name = (tgName != null && tgName.trim().isNotEmpty)
         ? tgName.trim()
         : (typed.isNotEmpty ? typed : L.tgDefaultName);
+    // The phone came from Telegram's own contact card — verified at their
+    // signup, so the account lands with a PROVEN number (no SMS needed).
     AppState.instance.updateUser(
-      AppUser(id: 'u_tg', fullName: name, email: '', phone: ''),
+      AppUser(id: 'u_tg', fullName: name, email: '', phone: tgPhone ?? ''),
     );
     AppState.instance.signIn();
     if (!mounted) return;
@@ -182,6 +187,12 @@ class _TelegramWaitSheet extends StatelessWidget {
               L.tgWaiting,
               textAlign: TextAlign.center,
               style: AppTypography.h4(context),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              L.tgVerifiesNumber,
+              textAlign: TextAlign.center,
+              style: AppTypography.caption(context),
             ),
             const SizedBox(height: 16),
             ClipRRect(

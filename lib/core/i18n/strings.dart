@@ -599,9 +599,13 @@ class L {
   static String get tgContinue => _t('Continue with Telegram',
       'Войти через Telegram', 'Telegram orqali kirish');
   static String get tgWaiting => _t(
-      'Confirm in Telegram, then come back…',
-      'Подтвердите в Telegram и вернитесь…',
-      'Telegramda tasdiqlang va qayting…');
+      'In Telegram: tap START, then share your number…',
+      'В Telegram: нажмите START и поделитесь номером…',
+      "Telegramda: START bosing, so'ng raqamni ulashing…");
+  static String get tgVerifiesNumber => _t(
+      'Telegram confirms your number — no SMS needed',
+      'Telegram подтвердит ваш номер — SMS не нужен',
+      'Telegram raqamingizni tasdiqlaydi — SMS kerak emas');
   static String get tgFailed => _t(
       "Telegram sign-in didn't complete — try again",
       'Вход через Telegram не завершён — попробуйте ещё раз',
