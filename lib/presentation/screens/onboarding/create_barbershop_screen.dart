@@ -53,14 +53,25 @@ class _CreateBarbershopScreenState extends State<CreateBarbershopScreen> {
     if (b != null) setState(() => _photos.add(b));
   }
 
+  void _toast(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ));
+  }
+
   Future<void> _create() async {
     if (_name.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          content: Text(L.csNeedName),
-          behavior: SnackBarBehavior.floating,
-        ));
+      _toast(L.csNeedName);
+      return;
+    }
+    // A brand-new shop has no rating, no reviews and no history — its photos
+    // are the only reason anyone would tap it on the map. Shipping one with an
+    // empty gallery puts a dead pin on the map and blames the barber for it.
+    if (_photos.isEmpty) {
+      _toast(L.csNeedPhotos);
       return;
     }
     setState(() => _busy = true);

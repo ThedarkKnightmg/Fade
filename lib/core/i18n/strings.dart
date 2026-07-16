@@ -1572,7 +1572,17 @@ class L {
   static String get biEnter => _t('Enter barber mode',
       'Войти в режим барбера', 'Barber rejimiga kirish');
   static String get biNext => _t('Continue', 'Далее', 'Davom etish');
-  static String get biSkip => _t('Skip', 'Пропустить', "O'tkazib yuborish");
+  // Photos are required, so nothing skips any more. biSkip is gone with the
+  // button: at 42px wide it wrapped "O'tkazib yuborish" to one letter per line.
+  static String get biRequired => _t('Required', 'Нужно', 'Majburiy');
+  static String get biNeedPhoto => _t(
+      'Add your profile photo — clients pick a face they can see',
+      'Добавьте фото профиля — клиенты выбирают того, кого видят',
+      "Profil suratini qo'shing — mijoz ko'rgan odamini tanlaydi");
+  static String get biNeedWork => _t(
+      'Add at least one photo of your work',
+      'Добавьте хотя бы одно фото своей работы',
+      "Ishingizdan kamida bitta surat qo'shing");
 
   // ── Intro: how money & commissions work ──
   static String get biMoneyTitle => _t('How you get paid',
@@ -1665,6 +1675,10 @@ class L {
   static String get csOffDays => _t('Days off', 'Выходные', 'Dam olish kunlari');
   static String get csCreate => _t('Create & start working',
       'Создать и начать', 'Yaratish va boshlash');
+  static String get csNeedPhotos => _t(
+      'Add at least one photo — it’s the only thing clients see on the map',
+      'Добавьте хотя бы одно фото — только его клиенты видят на карте',
+      "Kamida bitta surat qo'shing — xaritada mijoz shuni ko'radi");
   static String get csNeedName => _t('Add a name and a location first',
       'Сначала укажите название и локацию',
       'Avval nom va manzil kiriting');

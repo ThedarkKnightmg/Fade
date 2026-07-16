@@ -38,9 +38,32 @@ class _BarberIntroScreenState extends State<BarberIntroScreen> {
 
   void _next() {
     HapticFeedback.selectionClick();
-    if (_page >= _last) return _finish();
+    if (_page >= _last) {
+      // Photos are the whole pitch: a client scrolling the barber feed is
+      // choosing a face and a fade, so a chair with neither can't compete.
+      // Required, not skippable — which is also why there's no Skip button.
+      final missing = _missingPhotos();
+      if (missing != null) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(
+            content: Text(missing),
+            behavior: SnackBarBehavior.floating,
+          ));
+        return;
+      }
+      return _finish();
+    }
     _pc.nextPage(
         duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
+  }
+
+  /// Why the barber can't continue yet, or null when they can.
+  String? _missingPhotos() {
+    final s = AppState.instance;
+    if (s.userPhoto == null) return L.biNeedPhoto;
+    if (s.shopPhotos.isEmpty) return L.biNeedWork;
+    return null;
   }
 
   void _finish() {
@@ -86,19 +109,13 @@ class _BarberIntroScreenState extends State<BarberIntroScreen> {
                   const Spacer(),
                   _Dots(count: _last + 1, index: _page),
                   const Spacer(),
-                  SizedBox(
-                    width: 42,
-                    child: _page == _last
-                        ? TextButton(
-                            onPressed: _next,
-                            child: Text(L.biSkip,
-                                style: GoogleFonts.nunito(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    color: p.textSecondary)),
-                          )
-                        : null,
-                  ),
+                  // Balances the 42px back button so the dots stay centred.
+                  // This used to hold a "Skip" TextButton — 42px can't fit
+                  // "O'tkazib yuborish", so it wrapped to one letter per line,
+                  // made this row ten lines tall, and shoved the page's hero
+                  // off the top of the screen. Photos are required now, so the
+                  // button is gone rather than merely widened.
+                  const SizedBox(width: 42),
                 ],
               ),
             ),
@@ -596,6 +613,44 @@ class _StepBtn extends StatelessWidget {
   }
 }
 
+/// A section heading that carries its own state: "Required" until it's filled,
+/// then a green tick. Says what's needed before the barber taps Continue and
+/// gets told off, rather than after.
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.text, required this.done});
+
+  final String text;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(text, style: AppTypography.h4(context)),
+        const SizedBox(width: 8),
+        if (done)
+          const Icon(Icons.check_circle_rounded, size: 17, color: AppColors.green)
+        else
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              L.biRequired,
+              style: GoogleFonts.nunito(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                color: AppColors.accent,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 class _PhotosPage extends StatelessWidget {
   const _PhotosPage();
 
@@ -629,7 +684,7 @@ class _PhotosPage extends StatelessWidget {
                 sub: L.biPhotoSub,
               ),
               const SizedBox(height: 26),
-              Text(L.biYourPhoto, style: AppTypography.h4(context)),
+              _SectionLabel(text: L.biYourPhoto, done: photo != null),
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: _profile,
@@ -654,7 +709,7 @@ class _PhotosPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 26),
-              Text(L.biYourWork, style: AppTypography.h4(context)),
+              _SectionLabel(text: L.biYourWork, done: work.isNotEmpty),
               const SizedBox(height: 10),
               SizedBox(
                 height: 92,
