@@ -41,7 +41,8 @@ class SupabaseConfig {
   ///      "Authorized Client IDs" so the native ID token is accepted.
   ///
   /// Empty = the button hides itself in release builds (never a dead button).
-  static const String googleWebClientId = '';
+  static const String googleWebClientId =
+      '375506986596-jpvj8k1drdc4g2ic60vgrmic216fneg5.apps.googleusercontent.com';
 
   /// Whether a real SMS provider is wired to the Supabase "Send SMS" hook.
   ///

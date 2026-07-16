@@ -6,6 +6,7 @@ import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/calendar_link.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
 import '../../widgets/directions_sheet.dart';
@@ -484,14 +485,38 @@ class _BookingNote extends StatelessWidget {
           ),
           if (isActive) ...[
             const SizedBox(height: 12),
-            PrimaryButton(
-              label: L.showTicket,
-              icon: Icons.qr_code_2_rounded,
-              height: 48,
-              style: PrimaryButtonStyle.lime,
-              onPressed: () => Navigator.of(context).push(
-                FadeThroughPageRoute(child: BookingTicketScreen(booking: b)),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: PrimaryButton(
+                    label: L.showTicket,
+                    icon: Icons.qr_code_2_rounded,
+                    height: 48,
+                    style: PrimaryButtonStyle.lime,
+                    onPressed: () => Navigator.of(context).push(
+                      FadeThroughPageRoute(
+                          child: BookingTicketScreen(booking: b)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Straight into Google Calendar — the reminder is what gets
+                // them to the chair on time, so it rides next to the ticket.
+                GestureDetector(
+                  onTap: () => addBookingToCalendar(context, b),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: p.card,
+                      border: Border.all(color: p.border, width: 1.4),
+                    ),
+                    child: const Icon(Icons.calendar_month_rounded,
+                        size: 20, color: AppColors.accent),
+                  ),
+                ),
+              ],
             ),
           ],
           if (!isActive) ...[

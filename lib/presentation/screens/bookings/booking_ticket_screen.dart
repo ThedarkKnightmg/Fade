@@ -8,9 +8,11 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/calendar_link.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
 import '../../widgets/paper_kit.dart';
+import '../../widgets/primary_button.dart';
 
 /// The client's "Booking Ticket": a dynamic QR the barber scans at the chair to
 /// verify the visit (locking their commission). Refreshes every 30s. The
@@ -168,6 +170,14 @@ class BookingTicketScreen extends StatelessWidget {
                     Text(L.noShowCaution,
                         style: AppTypography.caption(context)),
                   ],
+                ),
+                const SizedBox(height: 16),
+                PrimaryButton(
+                  label: L.addToCalendar,
+                  icon: Icons.calendar_month_rounded,
+                  height: 54,
+                  style: PrimaryButtonStyle.ghost,
+                  onPressed: () => addBookingToCalendar(context, booking),
                 ),
               ],
             ),

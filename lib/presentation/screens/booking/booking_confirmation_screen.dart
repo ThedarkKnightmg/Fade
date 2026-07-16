@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/animations/motion.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/calendar_link.dart';
 import '../../../data/app_state.dart';
 import '../../../data/hair_data.dart';
 import '../../../data/models/booking.dart';
@@ -213,38 +212,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                       height: 56,
                       style: PrimaryButtonStyle.ghost,
                       icon: Icons.calendar_month_rounded,
-                      onPressed: () async {
-                        // A real calendar entry via the Google Calendar
-                        // template URL; clipboard only as a fallback.
-                        String z(DateTime d) => DateFormat("yyyyMMdd'T'HHmmss")
-                            .format(d.toUtc());
-                        final end = b.dateTime.add(Duration(
-                            minutes: b.service.durationMinutes));
-                        final url = Uri.parse(
-                          'https://calendar.google.com/calendar/render'
-                          '?action=TEMPLATE'
-                          '&text=${Uri.encodeComponent('${b.service.name} · ${b.barbershop.name}')}'
-                          '&dates=${z(b.dateTime)}Z/${z(end)}Z'
-                          '&details=${Uri.encodeComponent(L.bkCalDetails(b.barber.name))}'
-                          '&location=${Uri.encodeComponent(b.barbershop.address)}',
-                        );
-                        var ok = false;
-                        try {
-                          ok = await launchUrl(url,
-                              mode: LaunchMode.externalApplication);
-                        } catch (_) {}
-                        if (ok || !context.mounted) return;
-                        final when =
-                            DateFormat('EEE d MMM, HH:mm').format(b.dateTime);
-                        await Clipboard.setData(ClipboardData(
-                          text: L.bkCalClipboard(b.service.name,
-                              b.barber.name, b.barbershop.name, when),
-                        ));
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(L.apptCopied)),
-                        );
-                      },
+                      onPressed: () => addBookingToCalendar(context, b),
                     ),
                   ),
                 ],
