@@ -630,6 +630,51 @@ class L {
       'Для входа через Google нужен Web client ID (SupabaseConfig)',
       'Google uchun Web client ID kerak (SupabaseConfig)');
 
+  // ── The auth gate (the front door — identity before anything else) ──
+  static String get authClientTitle =>
+      _t('Book in ', 'Записаться за ', 'Yozilish ');
+  static String get authClientTitleMark =>
+      _t('one tap', 'одно касание', 'bir bosishda');
+  static String get authBarberTitle => _t('Your chair,\n', 'Ваше кресло,\n', 'Kreslongiz,\n');
+  static String get authBarberTitleMark =>
+      _t('your rules', 'ваши правила', 'sizning qoidangiz');
+  static String get authClientWhy => _t(
+      'Sign in with the app you already use. Your barber gets a number to reach you on if he runs late — nothing else.',
+      'Войдите через привычное приложение. Барберу нужен только номер, чтобы предупредить об опоздании.',
+      "O'zingiz ishlatadigan ilova orqali kiring. Barberga faqat kechiksa xabar berish uchun raqam kerak.");
+  static String get authBarberWhy => _t(
+      'Clients only book barbers with a verified number. Sign in once and your chair goes live.',
+      'Клиенты записываются только к барберам с подтверждённым номером. Войдите — и кресло активно.',
+      "Mijozlar faqat tasdiqlangan raqamli barberlarga yoziladi. Kiring — kreslongiz faol bo'ladi.");
+  static String get authTrustClient => _t(
+      'Fade never sees a password. Your number is used for bookings only — never shown to other clients.',
+      'Fade не видит пароль. Номер используется только для записей и не виден другим клиентам.',
+      "Fade parolni ko'rmaydi. Raqam faqat yozilish uchun — boshqa mijozlarga ko'rinmaydi.");
+  static String get authTrustBarber => _t(
+      'Fade never sees a password. A verified number is what clients trust — and what keeps no-shows accountable.',
+      'Fade не видит пароль. Подтверждённый номер — это доверие клиентов и защита от неявок.',
+      "Fade parolni ko'rmaydi. Tasdiqlangan raqam — mijoz ishonchi va kelmaganlik uchun javobgarlik.");
+  static String get authNoProviders => _t(
+      'No sign-in method is configured in this build.',
+      'В этой сборке не настроен ни один способ входа.',
+      "Bu buildda hech qanday kirish usuli sozlanmagan.");
+  static String get barberPhoneVerified => _t('Verified — clients reach you here',
+      'Подтверждён — клиенты звонят сюда', 'Tasdiqlangan — mijozlar shu raqamga');
+  static String get barberPhoneMissing => _t('No number on your account',
+      'На аккаунте нет номера', 'Hisobingizda raqam yo\'q');
+  static String get authPhoneInstead => _t('No Telegram? Use my phone number',
+      'Нет Telegram? Войти по номеру', 'Telegram yo\'qmi? Raqam orqali');
+  static String get authSmsSub => _t(
+      "We'll text you a code to confirm the number.",
+      'Отправим код в SMS для подтверждения номера.',
+      "Raqamni tasdiqlash uchun SMS kod yuboramiz.");
+  static String get authSendCode =>
+      _t('Send code', 'Отправить код', 'Kod yuborish');
+  static String get tgNeedsContactShare => _t(
+      'Telegram confirmed you but shared no number — tap the contact button and retry',
+      'Telegram подтвердил вас, но не передал номер — нажмите кнопку контакта и повторите',
+      "Telegram sizni tasdiqladi, lekin raqam ulashilmadi — kontakt tugmasini bosing va qayta uring");
+
   // ── Display-time translation for CATALOGUE text ─────────────────────────
   // The mock data ships English (service names, specialties, taglines, tags).
   // tr() localizes them at display time; unknown strings pass through

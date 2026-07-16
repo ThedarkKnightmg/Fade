@@ -41,6 +41,7 @@ class LeaderLoopScreen extends StatefulWidget {
     required this.age,
     required this.phone,
     this.initialShopName = '',
+    this.photo,
   });
 
   final String firstName;
@@ -48,6 +49,11 @@ class LeaderLoopScreen extends StatefulWidget {
   final int age;
   final String phone;
   final String initialShopName;
+
+  /// The barber's own portrait, carried from the registration screen. It used
+  /// to stop there — the Flow B (join) branch passed it on, this one didn't —
+  /// so a shop founder's photo silently vanished.
+  final Uint8List? photo;
 
   @override
   State<LeaderLoopScreen> createState() => _LeaderLoopScreenState();
@@ -184,12 +190,13 @@ class _LeaderLoopScreenState extends State<LeaderLoopScreen> {
       lat: _pin.latitude,
       lng: _pin.longitude,
       claimLeader: _claimLeader,
+      leaderPhoto: widget.photo,
       shopProof: _proof,
     );
   }
 
   String get _inviteLink =>
-      'https://fade.app/join/${_created?.id ?? 'shop'}';
+      'https://fade.uz/join/${_created?.id ?? 'shop'}';
   String get _inviteMessage =>
       L.inviteMessageFor(_name.text.trim(), _inviteLink);
 
@@ -670,7 +677,7 @@ class _LeaderLoopScreenState extends State<LeaderLoopScreen> {
                   children: [
                     Icon(Icons.link_rounded, size: 15, color: p.textTertiary),
                     const SizedBox(width: 6),
-                    Text('fade.app/join',
+                    Text('fade.uz/join',
                         style: AppTypography.caption(context)),
                   ],
                 ),

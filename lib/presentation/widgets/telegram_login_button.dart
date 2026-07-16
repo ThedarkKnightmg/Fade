@@ -9,8 +9,6 @@ import '../../core/supabase/telegram_auth.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/app_state.dart';
-import '../../data/models/user.dart';
-import '../screens/root_shell.dart';
 
 /// "Continue with Telegram" — the whole flow in one drop-in button (used by
 /// BOTH the login and register screens, so the market-native sign-in is the
@@ -23,11 +21,24 @@ import '../screens/root_shell.dart';
 /// Free (no SMS cost), instantly familiar locally, and bot accounts are hard to
 /// fake. Unconfigured builds demo the choreography so the flow stays testable.
 class TelegramLoginButton extends StatefulWidget {
-  const TelegramLoginButton({super.key, this.fallbackName});
+  const TelegramLoginButton({
+    super.key,
+    this.fallbackName,
+    this.role = AppRole.client,
+    this.onSignedIn,
+  });
 
   /// Optional name typed on the register form, used only if Telegram doesn't
   /// give us one.
   final String? fallbackName;
+
+  /// Which side of the marketplace this sign-up is for.
+  final AppRole role;
+
+  /// Called once the identity has landed in AppState. The GATE owns routing —
+  /// the button must not push RootShell itself, or the barber path (which has
+  /// to detour through setup) would be impossible.
+  final VoidCallback? onSignedIn;
 
   /// Whether this build should render the button at all. Mirrors
   /// [GoogleLoginButton.visible]: in release it appears only when the bot is
@@ -104,17 +115,37 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
     final name = (tgName != null && tgName.trim().isNotEmpty)
         ? tgName.trim()
         : (typed.isNotEmpty ? typed : L.tgDefaultName);
+    final phone = tgPhone ?? '';
+    if (phone.isEmpty) {
+      // Verified with no number should be impossible — the webhook only marks a
+      // code verified once the contact is shared. Refuse rather than admit an
+      // identity we can't key on; a barber must be callable.
+      _fail(L.tgNeedsContactShare);
+      return;
+    }
     // The phone came from Telegram's own contact card — verified at their
-    // signup, so the account lands with a PROVEN number (no SMS needed).
-    AppState.instance.updateUser(
-      AppUser(id: 'u_tg', fullName: name, email: '', phone: tgPhone ?? ''),
+    // signup — so the account lands with a PROVEN number and no SMS cost.
+    // The id derives from it: it used to be the constant 'u_tg', which gave
+    // every Telegram user on earth the same account id.
+    AppState.instance.signInWithIdentity(
+      id: 'tg_$phone',
+      fullName: name,
+      phone: phone,
+      role: widget.role,
+      method: AuthMethod.telegram,
     );
-    AppState.instance.signIn();
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      FadeThroughPageRoute(child: const RootShell()),
-      (route) => false,
-    );
+    widget.onSignedIn?.call();
+  }
+
+  void _fail(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ));
   }
 
   @override

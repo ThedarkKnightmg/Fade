@@ -13,6 +13,11 @@ class AppUser {
   final String phone;
   final String? avatarUrl;
 
+  /// Nobody. The signed-out profile — used instead of falling back to the demo
+  /// user, which is how mock details leaked onto real accounts.
+  static const AppUser empty =
+      AppUser(id: '', fullName: '', email: '', phone: '');
+
   String get initials {
     final parts = fullName.trim().split(' ');
     if (parts.isEmpty) return '?';

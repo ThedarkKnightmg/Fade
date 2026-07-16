@@ -4,23 +4,31 @@ import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../data/app_state.dart';
 import '../../widgets/paper_kit.dart';
-import 'barber_registration_screen.dart';
-import 'client_registration_screen.dart';
+import '../auth/login_screen.dart';
 
 /// "How will you use Fade?" — pick the client or barber side at sign-up.
 class RoleChoiceScreen extends StatelessWidget {
   const RoleChoiceScreen({super.key});
 
+  // Both sides go through the SAME gate — identity first, details after. The
+  // role rides along as an argument and is only committed to AppState once a
+  // provider has vouched for the person, so backing out leaves nothing behind.
+  //
+  // The client path used to push ClientRegistrationScreen ("Ismingiz nima?"),
+  // which took a typed name and walked straight into the app. That screen is
+  // deleted: Telegram already returns the name AND a verified phone, so the
+  // form had nothing left to ask.
   void _client(BuildContext context) {
     Navigator.of(context).push(
-      FadeThroughPageRoute(child: const ClientRegistrationScreen()),
+      FadeThroughPageRoute(child: const LoginScreen(role: AppRole.client)),
     );
   }
 
   void _barber(BuildContext context) {
     Navigator.of(context).push(
-      FadeThroughPageRoute(child: const BarberRegistrationScreen()),
+      FadeThroughPageRoute(child: const LoginScreen(role: AppRole.barber)),
     );
   }
 

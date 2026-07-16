@@ -26,6 +26,22 @@ import 'mock_data.dart';
 /// Which side of the marketplace the user is currently using.
 enum AppRole { client, barber }
 
+/// How far a person has got through the front door. ONE value, because two
+/// independent booleans (`_isAuthenticated` + `_hasCompletedOnboarding`) could
+/// disagree — and the splash screen used to *repair* the disagreement by
+/// calling signIn(), which meant identity could never block entry.
+///
+/// * [anonymous] — nobody has proved anything. Show the sign-in gate.
+/// * [identified] — a provider vouched for this human (we hold a verified
+///   phone or email), but their setup isn't finished. Only barbers land here:
+///   they still need a chair. Resuming sends them back to finish it.
+/// * [ready] — identity proved AND setup complete. The app opens.
+enum AuthStage { anonymous, identified, ready }
+
+/// Which provider vouched for the person. Never null once past [anonymous] —
+/// that's the invariant that makes "authenticated" mean something.
+enum AuthMethod { telegram, google, phoneOtp }
+
 /// Everything a barber gives us when they sign up in the intro.
 /// Barbers don't create shops — they **attach** to an existing one ([shopId])
 /// that's already on the map (placed by its owner). This keeps one pin per
@@ -294,13 +310,25 @@ class AppState extends ChangeNotifier {
   RegisteredBarber? _registeredBarber;
   RegisteredBarber? get registeredBarber => _registeredBarber;
 
-  /// Sign up as a barber from the intro: store the profile, flip to barber
-  /// mode, and drop straight into the app.
+  /// Trust photos captured in the Leader Loop, keyed by shop id — the evidence
+  /// behind a "this shop is real" claim. Held so a later review can actually
+  /// look at it; until then it is at least no longer thrown away.
+  final Map<String, Uint8List> _shopProofs = {};
+  Uint8List? shopProofFor(String shopId) => _shopProofs[shopId];
+
+  /// A barber has finished setup (they have a chair) — open the app.
+  ///
+  /// This no longer *grants* the session: reaching here at all now requires an
+  /// already-[AuthStage.identified] user, i.e. a provider-verified phone. It
+  /// used to set `_isAuthenticated = true` off four typed fields, which handed
+  /// out a public marketplace identity — and, via the Leader Loop, a shop pin
+  /// on the live map — to anyone who typed a name and `1234567`.
   void registerBarber(RegisteredBarber barber) {
+    assert(_stage != AuthStage.anonymous,
+        'registerBarber requires a verified identity — go through the gate');
     _registeredBarber = barber;
     _activeRole = AppRole.barber;
-    _hasCompletedOnboarding = true;
-    _isAuthenticated = true;
+    _stage = AuthStage.ready;
     // Any completed barber sign-up (existing shop OR Leader Loop, which
     // delegates here) counts as onboarded, so a later client<->barber switch is
     // an instant setRole — not a forced re-run of the "become a barber" intro.
@@ -368,6 +396,10 @@ class AppState extends ChangeNotifier {
       tags: const ['New'],
     );
     MockData.barbershops.add(shop);
+    // Keep the trust photo. The parameter was accepted and then never read, so
+    // the whole "prove you're real" step was theatre — the evidence reached
+    // here and hit the floor, leaving nothing for anyone to review later.
+    if (shopProof != null) _shopProofs[id] = shopProof;
     // Register the founder against the new shop; claiming → owner/Leader.
     registerBarber(RegisteredBarber(
       firstName: firstName,
@@ -530,26 +562,12 @@ class AppState extends ChangeNotifier {
     _save();
   }
 
-  /// Sign up as a client from the intro — capture their name (and optional
-  /// photo), then drop into the client app.
-  void registerClient({
-    required String fullName,
-    required String phone,
-    Uint8List? photo,
-  }) {
-    _user = AppUser(
-      id: _user.id,
-      fullName: fullName.isEmpty ? _user.fullName : fullName,
-      email: _user.email,
-      phone: phone.isEmpty ? _user.phone : phone,
-      avatarUrl: _user.avatarUrl,
-    );
-    if (photo != null) _userPhoto = photo;
-    _activeRole = AppRole.client;
-    _hasCompletedOnboarding = true;
-    _isAuthenticated = true;
-    notifyListeners();
-  }
+  // registerClient() is GONE. It minted a fully authenticated session from a
+  // typed first name, and kept `id: _user.id` — which defaulted to the mock
+  // user — so every client shared the id `u1`, the email
+  // alex.johnson@example.com, and (phone being optional) a fake US number.
+  // Clients now arrive through signInWithIdentity() with a provider-verified
+  // identity and a unique id.
 
   /// The (shop, barber) the user operates as in barber mode — built from the
   /// sign-up details when present, otherwise the demo barber.
@@ -1306,9 +1324,9 @@ class AppState extends ChangeNotifier {
   // Base host for a barber's public booking link. Change this ONE constant to
   // your deployed landing page (e.g. a free Cloudflare Worker at
   // 'your-name.workers.dev') and every shared link points at the live page.
-  static const String bookingLinkBase = 'fade.app';
+  static const String bookingLinkBase = 'fade.uz';
 
-  /// Display form (no scheme): fade.app/b/handle.
+  /// Display form (no scheme): fade.uz/b/handle.
   String get barberLink => '$bookingLinkBase/b/$barberHandle';
 
   /// The full, tappable URL to share/copy — opens the barber's booking page.
@@ -1320,7 +1338,7 @@ class AppState extends ChangeNotifier {
     return slug.isEmpty ? 'barber' : slug;
   }
 
-  /// Resolve a scanned booking code — a full URL, 'fade.app/b/handle', or a
+  /// Resolve a scanned booking code — a full URL, 'fade.uz/b/handle', or a
   /// bare handle — to the shop that barber works at. Null if unknown.
   Barbershop? shopFromBookingCode(String code) {
     final handle = _handleFromCode(code);
@@ -1820,11 +1838,22 @@ class AppState extends ChangeNotifier {
   bool _isDarkMode = false; // app opens in the light theme; toggle → navy
   bool get isDarkMode => _isDarkMode;
 
-  bool _hasCompletedOnboarding = false;
-  bool get hasCompletedOnboarding => _hasCompletedOnboarding;
+  // === Auth ===
+  // One source of truth. The old pair of bools is now DERIVED from it, so they
+  // can never drift apart — and nothing can flip "authenticated" on without an
+  // identity, because only signInWithIdentity() moves this off `anonymous`.
+  AuthStage _stage = AuthStage.anonymous;
+  AuthStage get authStage => _stage;
 
-  bool _isAuthenticated = false;
-  bool get isAuthenticated => _isAuthenticated;
+  AuthMethod? _method;
+  AuthMethod? get authMethod => _method;
+
+  /// True once a provider has vouched for this person. Read-only by design:
+  /// there is deliberately no setter, so no screen can grant itself a session.
+  bool get isAuthenticated => _stage != AuthStage.anonymous;
+
+  /// True once identity is proved AND setup is finished — i.e. the app opens.
+  bool get hasCompletedOnboarding => _stage == AuthStage.ready;
 
   // === My Barber ===
   // We persist (shopId, barberId) so we can re-fetch the full Barber
@@ -2163,7 +2192,28 @@ class AppState extends ChangeNotifier {
 
   Future<void> load() async {
     final sp = await SharedPreferences.getInstance();
-    _hasCompletedOnboarding = sp.getBool('onboarded') ?? _hasCompletedOnboarding;
+    // Auth stage + the provider that vouched. Read together: a stage with no
+    // method means the record is broken (or hand-edited), so we distrust it and
+    // fall back to anonymous. No proof, no session.
+    final rawStage = sp.getString('auth_stage');
+    _stage = AuthStage.values.firstWhere(
+      (s) => s.name == rawStage,
+      orElse: () => AuthStage.anonymous,
+    );
+    final rawMethod = sp.getString('auth_method');
+    _method = AuthMethod.values
+        .where((m) => m.name == rawMethod)
+        .cast<AuthMethod?>()
+        .firstWhere((_) => true, orElse: () => null);
+    if (_stage != AuthStage.anonymous && _method == null) {
+      _stage = AuthStage.anonymous;
+    }
+    // Legacy installs are deliberately NOT migrated. Those identities were
+    // created by typing a name; carrying them across would defeat the very
+    // change that removes them. They re-authenticate once via Telegram, and
+    // keep their bookings/chats/wallet — this is a re-auth, not a sign-out.
+    await sp.remove('onboarded');
+    await sp.remove('authed');
     _barberOnboarded = sp.getBool('barberOnboarded') ?? _barberOnboarded;
     _payMethod = sp.getString('payMethod') ?? _payMethod;
     _offDays
@@ -2171,7 +2221,6 @@ class AppState extends ChangeNotifier {
       ..addAll((sp.getStringList('offDays') ?? const [])
           .map(int.tryParse)
           .whereType<int>());
-    _isAuthenticated = sp.getBool('authed') ?? _isAuthenticated;
     final role = sp.getString('role');
     if (role != null) {
       _activeRole = role == 'barber' ? AppRole.barber : AppRole.client;
@@ -2219,15 +2268,20 @@ class AppState extends ChangeNotifier {
       // Move the barber demo content onto the shop they're attached to.
       _reseedBarberDemoForRegistered();
     }
-    final clName = sp.getString('cl_name');
-    if (clName != null && clName.isNotEmpty) {
+    // Restore the profile ONLY for a real session; an anonymous install has no
+    // profile to restore and must not inherit the mock user's details.
+    if (_stage != AuthStage.anonymous) {
       _user = AppUser(
-        id: _user.id,
-        fullName: clName,
+        // cl_id is what makes this person unique. It was never persisted
+        // before, so `id` silently stayed MockData.currentUser.id ('u1').
+        id: sp.getString('cl_id') ?? _user.id,
+        fullName: sp.getString('cl_name') ?? _user.fullName,
         email: sp.getString('cl_email') ?? _user.email,
         phone: sp.getString('cl_phone') ?? _user.phone,
-        avatarUrl: _user.avatarUrl,
+        avatarUrl: sp.getString('cl_avatar') ?? _user.avatarUrl,
       );
+    } else {
+      _user = AppUser.empty;
     }
     _userPhoto = _decodePhoto(sp.getString('cl_photo'));
     _aiEndpoint = sp.getString('aiEndpoint') ?? _aiEndpoint;
@@ -2342,12 +2396,16 @@ class AppState extends ChangeNotifier {
 
   Future<void> _save() async {
     final sp = await SharedPreferences.getInstance();
-    await sp.setBool('onboarded', _hasCompletedOnboarding);
+    await sp.setString('auth_stage', _stage.name);
+    if (_method != null) {
+      await sp.setString('auth_method', _method!.name);
+    } else {
+      await sp.remove('auth_method');
+    }
     await sp.setBool('barberOnboarded', _barberOnboarded);
     await sp.setString('payMethod', _payMethod);
     await sp.setStringList(
         'offDays', _offDays.map((d) => d.toString()).toList());
-    await sp.setBool('authed', _isAuthenticated);
     await sp.setString('role', _activeRole.name);
     await sp.setString('lang', _language.name);
     await sp.setBool('dark', _isDarkMode);
@@ -2383,9 +2441,17 @@ class AppState extends ChangeNotifier {
         await sp.remove(k);
       }
     }
+    // cl_id is the provider-verified identity key ('tg_<id>' / 'g_<email>').
+    // Without it the restored user silently reverted to the mock id 'u1'.
+    await sp.setString('cl_id', _user.id);
     await sp.setString('cl_name', _user.fullName);
     await sp.setString('cl_email', _user.email);
     await sp.setString('cl_phone', _user.phone);
+    if (_user.avatarUrl != null) {
+      await sp.setString('cl_avatar', _user.avatarUrl!);
+    } else {
+      await sp.remove('cl_avatar');
+    }
     await _putPhoto(sp, 'cl_photo', _userPhoto);
     // Profile extras — the home address, reminder preference, and earned
     // perks survive restarts (they're all promised to the user as "saved").
@@ -2603,13 +2669,58 @@ class AppState extends ChangeNotifier {
   static Uint8List? _decodePhoto(String? s) =>
       (s == null || s.isEmpty) ? null : base64Decode(s);
 
-  void completeOnboarding() {
-    _hasCompletedOnboarding = true;
+  /// The ONE way into the app. A provider (Telegram / Google / phone OTP) has
+  /// just vouched for this person, so record who they are and open the door.
+  ///
+  /// There is no plain `signIn()` any more, and no `registerClient()`. Both let
+  /// a caller assert a session out of thin air — `registerClient` did it on the
+  /// strength of a non-empty first-name string. Requiring [id] and [method]
+  /// here means every session is traceable to a provider that verified a real
+  /// human, which is what the wallet, commissions and no-show penalties assume.
+  ///
+  /// [id] must derive from the VERIFIED credential (telegram id, email, phone)
+  /// — never a constant. It used to be `_user.id`, which defaulted to the mock
+  /// user, so every client on earth shared the id `u1`.
+  ///
+  /// A client is [AuthStage.ready] immediately: Telegram already gave us their
+  /// name and phone, so there is nothing left to ask. A barber stops at
+  /// [AuthStage.identified] — they still need a chair — and the splash screen
+  /// resumes them into that setup on relaunch.
+  void signInWithIdentity({
+    required String id,
+    required String fullName,
+    required AppRole role,
+    required AuthMethod method,
+    String phone = '',
+    String email = '',
+    String? avatarUrl,
+    Uint8List? photo,
+  }) {
+    _user = AppUser(
+      id: id,
+      fullName: fullName,
+      email: email,
+      phone: phone,
+      avatarUrl: avatarUrl,
+    );
+    if (photo != null) _userPhoto = photo;
+    _method = method;
+    _activeRole = role;
+    _stage = role == AppRole.barber ? AuthStage.identified : AuthStage.ready;
     notifyListeners();
   }
 
-  void signIn() {
-    _isAuthenticated = true;
+  /// Google proves an email but never a phone, and a barber has to be callable.
+  /// Lets the OTP step top up an existing session without re-authenticating.
+  void attachVerifiedPhone(String phone) {
+    if (phone.isEmpty) return;
+    _user = AppUser(
+      id: _user.id,
+      fullName: _user.fullName,
+      email: _user.email,
+      phone: phone,
+      avatarUrl: _user.avatarUrl,
+    );
     notifyListeners();
   }
 
@@ -2617,11 +2728,14 @@ class AppState extends ChangeNotifier {
   /// Also wipes bookings/chats and re-seeds, so the next person starts clean
   /// and doesn't inherit the previous user's appointments.
   void signOut() {
-    _isAuthenticated = false;
-    _hasCompletedOnboarding = false;
+    _stage = AuthStage.anonymous;
+    _method = null;
     _barberOnboarded = false;
     _registeredBarber = null;
-    _user = MockData.currentUser;
+    // Empty, NOT MockData.currentUser — falling back to the demo user is how
+    // "Alex Johnson" and a fake US phone number kept reappearing on fresh
+    // accounts. Nobody is signed in, so the profile is nobody.
+    _user = AppUser.empty;
     _userPhoto = null;
     _activeRole = AppRole.client;
     _bookings.clear();

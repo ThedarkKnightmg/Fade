@@ -31,14 +31,34 @@ class _BarberRegistrationScreenState extends State<BarberRegistrationScreen> {
   final _first = TextEditingController();
   final _surname = TextEditingController();
   final _age = TextEditingController();
-  final _phone = TextEditingController();
   Uint8List? _photo;
   Barbershop? _selectedShop;
-  bool _isOwner = true;
+
+  /// Defaults to FALSE. It used to default to true, which is what made the
+  /// Coworker-Join back-out into an ownership exploit: `_selectedShop` stayed
+  /// set, `_validate()` passed, and Continue registered you as OWNER of a shop
+  /// someone else created. Ownership is now only ever granted by the Leader
+  /// Loop, where you create the shop yourself.
+  bool _isOwner = false;
+
+  /// The phone is NOT collected here any more — reaching this screen requires a
+  /// provider-verified identity, so we already hold a real number. Asking again
+  /// would invite a typo'd or fake one (`1234567` passed the old length check).
+  String get _verifiedPhone => AppState.instance.user.phone;
+
+  @override
+  void initState() {
+    super.initState();
+    // Prefill from the identity the provider vouched for; still editable,
+    // because a Telegram display name isn't always the name above the chair.
+    final parts = AppState.instance.user.fullName.trim().split(' ');
+    if (parts.isNotEmpty) _first.text = parts.first;
+    if (parts.length > 1) _surname.text = parts.sublist(1).join(' ');
+  }
 
   @override
   void dispose() {
-    for (final c in [_first, _surname, _age, _phone]) {
+    for (final c in [_first, _surname, _age]) {
       c.dispose();
     }
     super.dispose();
@@ -71,34 +91,46 @@ class _BarberRegistrationScreenState extends State<BarberRegistrationScreen> {
             firstName: _first.text.trim(),
             surname: _surname.text.trim(),
             age: int.parse(_age.text.trim()),
-            phone: _phone.text.trim(),
+            phone: _verifiedPhone,
             initialShopName: result.createName ?? '',
+            // Was silently dropped here while the Flow B branch kept it, so a
+            // Leader's own photo never reached their shop.
+            photo: _photo,
           ),
         ),
       );
     } else {
       // Joining a shop that's already on the map runs Flow B — the Leader
-      // approves the roster. Keep the selection as a direct-finish fallback.
+      // approves the roster. There is NO direct-finish fallback any more: the
+      // only ways out of this screen are the Leader Loop (you create the shop)
+      // or a join request (the Leader admits you).
       final shop = result.shop!;
       setState(() => _selectedShop = shop);
       final err = _validatePersonal();
       if (err != null) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(err)));
+        setState(() => _selectedShop = null);
         return;
       }
-      Navigator.of(context).push(
+      await Navigator.of(context).push(
         FadeThroughPageRoute(
           child: CoworkerJoinScreen(
             shop: shop,
             firstName: _first.text.trim(),
             surname: _surname.text.trim(),
             age: int.parse(_age.text.trim()),
-            phone: _phone.text.trim(),
+            phone: _verifiedPhone,
             photo: _photo,
           ),
         ),
       );
+      // Backing out of the join screen must NOT leave the shop selected: that
+      // is exactly what let someone tap Continue and register as its owner.
+      // A join is only real once CoworkerJoinScreen files the request itself.
+      if (mounted && AppState.instance.registeredBarber == null) {
+        setState(() => _selectedShop = null);
+      }
     }
   }
 
@@ -109,7 +141,8 @@ class _BarberRegistrationScreenState extends State<BarberRegistrationScreen> {
     if (_surname.text.trim().isEmpty) return L.errSurname;
     final age = int.tryParse(_age.text.trim());
     if (age == null || age < 16 || age > 90) return L.errAge;
-    if (_phone.text.trim().length < 7) return L.errPhone;
+    // No phone rule: the number came from the provider, already verified. The
+    // old `length < 7` check was satisfied by "1234567".
     return null;
   }
 
@@ -130,7 +163,7 @@ class _BarberRegistrationScreenState extends State<BarberRegistrationScreen> {
       firstName: _first.text.trim(),
       surname: _surname.text.trim(),
       age: int.parse(_age.text.trim()),
-      phone: _phone.text.trim(),
+      phone: _verifiedPhone,
       shopId: _selectedShop!.id,
       isOwner: _isOwner,
       photo: _photo,
@@ -213,24 +246,16 @@ class _BarberRegistrationScreenState extends State<BarberRegistrationScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                    child: _Field(
-                        controller: _age,
-                        label: L.ageLabel,
-                        icon: Icons.cake_outlined,
-                        keyboard: TextInputType.number)),
-                const SizedBox(width: 12),
-                Expanded(
-                    flex: 2,
-                    child: _Field(
-                        controller: _phone,
-                        label: L.phoneWord,
-                        icon: Icons.phone_outlined,
-                        keyboard: TextInputType.phone)),
-              ],
-            ),
+            _Field(
+                controller: _age,
+                label: L.ageLabel,
+                icon: Icons.cake_outlined,
+                keyboard: TextInputType.number),
+            const SizedBox(height: 12),
+            // The number we already hold, shown rather than asked for. It reads
+            // as reassurance ("you're already verified") instead of one more
+            // field, and it cannot be swapped for a fake one.
+            _VerifiedPhoneRow(phone: _verifiedPhone),
             const SizedBox(height: 18),
             Text(L.chooseYourShop, style: AppTypography.h4(context)),
             const SizedBox(height: 8),
@@ -321,6 +346,50 @@ class _BarberRegistrationScreenState extends State<BarberRegistrationScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The provider-verified number, displayed instead of collected — proof, not
+/// a form field.
+class _VerifiedPhoneRow extends StatelessWidget {
+  const _VerifiedPhoneRow({required this.phone});
+
+  final String phone;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    const green = Color(0xFF2FA84F);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      decoration: BoxDecoration(
+        color: green.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: green.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.verified_rounded, size: 19, color: green),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  phone.isEmpty ? L.barberPhoneMissing : phone,
+                  style: AppTypography.body(context)
+                      .copyWith(fontWeight: FontWeight.w800),
+                ),
+                Text(L.barberPhoneVerified,
+                    style: AppTypography.caption(context)
+                        .copyWith(color: p.textSecondary)),
+              ],
+            ),
+          ),
+          Icon(Icons.lock_outline_rounded, size: 16, color: p.textTertiary),
+        ],
       ),
     );
   }

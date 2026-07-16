@@ -43,9 +43,19 @@ class SupabaseConfig {
   /// Empty = the button hides itself in release builds (never a dead button).
   static const String googleWebClientId = '';
 
+  /// Whether a real SMS provider is wired to the Supabase "Send SMS" hook.
+  ///
+  /// Flip to true ONLY once the hook actually delivers — today the Telegram
+  /// Gateway answers `BALANCE_NOT_ENOUGH` and Eskiz is deployed but not the
+  /// hook target. While false, the phone/SMS path stays hidden rather than
+  /// showing a code screen no code ever arrives at.
+  static const bool smsConfigured = false;
+
   static bool get isSet => url.isNotEmpty && publishableKey.isNotEmpty;
 
   static bool get telegramLoginConfigured => isSet && telegramBot.isNotEmpty;
 
   static bool get googleConfigured => isSet && googleWebClientId.isNotEmpty;
+
+  static bool get smsAuthConfigured => isSet && smsConfigured;
 }

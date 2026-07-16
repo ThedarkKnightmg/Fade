@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter/services.dart';
 
 import '../../../core/animations/app_animations.dart';
@@ -9,17 +8,26 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/validators.dart';
 import '../../../data/app_state.dart';
-import '../../../data/models/user.dart';
 import '../../widgets/app_text_field.dart';
-import '../../widgets/google_login_button.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
-import '../../widgets/telegram_login_button.dart';
+import '../onboarding/barber_registration_screen.dart';
 import '../root_shell.dart';
 import 'phone_verify_screen.dart';
 
+/// The SMS fallback — for whoever has neither Telegram nor Google.
+///
+/// Name + phone, then a real OTP. That's the whole form: the email and
+/// password fields are gone, because the password was never checked against
+/// anything and "Forgot password?" announced a reset link it never sent.
+///
+/// Reached from [LoginScreen] only when [SupabaseConfig.smsAuthConfigured] is
+/// on, since SMS costs money per message and needs a live provider (Eskiz or
+/// the Telegram Gateway) wired to the Supabase Send-SMS hook.
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  const RegisterScreen({super.key, this.role = AppRole.client});
+
+  final AppRole role;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -27,65 +35,59 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _name = TextEditingController();
-  final _email = TextEditingController();
   final _phone = TextEditingController();
-  final _password = TextEditingController();
-  bool _obscure = true;
   bool _submitted = false;
 
   String? _nameError;
-  String? _emailError;
   String? _phoneError;
-  String? _passwordError;
 
   @override
   void dispose() {
     _name.dispose();
-    _email.dispose();
     _phone.dispose();
-    _password.dispose();
     super.dispose();
   }
 
   void _validate() {
     setState(() {
       _nameError = Validators.fullName(_name.text);
-      _emailError = Validators.email(_email.text);
       _phoneError = Validators.phone(_phone.text);
-      _passwordError = Validators.password(_password.text);
     });
   }
 
   void _create() {
     _submitted = true;
     _validate();
-    if (_nameError != null ||
-        _emailError != null ||
-        _phoneError != null ||
-        _passwordError != null) {
-      return;
-    }
+    if (_nameError != null || _phoneError != null) return;
     HapticFeedback.selectionClick();
-    // Persist the validated, trimmed profile; the phone is confirmed by an SMS
-    // code before we actually land inside the app.
-    AppState.instance.updateUser(
-      AppUser(
-        id: 'u_local',
-        fullName: _name.text.trim(),
-        email: _email.text.trim(),
-        phone: _phone.text.trim(),
-      ),
-    );
+
+    final name = _name.text.trim();
     final phoneE164 = AuthService.normalizePhone(_phone.text.trim());
+
+    // NOTHING is written to AppState here. The old code called updateUser()
+    // before the OTP, so abandoning this screen left an unverified profile
+    // persisted on the device. The identity is minted only on success, below.
     Navigator.of(context).push(
       FadeThroughPageRoute(
         child: PhoneVerifyScreen(
           phoneE164: phoneE164,
           onVerified: () {
-            AppState.instance.signIn();
+            AppState.instance.signInWithIdentity(
+              // Keyed on the verified number, like the Telegram path — so the
+              // same human signing in either way lands on one identity.
+              id: 'tg_$phoneE164',
+              fullName: name,
+              phone: phoneE164,
+              role: widget.role,
+              method: AuthMethod.phoneOtp,
+            );
             if (!mounted) return;
             Navigator.of(context).pushAndRemoveUntil(
-              FadeThroughPageRoute(child: const RootShell()),
+              FadeThroughPageRoute(
+                child: widget.role == AppRole.barber
+                    ? const BarberRegistrationScreen()
+                    : const RootShell(),
+              ),
               (route) => false,
             );
           },
@@ -93,7 +95,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -135,44 +136,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 8),
               FadeSlideIn(
                 delay: const Duration(milliseconds: 80),
-                child: Text(
-                  L.authOneMinute,
-                  style: AppTypography.bodySmall(context),
-                ),
+                child: Text(L.authSmsSub,
+                    style: AppTypography.bodySmall(context)),
               ),
-              const SizedBox(height: 22),
-              // Both no-typing paths lead; the form below is the fallback for
-              // whoever has neither. Telegram fills in a verified phone,
-              // Google a verified email + photo — either way, no password.
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 110),
-                child: TelegramLoginButton(fallbackName: _name.text),
-              ),
-              if (GoogleLoginButton.visible) ...[
-                const SizedBox(height: 12),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 140),
-                  child: GoogleLoginButton(fallbackName: _name.text),
-                ),
-              ],
-              const SizedBox(height: 18),
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 125),
-                child: Row(
-                  children: [
-                    Expanded(child: Divider(color: p.border)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        L.tgOr,
-                        style: AppTypography.caption(context),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: p.border)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 24),
               FadeSlideIn(
                 delay: const Duration(milliseconds: 140),
                 child: AppTextField(
@@ -192,30 +159,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 200),
                 child: AppTextField(
-                  label: L.emailWord,
-                  hint: 'you@example.com',
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: Icons.alternate_email_rounded,
-                  textInputAction: TextInputAction.next,
-                  errorText: _emailError,
-                  onChanged: (_) {
-                    if (_submitted) _validate();
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 260),
-                child: AppTextField(
                   label: L.phoneWord,
-                  hint: '+1 (555) 000-0000',
+                  hint: '+998 90 000 00 00',
                   controller: _phone,
                   keyboardType: TextInputType.phone,
                   prefixIcon: Icons.phone_outlined,
                   maxLength: 20,
-                  textInputAction: TextInputAction.next,
+                  textInputAction: TextInputAction.done,
                   errorText: _phoneError,
+                  onSubmitted: (_) => _create(),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9+()\-\s]')),
                   ],
@@ -224,65 +176,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 16),
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 320),
-                child: AppTextField(
-                  label: L.authPassword,
-                  hint: L.authMin8Chars,
-                  controller: _password,
-                  obscureText: _obscure,
-                  prefixIcon: Icons.lock_outline_rounded,
-                  maxLength: 128,
-                  errorText: _passwordError,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _create(),
-                  onChanged: (_) {
-                    if (_submitted) _validate();
-                  },
-                  suffix: IconButton(
-                    onPressed: () => setState(() => _obscure = !_obscure),
-                    icon: Icon(
-                      _obscure
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      size: 20,
-                      color: p.textTertiary,
-                    ),
-                  ),
-                ),
-              ),
               const SizedBox(height: 26),
               FadeSlideIn(
-                delay: const Duration(milliseconds: 380),
+                delay: const Duration(milliseconds: 260),
                 child: PrimaryButton(
-                  label: L.authCreateAccount,
+                  label: L.authSendCode,
                   height: 62,
                   onPressed: _create,
-                ),
-              ),
-              const SizedBox(height: 22),
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 440),
-                child: Center(
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).maybePop(),
-                    child: Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: L.authAlreadyHaveAcct,
-                            style: AppTypography.body(context),
-                          ),
-                          markerBoxSpan(
-                            L.authSignIn,
-                            AppTypography.body(context)
-                                .copyWith(fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ],
@@ -292,4 +192,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-

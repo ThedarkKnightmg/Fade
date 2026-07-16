@@ -3,15 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../core/animations/app_animations.dart';
 import '../../core/animations/motion.dart';
 import '../../core/i18n/strings.dart';
 import '../../core/supabase/google_auth.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/app_state.dart';
-import '../../data/models/user.dart';
-import '../screens/root_shell.dart';
 import 'paper_kit.dart';
 
 /// Google's official four-colour "G". Inlined rather than shipped as an asset
@@ -36,10 +33,21 @@ const String _googleG = '''
 /// Hides itself in release builds until [SupabaseConfig.googleWebClientId] is
 /// set — a sign-in button that can't sign anyone in is worse than no button.
 class GoogleLoginButton extends StatefulWidget {
-  const GoogleLoginButton({super.key, this.fallbackName});
+  const GoogleLoginButton({
+    super.key,
+    this.fallbackName,
+    this.role = AppRole.client,
+    this.onSignedIn,
+  });
 
   /// Name typed on the register form, used only if Google has no display name.
   final String? fallbackName;
+
+  /// Which side of the marketplace this sign-up is for.
+  final AppRole role;
+
+  /// Called once the identity has landed in AppState. The gate owns routing.
+  final VoidCallback? onSignedIn;
 
   /// Whether this build should render the button at all.
   static bool get visible => GoogleAuth.configured || kDebugMode;
@@ -74,22 +82,20 @@ class _GoogleLoginButtonState extends State<GoogleLoginButton> {
       final name = profile.name.trim().isNotEmpty
           ? profile.name.trim()
           : (typed.isNotEmpty ? typed : L.tgDefaultName);
-      AppState.instance.updateUser(
-        AppUser(
-          id: 'u_google',
-          fullName: name,
-          // Verified by Google — no confirmation mail needed.
-          email: profile.email,
-          phone: '',
-          avatarUrl: profile.photoUrl,
-        ),
+      // Keyed on the verified email — it was the constant 'u_google', which
+      // gave every Google user the same account id. Note there is no phone:
+      // Google proves an email and nothing else, so a barber signing up this
+      // way still owes us a number before clients can book them.
+      AppState.instance.signInWithIdentity(
+        id: 'g_${profile.email}',
+        fullName: name,
+        email: profile.email,
+        avatarUrl: profile.photoUrl,
+        role: widget.role,
+        method: AuthMethod.google,
       );
-      AppState.instance.signIn();
       if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        FadeThroughPageRoute(child: const RootShell()),
-        (route) => false,
-      );
+      widget.onSignedIn?.call();
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
