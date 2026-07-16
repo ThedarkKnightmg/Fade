@@ -1185,12 +1185,18 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ═══════════════════ Barber wallet & tiered commission ═══════════════════
-  // The "vending machine": the barber pre-loads a small balance; the app only
-  // deducts a fee when it DELIVERS a paying client. Walk-ins are free (Tier 1),
-  // new app-clients cost ~5% (Tier 2), regulars via the barber's own QR/link
-  // are ~free (Tier 3), and VIP is an optional accelerator (Tier 4). Mock
-  // ledger — real top-ups + settlement hand off to a payment provider.
+  // ═══════════════════ Barber wallet & commission ═══════════════════
+  // The "vending machine": the barber pre-loads a small balance and the app
+  // deducts a fee when it delivers a booking.
+  //
+  // WHAT ACTUALLY HAPPENS (see commissionSomFor): a FLAT 5% on every booking
+  // made through Fade — first visit or fiftieth — halved to 2.5% for VIP.
+  // Only walk-ins the barber logs himself are free, since Fade never handled
+  // them. This block used to describe a four-tier scheme where regulars became
+  // free after their first visit; that was never implemented, and the barber
+  // intro was written from the comment rather than the code, so the app
+  // promised "0% forever" and then charged 5% on visit two. If the tiers ever
+  // do get built, change commissionSomFor and the copy in the same commit.
 
   static const int newClientFeePercent = 5;
 

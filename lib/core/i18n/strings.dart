@@ -1533,6 +1533,21 @@ class L {
       'Три быстрых шага — и вы принимаете записи.',
       "Uch qadam — va yozuvlar qabul qilasiz.");
   static String get biStart => _t("Let's go", 'Начать', 'Boshlaymiz');
+  // The welcome page's three selling points. They used to borrow strings from
+  // elsewhere — one was a *notification body*, another was the next page's own
+  // subtitle — so the page repeated itself and sold nothing.
+  static String get biPerkChair => _t(
+      'Your chair, your prices, your hours.',
+      'Ваше кресло, ваши цены, ваш график.',
+      "O'rindiq, narx va vaqt — hammasi sizniki.");
+  static String get biPerkBookings => _t(
+      'Requests land here — accept or decline in one tap.',
+      'Заявки приходят сюда — одно касание, и готово.',
+      "So'rovlar shu yerga keladi — bir bosishda qabul qiling.");
+  static String get biPerkMap => _t(
+      'Clients nearby find you on the map.',
+      'Клиенты рядом находят вас на карте.',
+      'Yaqindagi mijozlar sizni xaritadan topadi.');
   static String get biGoalTitle => _t("What's your weekly goal?",
       'Ваша цель на неделю?', 'Haftalik maqsadingiz?');
   static String get biGoalSub => _t(
@@ -1566,18 +1581,32 @@ class L {
       'Simple and fair — you keep your price. Here is the whole deal.',
       'Просто и честно — цена остаётся вашей. Вот и всё.',
       "Sodda va halol — narx sizniki. Mana hammasi.");
-  static String get biMoneyKeepTitle => _t('You keep 100% of your price',
-      'Вы оставляете 100% цены', "Narxning 100% sizniki");
+  // Card 1 is about WHERE the money lands, not about a percentage — it used to
+  // say "you keep 100% of your price", which flatly contradicted the 5% fee on
+  // the card right below it. Direct payment is the real benefit, and it's true.
+  static String get biMoneyKeepTitle => _t('Clients pay you directly',
+      'Клиенты платят вам напрямую', "Mijoz to'g'ridan-to'g'ri to'laydi");
   static String get biMoneyKeepSub => _t(
-      'Clients pay you directly for the cut. Fade never takes a slice of your work.',
-      'Клиенты платят вам напрямую. Fade не берёт долю с вашей работы.',
-      "Mijozlar to'g'ridan-to'g'ri sizga to'laydi. Fade ishingizdan ulush olmaydi.");
-  static String get biMoneyCommTitle => _t('Just 5% on new clients we bring',
-      'Всего 5% за новых клиентов', "Yangi mijoz uchun atigi 5%");
+      'Cash or card, at your chair. Your earnings never sit in a Fade account.',
+      'Наличными или картой, у кресла. Ваш заработок не лежит на счету Fade.',
+      "Naqd yoki karta — kreslongizda. Daromadingiz Fade hisobida turmaydi.");
+  // The honest fee. 95% is the anchor (and the badge); the 5% is stated plainly
+  // right under it. The old copy promised "0% forever" after a client's first
+  // visit — but commissionSomFor() charges EVERY non-walk-in booking, so the
+  // app broke that promise on visit two and the barber found out from their
+  // own wallet. Never write a number here the ledger won't back up.
+  static String get biMoneyCommTitle => _t('You keep 95% of every booking',
+      'Вы оставляете 95% с каждой записи', "Har bir yozuvdan 95% sizniki");
   static String get biMoneyCommSub => _t(
-      "Only on their first visit. After that they're your regular — 0% forever.",
-      'Только за первый визит. Потом это ваш постоянный — 0% навсегда.',
-      "Faqat birinchi tashrifda. Keyin u doimiy — abadiy 0%.");
+      'Fade takes 5% on bookings the app brings you. Walk-ins you add yourself are always free.',
+      'Fade берёт 5% с записей, которые приводит приложение. Своих клиентов вы вносите сами — бесплатно.',
+      "Fade ilova olib kelgan yozuvlardan 5% oladi. O'zingiz kiritgan mijozlar — doim bepul.");
+  static String get biMoneyCashTitle => _t('Cashback — up to 2% back',
+      'Кешбэк — до 2% назад', 'Keshbek — 2% gacha qaytadi');
+  static String get biMoneyCashSub => _t(
+      'We may return part of the fee to barbers whose clients keep coming back.',
+      'Часть комиссии может вернуться барберам, к которым клиенты возвращаются.',
+      "Mijozlari qaytib keladigan barberlarga to'lovning bir qismi qaytishi mumkin.");
   static String get biMoneyWalletTitle => _t("It's all in your wallet",
       'Всё в вашем кошельке', "Hammasi hamyoningizda");
   static String get biMoneyWalletSub => _t(

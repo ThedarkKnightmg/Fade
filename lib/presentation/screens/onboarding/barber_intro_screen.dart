@@ -223,13 +223,27 @@ class _WelcomePage extends StatelessWidget {
             sub: L.biWelcomeSub,
           ),
           const SizedBox(height: 30),
-          _Perk(icon: Icons.event_available_rounded, text: L.becomeBarberSub),
-          const SizedBox(height: 12),
+          // The same 3D stickers as the home tiles, so a barber's first screen
+          // speaks the app's own visual language. Each one actually depicts its
+          // line — the page used to show three identical blue ticks, which say
+          // nothing and made the list read as filler.
           _Perk(
-              icon: Icons.notifications_active_rounded,
-              text: L.notifHelloBody),
-          const SizedBox(height: 12),
-          _Perk(icon: Icons.trending_up_rounded, text: L.biGoalSub),
+            sticker: 'assets/tiles/cuts.png',
+            tint: AppColors.accent,
+            text: L.biPerkChair,
+          ),
+          const SizedBox(height: 14),
+          _Perk(
+            sticker: 'assets/tiles/book.png',
+            tint: AppColors.green,
+            text: L.biPerkBookings,
+          ),
+          const SizedBox(height: 14),
+          _Perk(
+            sticker: 'assets/tiles/map.png',
+            tint: AppColors.gold,
+            text: L.biPerkMap,
+          ),
         ],
       ),
     );
@@ -237,8 +251,14 @@ class _WelcomePage extends StatelessWidget {
 }
 
 class _Perk extends StatelessWidget {
-  const _Perk({required this.icon, required this.text});
-  final IconData icon;
+  const _Perk({
+    required this.sticker,
+    required this.tint,
+    required this.text,
+  });
+
+  final String sticker;
+  final Color tint;
   final String text;
 
   @override
@@ -247,19 +267,28 @@ class _Perk extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 40,
-          height: 40,
+          width: 54,
+          height: 54,
+          padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(
-            color: AppColors.accent.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
+            color: tint.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: const Icon(Icons.check_rounded,
-              size: 20, color: AppColors.accent),
+          // Decoded a touch above its 44px draw size so the sticker stays crisp
+          // on a 3x screen without holding a full-res bitmap per row.
+          child: Image.asset(
+            sticker,
+            cacheWidth: 160,
+            filterQuality: FilterQuality.high,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(text,
-              style: AppTypography.bodySmall(context).copyWith(color: p.text)),
+          child: Text(
+            text,
+            style: AppTypography.bodySmall(context)
+                .copyWith(color: p.text, height: 1.35),
+          ),
         ),
       ],
     );
@@ -292,17 +321,29 @@ class _MoneyPage extends StatelessWidget {
             sub: L.biMoneyKeepSub,
           ),
           const SizedBox(height: 12),
+          // The badge reads 95%, not 5% — the number that matters to a barber
+          // is what he takes home, and anchoring on the fee makes a small fee
+          // look like the headline. The 5% is still stated plainly in the sub:
+          // framing what's true is fair game, hiding it isn't.
           _MoneyRow(
             index: 1,
-            icon: Icons.person_add_alt_1_rounded,
-            tint: AppColors.accent,
+            icon: Icons.percent_rounded,
+            tint: AppColors.green,
             title: L.biMoneyCommTitle,
             sub: L.biMoneyCommSub,
-            badge: '5%',
+            badge: '95%',
           ),
           const SizedBox(height: 12),
           _MoneyRow(
             index: 2,
+            icon: Icons.replay_rounded,
+            tint: AppColors.gold,
+            title: L.biMoneyCashTitle,
+            sub: L.biMoneyCashSub,
+          ),
+          const SizedBox(height: 12),
+          _MoneyRow(
+            index: 3,
             icon: Icons.receipt_long_rounded,
             tint: AppColors.accent,
             title: L.biMoneyWalletTitle,
@@ -310,7 +351,7 @@ class _MoneyPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _MoneyRow(
-            index: 3,
+            index: 4,
             icon: Icons.rocket_launch_rounded,
             tint: AppColors.gold,
             title: L.biMoneyBoostTitle,
