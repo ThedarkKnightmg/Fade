@@ -338,9 +338,22 @@ class _ScrollRevealState extends State<ScrollReveal> {
   }
 
   /// 0 = just entering from the bottom of the viewport, 1 = comfortably in.
+  ///
+  /// Returns 1 (fully revealed) whenever the geometry can't be trusted yet.
+  /// That's the safe answer: a card that can't be measured shows normally
+  /// instead of being hidden or half-shifted, and the next frame corrects it.
   double _progress() {
     final box = context.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return 1;
+    if (box == null || !box.attached || !box.hasSize) return 1;
+    // localToGlobal walks the WHOLE ancestor chain, reading each one's size to
+    // build the transform. Guarding only our own box isn't enough: a page
+    // transition inserts a SlideTransition above us, and on the frame it
+    // appears that RenderFractionalTranslation has no size yet — reading
+    // through it throws 'hasSize: RenderBox was not laid out'. We build before
+    // layout runs, so an ancestor mid-insertion is normal, not exceptional.
+    for (RenderObject? o = box.parent; o != null; o = o.parent) {
+      if (o is RenderBox && !o.hasSize) return 1;
+    }
     final h = MediaQuery.of(context).size.height;
     final topY = box.localToGlobal(Offset.zero).dy;
     const start = 0.97, end = 0.74;
