@@ -16,7 +16,13 @@ class Notify {
   static int _id = 0;
 
   /// Call once at startup. Safe to call on any platform — no-ops where
-  /// unsupported (web) and asks Android 13+ for the notification permission.
+  /// unsupported (web).
+  ///
+  /// Deliberately does NOT ask for the permission: this runs before runApp, so
+  /// the prompt used to be the very first thing a new user saw — no app, no
+  /// context, nothing earned yet. A cold "Allow notifications?" is the easiest
+  /// Deny in the world, and Android only ever asks once. [ensurePermission]
+  /// asks later, at a moment where the answer is obviously yes.
   static Future<void> init() async {
     if (kIsWeb) return;
     try {
@@ -30,7 +36,6 @@ class Notify {
       );
       final impl = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
-      await impl?.requestNotificationsPermission();
       // Register the channel up front so it exists before the first show.
       await impl?.createNotificationChannel(const AndroidNotificationChannel(
         'fade_events',
@@ -47,6 +52,25 @@ class Notify {
 
   /// One-time "notifications are on" ping after the first launch with
   /// permission — proves the pipe and teaches the user where updates land.
+  /// Ask for the notification permission — at a moment the user can see the
+  /// point of it (right after booking, when "we'll tell you when your barber
+  /// confirms" is a promise they want kept), not on a cold launch.
+  ///
+  /// Android shows the system prompt only once per install, ever: spend it
+  /// where the answer is yes. Safe to call repeatedly — it no-ops once
+  /// answered, and a Deny never blocks anything, since notifications are a
+  /// nice-to-have.
+  static Future<void> ensurePermission() async {
+    if (!_ready) return;
+    try {
+      final impl = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      await impl?.requestNotificationsPermission();
+    } catch (e) {
+      debugPrint('Notify.ensurePermission failed: $e');
+    }
+  }
+
   static Future<void> welcomeOnce(String title, String body) async {
     if (!_ready) return;
     final sp = await SharedPreferences.getInstance();

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/map/fast_tiles.dart';
+import '../../../core/notifications/notify.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
@@ -40,6 +43,11 @@ class BookingReviewScreen extends StatelessWidget {
       Navigator.of(context).maybePop();
       return;
     }
+    // NOW ask about notifications — the booking is 'requested' until the barber
+    // confirms, so "we'll tell you the moment they do" is a promise the user
+    // actually wants. Android grants the prompt once per install; this is the
+    // moment worth spending it on. Unawaited: never delay the payoff screen.
+    unawaited(Notify.ensurePermission());
     Navigator.of(context).pushReplacement(
       FadeThroughPageRoute(child: BookingConfirmationScreen(booking: toBook)),
     );

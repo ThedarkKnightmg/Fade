@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
-import 'core/i18n/strings.dart';
 import 'core/notifications/notify.dart';
 import 'core/supabase/supabase_service.dart';
 import 'core/theme/app_theme.dart';
@@ -19,7 +18,9 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('Supabase init failed: $e');
   }
-  // Real device notifications (asks Android 13+ for permission once).
+  // Set up the notification channel. Does NOT ask for permission — that now
+  // happens after the first booking (Notify.ensurePermission), where the user
+  // can see why it's worth a yes.
   await Notify.init();
   // Restore the saved profile + prefs so signed-in users skip onboarding.
   await AppState.instance.load();
@@ -27,8 +28,6 @@ Future<void> main() async {
   // (weekday/month names) renders in English even in RU/UZ.
   await initializeDateFormatting();
   Intl.defaultLocale = AppState.instance.language.name; // en / ru / uz
-  // One-time proof ping (after load so it speaks the saved language).
-  await Notify.welcomeOnce(L.notifHelloTitle, L.notifHelloBody);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
