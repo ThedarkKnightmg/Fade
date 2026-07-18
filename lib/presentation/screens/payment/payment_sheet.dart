@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +8,20 @@ import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
+
+/// Whether a REAL payment provider is wired. While false, a shipped build must
+/// never grant anything for money — the sheet shows "coming soon" instead of
+/// calling onPaid. Today the sheet is a stub (Future.delayed, no charge), so
+/// with this false in release, tapping Pay does NOT hand out VIP/Boost/top-ups.
+///
+/// Flip to true ONLY once the flow is: client → Edge Function payment intent →
+/// Payme/Click redirect → signed provider webhook (service_role) writes the
+/// grant server-side. onPaid must never be the thing that grants.
+const bool kPaymentsLive = false;
+
+/// The stub may grant in DEBUG (so the paid-feature UI stays testable), but
+/// never in a release build until real payments exist.
+bool get _paymentsGrantable => kPaymentsLive || kDebugMode;
 
 /// The Uzbek payment providers Fade hands off to. Real integration redirects to
 /// each provider's app/checkout and returns; here it's a provider-handoff STUB
@@ -145,7 +160,7 @@ class _PaymentSheetState extends State<_PaymentSheet> {
   late String _method = AppState.instance.payMethod;
   late int _amount =
       widget.fixedAmount ?? (widget.amountOptions?.first ?? 0);
-  int _phase = 0; // 0 pick · 1 processing · 2 done
+  int _phase = 0; // 0 pick · 1 processing · 2 done · 3 coming-soon
 
   _Brand get _brand =>
       _brands.firstWhere((b) => b.id == _method, orElse: () => _brands.first);
@@ -153,6 +168,12 @@ class _PaymentSheetState extends State<_PaymentSheet> {
   Future<void> _pay() async {
     AppState.instance.setPayMethod(_method);
     HapticFeedback.mediumImpact();
+    // No real provider yet: in a shipped build, refuse rather than hand out a
+    // paid feature for free. onPaid is never called here.
+    if (!_paymentsGrantable) {
+      setState(() => _phase = 3);
+      return;
+    }
     setState(() => _phase = 1);
     // Simulated provider handoff — a real flow deep-links to Payme/Click here.
     await Future<void>.delayed(const Duration(milliseconds: 1400));
@@ -179,7 +200,11 @@ class _PaymentSheetState extends State<_PaymentSheet> {
             20, 12, 20, 20 + MediaQuery.of(context).padding.bottom),
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 260),
-          child: _phase == 0 ? _picker(p) : _status(p),
+          child: _phase == 0
+              ? _picker(p)
+              : _phase == 3
+                  ? _comingSoon(p)
+                  : _status(p),
         ),
       ),
     );
@@ -286,6 +311,55 @@ class _PaymentSheetState extends State<_PaymentSheet> {
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  /// Shown when no real payment provider is wired yet. The point is that
+  /// tapping Pay grants NOTHING — no free VIP/Boost/top-up in a shipped build.
+  Widget _comingSoon(PaperPalette p) {
+    return Column(
+      key: const ValueKey('soon'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 20),
+        Container(
+          width: 84,
+          height: 84,
+          decoration: BoxDecoration(
+            color: AppColors.accent.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.schedule_rounded,
+              size: 42, color: AppColors.accent),
+        ),
+        const SizedBox(height: 18),
+        Text(L.payComingSoonTitle,
+            textAlign: TextAlign.center, style: AppTypography.h3(context)),
+        const SizedBox(height: 6),
+        Text(L.payComingSoonSub,
+            textAlign: TextAlign.center,
+            style: AppTypography.bodySmall(context)),
+        const SizedBox(height: 22),
+        SizedBox(
+          width: double.infinity,
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              height: 52,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: p.card,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: p.border),
+              ),
+              child: Text(L.okGotIt,
+                  style: GoogleFonts.nunito(
+                      fontSize: 15, fontWeight: FontWeight.w900, color: p.text)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
       ],
     );
   }

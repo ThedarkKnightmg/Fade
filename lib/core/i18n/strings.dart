@@ -670,6 +670,13 @@ class L {
       "Raqamni tasdiqlash uchun SMS kod yuboramiz.");
   static String get authSendCode =>
       _t('Send code', 'Отправить код', 'Kod yuborish');
+  static String get okGotIt => _t('Got it', 'Понятно', 'Tushunarli');
+  static String get payComingSoonTitle => _t('Payments launching soon',
+      'Оплата скоро заработает', "To'lovlar tez orada");
+  static String get payComingSoonSub => _t(
+      "Card payments go live shortly — you'll be able to activate this then.",
+      'Оплата картой скоро появится — тогда это можно будет активировать.',
+      "Karta orqali to'lov tez orada ishga tushadi — o'shanda faollashtirasiz.");
   static String get tgPhraseLabel => _t('Your check phrase',
       'Ваша проверочная фраза', 'Tekshiruv so\'zingiz');
   static String get tgNeedsContactShare => _t(
