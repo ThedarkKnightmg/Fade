@@ -444,10 +444,22 @@ class L {
   static String get matchWord => _t('match', 'совпадение', 'mos');
   static String get alsoGreatOnYou =>
       _t('Also great on you', 'Вам также подойдёт', 'Sizga yana mos keladi');
+  // Honest disclosure: the selfie is sent to an AI service to build the
+  // preview — it does NOT stay on the device. The old copy ("processed only for
+  // your preview") implied on-device processing, which is false and a
+  // suspension risk. See the consent gate before the first upload.
   static String get photoPrivacy => _t(
-      'Your photo is processed only for your preview.',
-      'Фото обрабатывается только для превью.',
-      "Surat faqat ko'rish uchun ishlanadi.");
+      'To create your preview, your photo is sent to an AI service, used only for this render, and not kept.',
+      'Для превью фото отправляется в AI-сервис, используется только для этого рендера и не сохраняется.',
+      "Ko'rinishni yaratish uchun surat AI xizmatiga yuboriladi, faqat shu render uchun ishlatiladi va saqlanmaydi.");
+  static String get aiConsentTitle => _t('Create your AI preview?',
+      'Создать AI-превью?', 'AI ko\'rinish yaratilsinmi?');
+  static String get aiConsentBody => _t(
+      'Your photo will be sent to an AI service to generate the hairstyle preview, then discarded. It is never shown to barbers or other users. Continue?',
+      'Ваше фото будет отправлено в AI-сервис для генерации превью, затем удалено. Оно не показывается барберам или другим пользователям. Продолжить?',
+      "Suratingiz soch ko'rinishini yaratish uchun AI xizmatiga yuboriladi, so'ng o'chiriladi. U barberlarga yoki boshqalarga ko'rsatilmaydi. Davom etamizmi?");
+  static String get aiConsentAccept =>
+      _t('Send & generate', 'Отправить', 'Yuborish');
   static String get aiRenderFailed => _t(
       "AI render didn't work", 'Не удалось сгенерировать', 'AI ishlamadi');
   static String get connectAiForHair => _t('Connect AI for photo-real hair',

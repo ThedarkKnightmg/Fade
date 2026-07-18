@@ -2036,6 +2036,17 @@ class AppState extends ChangeNotifier {
   bool get hasAiKey =>
       _aiEndpoint.trim().isNotEmpty || _geminiKey.trim().isNotEmpty;
 
+  /// Whether the user has agreed, once, to have their selfie sent to the AI
+  /// service. The upload leaves the device, so it must not happen silently —
+  /// the first render asks; after that it's remembered.
+  bool _aiConsent = false;
+  bool get aiConsent => _aiConsent;
+  void grantAiConsent() {
+    if (_aiConsent) return;
+    _aiConsent = true;
+    notifyListeners();
+  }
+
   // === Favourites ===
   final Set<String> _favouriteShopIds = {'shop2', 'shop5'};
   Set<String> get favouriteShopIds => Set.unmodifiable(_favouriteShopIds);
@@ -2292,6 +2303,7 @@ class AppState extends ChangeNotifier {
     _userPhoto = _decodePhoto(sp.getString('cl_photo'));
     _aiEndpoint = sp.getString('aiEndpoint') ?? _aiEndpoint;
     _geminiKey = sp.getString('geminiKey') ?? _geminiKey;
+    _aiConsent = sp.getBool('aiConsent') ?? _aiConsent;
     // Restore the user's own bookings, skipping any id already seeded.
     final raw = sp.getString('bookings');
     if (raw != null && raw.isNotEmpty) {
@@ -2470,6 +2482,7 @@ class AppState extends ChangeNotifier {
     await sp.setStringList('perks', _perks);
     await sp.setString('aiEndpoint', _aiEndpoint);
     await sp.setString('geminiKey', _geminiKey);
+    await sp.setBool('aiConsent', _aiConsent);
     // Persist the user's OWN bookings (clientName == null) so appointments
     // survive a relaunch. Barber-side demo bookings are re-seeded each launch,
     // so we deliberately don't store them.

@@ -185,6 +185,28 @@ class _AiHairScreenState extends State<AiHairScreen> {
     _generate();
   }
 
+  /// One-time consent before the first selfie upload. Returns true if the user
+  /// agreed to send the photo to the AI service.
+  Future<bool?> _askAiConsent() {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(L.aiConsentTitle),
+        content: Text(L.aiConsentBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(L.notNow),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(L.aiConsentAccept),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _generate() async {
     final photo = _photo;
     final style = HairData.byId(_styleId);
@@ -196,6 +218,15 @@ class _AiHairScreenState extends State<AiHairScreen> {
     }
     final endpoint = AppState.instance.aiEndpoint;
     final key = AppState.instance.geminiKey;
+    // The photo is about to leave the device. If a real engine is connected and
+    // the user hasn't agreed yet, ask ONCE before uploading anything.
+    final willUpload =
+        endpoint.trim().isNotEmpty || key.trim().isNotEmpty;
+    if (willUpload && !AppState.instance.aiConsent) {
+      final agreed = await _askAiConsent();
+      if (agreed != true) return; // declined — nothing is sent
+      AppState.instance.grantAiConsent();
+    }
     setState(() => _generating = true);
     final HairAiResult res;
     final desc = _aiHairDescription(style, color);

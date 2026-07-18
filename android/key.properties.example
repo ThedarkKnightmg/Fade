@@ -1,0 +1,20 @@
+# Release signing — copy this file to `android/key.properties` and fill in your
+# real values. key.properties itself is .gitignored, so the keystore and its
+# passwords NEVER enter the repo.
+#
+# 1. Generate a release keystore ONCE (keep the .jks file and these passwords
+#    safe forever — losing them means you can never update the app on Play):
+#
+#      keytool -genkey -v -keystore C:\fade-release.jks \
+#        -keyalg RSA -keysize 2048 -validity 10000 -alias fade
+#
+# 2. Copy this file to android/key.properties and set the four values below.
+# 3. Build:  flutter build appbundle --release   (from C:\FadeBuild)
+# 4. After you enroll in Google Play App Signing, add the Play-managed SHA-1
+#    (Play Console → App signing) to your Google OAuth Android client, or
+#    Google sign-in breaks in the Play build.
+
+storeFile=C:\\fade-release.jks
+storePassword=CHANGE_ME
+keyAlias=fade
+keyPassword=CHANGE_ME
