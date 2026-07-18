@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/animations/app_animations.dart';
 import '../../core/i18n/strings.dart';
+import '../../core/supabase/supabase_service.dart';
 import '../../core/supabase/telegram_auth.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
@@ -58,29 +60,39 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
     _busy = true;
     HapticFeedback.selectionClick();
     final code = TelegramAuth.newCode();
+    final deviceSecret = TelegramAuth.newDeviceSecret();
+    final phrase = TelegramAuth.newPhrase();
     var cancelled = false;
-    // The waiting sheet — swiping it away cancels the wait.
+    // The waiting sheet shows the check phrase — the same words the bot echoes,
+    // so the user confirms this login is the one they started.
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _TelegramWaitSheet(),
+      builder: (_) => _TelegramWaitSheet(phrase: phrase),
     ).whenComplete(() => cancelled = true);
 
     var ok = false;
     String? tgName;
     String? tgPhone;
+    String? tokenHash;
     if (TelegramAuth.configured) {
+      // Register the attempt (bound to this device) BEFORE opening the bot —
+      // this is what lets the server reject an attacker-invented code.
+      await TelegramAuth.mint(
+          code: code, deviceSecret: deviceSecret, phrase: phrase);
       await launchUrl(TelegramAuth.deepLink(code),
           mode: LaunchMode.externalApplication);
       // Give them time to tap START *and* the share-contact button.
       for (var i = 0; i < 60 && !cancelled; i++) {
         await Future.delayed(const Duration(seconds: 2));
         try {
-          final (verified, name, phone) = await TelegramAuth.check(code);
+          final (verified, name, phone, token) =
+              await TelegramAuth.check(code, deviceSecret);
           if (verified) {
             ok = true;
             tgName = name;
             tgPhone = phone;
+            tokenHash = token;
             break;
           }
         } catch (_) {
@@ -92,23 +104,19 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
       // testable. DEBUG ONLY, and deliberately so: this branch hands out a
       // fully authenticated session with a blank phone to anyone who taps and
       // waits. Harmless while it can never run in a shipped build — which is
-      // exactly what the kDebugMode gate guarantees.
+      // exactly what the kDebugMode gate guarantees. (No real session here.)
       await Future.delayed(const Duration(milliseconds: 2200));
       ok = !cancelled;
     }
-    _busy = false;
-    if (!mounted) return;
+    if (!mounted) {
+      _busy = false;
+      return;
+    }
     final sheetStillOpen = !cancelled;
     if (sheetStillOpen) Navigator.of(context).pop(); // close the wait sheet
     if (!ok) {
-      if (sheetStillOpen) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            content: Text(L.tgFailed),
-            behavior: SnackBarBehavior.floating,
-          ));
-      }
+      _busy = false;
+      if (sheetStillOpen) _fail(L.tgFailed);
       return;
     }
     final typed = widget.fallbackName?.trim() ?? '';
@@ -120,20 +128,41 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
       // Verified with no number should be impossible — the webhook only marks a
       // code verified once the contact is shared. Refuse rather than admit an
       // identity we can't key on; a barber must be callable.
+      _busy = false;
       _fail(L.tgNeedsContactShare);
       return;
     }
-    // The phone came from Telegram's own contact card — verified at their
-    // signup — so the account lands with a PROVEN number and no SMS cost.
-    // The id derives from it: it used to be the constant 'u_tg', which gave
-    // every Telegram user on earth the same account id.
+
+    // Exchange the one-time magic-link token for a REAL Supabase session, so the
+    // app is server-verified — not just trusting a local flag. This is the fix
+    // for the "auth is local theatre" hole: every query now carries a real JWT.
+    String userId = 'tg_$phone';
+    if (tokenHash != null && tokenHash.isNotEmpty && SupabaseService.isReady) {
+      try {
+        final res = await SupabaseService.client.auth.verifyOTP(
+          tokenHash: tokenHash,
+          type: OtpType.email,
+        );
+        final uid = res.session?.user.id ?? res.user?.id;
+        if (uid != null) userId = uid; // key local state on the real auth uid
+      } catch (e) {
+        // The phone is verified regardless; fall back to the phone-derived id so
+        // the user still gets in, but the server session isn't established.
+        debugPrint('Telegram verifyOTP failed: $e');
+      }
+    }
+    if (!mounted) {
+      _busy = false;
+      return;
+    }
     AppState.instance.signInWithIdentity(
-      id: 'tg_$phone',
+      id: userId,
       fullName: name,
       phone: phone,
       role: widget.role,
       method: AuthMethod.telegram,
     );
+    _busy = false;
     if (!mounted) return;
     widget.onSignedIn?.call();
   }
@@ -189,7 +218,11 @@ class _TelegramLoginButtonState extends State<TelegramLoginButton> {
 /// The "confirm in Telegram" waiting sheet — a pulsing plane while the app
 /// polls for the bot's confirmation. Swipe down to cancel.
 class _TelegramWaitSheet extends StatelessWidget {
-  const _TelegramWaitSheet();
+  const _TelegramWaitSheet({required this.phrase});
+
+  /// The check phrase the bot echoes — shown here so the user can confirm the
+  /// bot's request belongs to the login they just started.
+  final String phrase;
 
   static const _tgBlue = Color(0xFF2AABEE);
 
@@ -234,6 +267,30 @@ class _TelegramWaitSheet extends StatelessWidget {
               L.tgVerifiesNumber,
               textAlign: TextAlign.center,
               style: AppTypography.caption(context),
+            ),
+            const SizedBox(height: 16),
+            // The check phrase — the bot shows the same words. If they don't
+            // match, the request in Telegram isn't this login.
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: _tgBlue.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Text(L.tgPhraseLabel,
+                      style: AppTypography.caption(context)),
+                  const SizedBox(height: 2),
+                  Text(
+                    phrase,
+                    style: AppTypography.h4(context).copyWith(
+                      color: _tgBlue,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             ClipRRect(

@@ -30,6 +30,9 @@ dependencies:
   # accessToken pair that supabase.auth.signInWithIdToken() expects, which is
   # the flow Supabase documents. See lib/core/supabase/google_auth.dart.
   google_sign_in: ^6.2.2
+  # SHA-256 for the Telegram login device-binding secret (already resolved
+  # transitively via supabase_flutter; promoted to a direct dep to import it).
+  crypto: ^3.0.3
   qr_flutter: ^4.1.0
   flutter_local_notifications: ^18.0.1
   mobile_scanner: ^5.2.3

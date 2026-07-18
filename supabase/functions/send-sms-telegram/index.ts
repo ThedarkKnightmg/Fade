@@ -61,16 +61,15 @@ Deno.serve(async (req) => {
     });
     const able = await ableRes.json();
     if (!able?.ok) {
-      // No Telegram for this number — surface it so the UI can offer SMS.
+      // Surface the Gateway's OWN reason. Supabase only forwards our message
+      // when we answer 200 with an error body — a non-2xx is reported to the
+      // client as a bare "unexpected status code", which hides the cause.
       console.error("checkSendAbility failed:", JSON.stringify(able));
       return new Response(
         JSON.stringify({
-          error: {
-            message:
-              "This number can't receive a Telegram code — try SMS instead.",
-          },
+          error: { message: `TG Gateway: ${JSON.stringify(able)}` },
         }),
-        { status: 422, headers: { "Content-Type": "application/json" } },
+        { status: 200, headers: { "Content-Type": "application/json" } },
       );
     }
 
@@ -92,7 +91,13 @@ Deno.serve(async (req) => {
     });
     const sent = await sendRes.json();
     if (!sent?.ok) {
-      throw new Error(`sendVerificationMessage failed: ${JSON.stringify(sent)}`);
+      console.error("sendVerificationMessage failed:", JSON.stringify(sent));
+      return new Response(
+        JSON.stringify({
+          error: { message: `TG Gateway send: ${JSON.stringify(sent)}` },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
     }
 
     return new Response(JSON.stringify({}), {

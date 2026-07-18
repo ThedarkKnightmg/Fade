@@ -670,6 +670,8 @@ class L {
       "Raqamni tasdiqlash uchun SMS kod yuboramiz.");
   static String get authSendCode =>
       _t('Send code', 'Отправить код', 'Kod yuborish');
+  static String get tgPhraseLabel => _t('Your check phrase',
+      'Ваша проверочная фраза', 'Tekshiruv so\'zingiz');
   static String get tgNeedsContactShare => _t(
       'Telegram confirmed you but shared no number — tap the contact button and retry',
       'Telegram подтвердил вас, но не передал номер — нажмите кнопку контакта и повторите',
