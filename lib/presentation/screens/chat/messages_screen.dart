@@ -10,6 +10,7 @@ import '../../../data/app_state.dart';
 import '../../../data/models/barber.dart';
 import '../../../data/models/barbershop.dart';
 import '../../../data/models/chat_message.dart';
+import '../../widgets/chat_kit.dart';
 import '../../widgets/paper_kit.dart';
 import 'chat_screen.dart';
 
@@ -31,7 +32,15 @@ class MessagesScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(L.messages, style: AppTypography.h1(context)),
+              // Title + the Telegram plane mark on the right.
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(L.messages, style: AppTypography.h1(context)),
+                  ),
+                  const TelegramMark(size: 34),
+                ],
+              ),
               const SizedBox(height: 2),
               Text(L.barbersYouBooked,
                   style: AppTypography.bodySmall(context)),

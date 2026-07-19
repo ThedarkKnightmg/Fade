@@ -9,6 +9,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
 import '../../../data/models/chat_message.dart';
+import '../../widgets/chat_kit.dart';
 import '../../widgets/message_composer.dart';
 import '../../widgets/paper_kit.dart';
 
@@ -301,26 +302,32 @@ class _BarberChatScreenState extends State<BarberChatScreen> {
               ),
             ),
             Divider(height: 1, color: p.border),
-            // Messages.
+            // Messages — on a Telegram-style wallpaper.
             Expanded(
-              child: AnimatedBuilder(
-                animation: AppState.instance,
-                builder: (context, _) {
-                  final msgs = AppState.instance.barberChatWith(_client);
-                  _toBottom();
-                  if (msgs.isEmpty) {
-                    return Center(
-                      child: Text(L.sayHiTo(_client),
-                          style: AppTypography.bodySmall(context)),
+              child: ChatWallpaper(
+                child: AnimatedBuilder(
+                  animation: AppState.instance,
+                  builder: (context, _) {
+                    final msgs = AppState.instance.barberChatWith(_client);
+                    _toBottom();
+                    if (msgs.isEmpty) {
+                      return Center(
+                        child: Text(L.sayHiTo(_client),
+                            style: AppTypography.bodySmall(context)),
+                      );
+                    }
+                    return ListView.builder(
+                      controller: _scroll,
+                      padding: const EdgeInsets.fromLTRB(8, 14, 8, 10),
+                      itemCount: msgs.length,
+                      itemBuilder: (_, i) => ChatBubble(
+                        text: msgs[i].text,
+                        mine: msgs[i].mine,
+                        at: msgs[i].at,
+                      ),
                     );
-                  }
-                  return ListView.builder(
-                    controller: _scroll,
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    itemCount: msgs.length,
-                    itemBuilder: (_, i) => _Bubble(msg: msgs[i]),
-                  );
-                },
+                  },
+                ),
               ),
             ),
             // Input bar.
@@ -336,62 +343,3 @@ class _BarberChatScreenState extends State<BarberChatScreen> {
   }
 }
 
-class _Bubble extends StatelessWidget {
-  const _Bubble({required this.msg});
-  final ChatMessage msg;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    final mine = msg.mine;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisAlignment:
-            mine ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: mine ? AppColors.accent : p.card,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(18),
-                  topRight: const Radius.circular(18),
-                  bottomLeft: Radius.circular(mine ? 18 : 4),
-                  bottomRight: Radius.circular(mine ? 4 : 18),
-                ),
-                border: mine ? null : Border.all(color: p.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    msg.text,
-                    style: GoogleFonts.nunito(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w600,
-                      color: mine ? Colors.white : p.text,
-                      height: 1.3,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    DateFormat('HH:mm').format(msg.at),
-                    style: GoogleFonts.nunito(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: mine
-                          ? Colors.white.withValues(alpha: 0.7)
-                          : p.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
