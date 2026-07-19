@@ -8,6 +8,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/barber.dart';
 import '../../../data/models/barbershop.dart';
+import '../../widgets/message_composer.dart';
 import '../../widgets/paper_kit.dart';
 
 /// A 1:1 conversation with a barber — bubbles + a text input. Messages live in
@@ -114,60 +115,10 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             // Input bar.
-            Container(
-              padding: EdgeInsets.fromLTRB(
-                  12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
-              decoration: BoxDecoration(
-                color: p.card,
-                border: Border(top: BorderSide(color: p.border)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: p.bg,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: p.border),
-                      ),
-                      child: TextField(
-                        controller: _ctrl,
-                        minLines: 1,
-                        maxLines: 4,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _send(),
-                        style: GoogleFonts.nunito(
-                            fontWeight: FontWeight.w600, color: p.text),
-                        decoration: InputDecoration(
-                          isCollapsed: true,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 14),
-                          border: InputBorder.none,
-                          hintText: L.messageHint,
-                          hintStyle: GoogleFonts.nunito(
-                              fontWeight: FontWeight.w600,
-                              color: p.textSecondary),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _send,
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: const BoxDecoration(
-                        color: AppColors.accent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.send_rounded,
-                          color: Colors.white, size: 22),
-                    ),
-                  ),
-                ],
-              ),
+            MessageComposer(
+              controller: _ctrl,
+              onSend: _send,
+              hintText: L.messageHint,
             ),
           ],
         ),

@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/validators.dart';
 import '../../../data/app_state.dart';
+import '../../widgets/morph_icon.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../auth/login_screen.dart';
@@ -319,7 +320,10 @@ class SettingsScreen extends StatelessWidget {
                   child: _Card(
                     children: [
                       _Tile(
-                        icon: Icons.dark_mode_rounded,
+                        // Sun ↔ moon morph as the theme flips.
+                        icon: Icons.light_mode_rounded,
+                        iconOn: Icons.dark_mode_rounded,
+                        iconActive: state.isDarkMode,
                         label: L.darkMode,
                         trailing: _MiniSwitch(
                           value: state.isDarkMode,
@@ -328,7 +332,10 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       _Divider(),
                       _Tile(
-                        icon: Icons.notifications_rounded,
+                        // Bell rings on ↔ off.
+                        icon: Icons.notifications_off_rounded,
+                        iconOn: Icons.notifications_active_rounded,
+                        iconActive: state.remindersOn,
                         label: L.reminders,
                         trailing: _MiniSwitch(
                           value: state.remindersOn,
@@ -461,6 +468,8 @@ class _Tile extends StatelessWidget {
     this.badge,
     this.onTap,
     this.labelColor,
+    this.iconOn,
+    this.iconActive = false,
   });
 
   final IconData icon;
@@ -470,6 +479,11 @@ class _Tile extends StatelessWidget {
   final Widget? badge;
   final VoidCallback? onTap;
   final Color? labelColor;
+
+  /// When set, the leading glyph MORPHS between [icon] (off) and [iconOn] (on)
+  /// as [iconActive] flips — used for the toggle rows.
+  final IconData? iconOn;
+  final bool iconActive;
 
   @override
   Widget build(BuildContext context) {
@@ -488,8 +502,16 @@ class _Tile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(13),
                 border: Border.all(color: p.border),
               ),
-              child:
-                  Icon(icon, size: 18, color: labelColor ?? p.textSecondary),
+              child: iconOn != null
+                  ? MorphIcon(
+                      active: iconActive,
+                      iconOff: icon,
+                      iconOn: iconOn!,
+                      size: 18,
+                      color: labelColor ?? p.textSecondary,
+                    )
+                  : Icon(icon,
+                      size: 18, color: labelColor ?? p.textSecondary),
             ),
             const SizedBox(width: 12),
             Expanded(
