@@ -790,9 +790,10 @@ class _NextBookingCardState extends State<_NextBookingCard> {
           children: [
             Expanded(
               child: _FrostButton(
-                icon: Icons.qr_code_scanner_rounded,
-                label: L.scanClient,
-                onTap: () => showScanClientSheet(context),
+                // Barber now SHOWS a QR the client scans (not a scanner).
+                icon: Icons.qr_code_2_rounded,
+                label: L.checkInTitle,
+                onTap: () => showCheckInSheet(context),
               ),
             ),
             const SizedBox(width: 10),

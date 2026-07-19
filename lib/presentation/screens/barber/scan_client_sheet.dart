@@ -2,38 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/animations/app_animations.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
 import '../../widgets/paper_kit.dart';
-import '../../widgets/primary_button.dart';
-import 'qr_scanner_screen.dart';
 
-/// Barber "Scan Client": the verified handshake. Picking today's client
-/// simulates scanning their QR → completes the booking and locks the commission
-/// (real cross-device camera scan = hardware/backend). Overdue, unscanned
-/// bookings surface here for the no-show fail-safe.
-Future<void> showScanClientSheet(BuildContext context) {
+/// Barber "Check-in": the barber SHOWS this QR and the client scans it to
+/// confirm the visit (flipped from the old model where the barber scanned the
+/// client). The client's scan runs the verified handshake and locks the
+/// commission. Today's bookings and the overdue no-show fail-safe live here
+/// too, since this is where the barber manages the chair at the moment of
+/// service. A manual tap-to-check-in remains as a fallback (client's phone
+/// dead, etc.).
+Future<void> showCheckInSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => const _ScanClientSheet(),
+    builder: (_) => const _CheckInSheet(),
   );
 }
 
-class _ScanClientSheet extends StatefulWidget {
-  const _ScanClientSheet();
+class _CheckInSheet extends StatefulWidget {
+  const _CheckInSheet();
 
   @override
-  State<_ScanClientSheet> createState() => _ScanClientSheetState();
+  State<_CheckInSheet> createState() => _CheckInSheetState();
 }
 
-class _ScanClientSheetState extends State<_ScanClientSheet> {
+class _CheckInSheetState extends State<_CheckInSheet> {
   String? _verifyingId;
 
   Future<void> _verify(Booking b) async {
@@ -56,38 +57,6 @@ class _ScanClientSheetState extends State<_ScanClientSheet> {
                     : L.scanAlreadyDone),
         behavior: SnackBarBehavior.floating,
       ));
-  }
-
-  /// Open the real camera scanner. A decoded QR of the form
-  /// `fade:ticket:<bookingId>:<slice>` verifies that booking; any other code is
-  /// rejected with a hint.
-  Future<void> _openCamera() async {
-    final messenger = ScaffoldMessenger.of(context);
-    final raw = await Navigator.of(context).push<String>(
-      FadeThroughPageRoute(child: const QrScannerScreen()),
-    );
-    if (raw == null || !mounted) return;
-    // Extract a booking id from `fade:ticket:<id>:<slice>`.
-    String? bookingId;
-    final parts = raw.split(':');
-    if (parts.length >= 3 && parts[0] == 'fade' && parts[1] == 'ticket') {
-      bookingId = parts[2];
-    }
-    // Match by id against ALL checkable bookings — including the user's own
-    // (clientName == null), which the client's ticket QR actually encodes.
-    final match = bookingId == null
-        ? null
-        : AppState.instance.scannableById(bookingId);
-    if (match != null) {
-      await _verify(match);
-    } else {
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          content: Text(bookingId == null ? L.scanNotTicket : L.scanEmpty),
-          behavior: SnackBarBehavior.floating,
-        ));
-    }
   }
 
   void _noShow(Booking b) {
@@ -113,7 +82,7 @@ class _ScanClientSheetState extends State<_ScanClientSheet> {
         final overdue = s.overdueBookings();
         return Container(
           constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.8),
+              maxHeight: MediaQuery.of(context).size.height * 0.86),
           decoration: BoxDecoration(
             color: p.bg,
             borderRadius:
@@ -138,25 +107,54 @@ class _ScanClientSheetState extends State<_ScanClientSheet> {
               ),
               Row(
                 children: [
-                  const Icon(Icons.qr_code_scanner_rounded,
+                  const Icon(Icons.qr_code_2_rounded,
                       size: 22, color: AppColors.accent),
                   const SizedBox(width: 10),
-                  Text(L.scanClient, style: AppTypography.h2(context)),
+                  Text(L.checkInTitle, style: AppTypography.h2(context)),
                 ],
               ),
               const SizedBox(height: 16),
-              // Open the REAL camera scanner.
-              PrimaryButton(
-                label: L.scanOpenCamera,
-                icon: Icons.qr_code_scanner_rounded,
-                height: 54,
-                onPressed: _openCamera,
-              ),
-              const SizedBox(height: 18),
               Flexible(
                 child: ListView(
                   shrinkWrap: true,
                   children: [
+                    // The barber's QR — the client scans THIS to check in.
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(26),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.accent.withValues(alpha: 0.16),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: QrImageView(
+                          data: s.barberCheckInPayload,
+                          size: 208,
+                          backgroundColor: Colors.white,
+                          eyeStyle: const QrEyeStyle(
+                            eyeShape: QrEyeShape.circle,
+                            color: AppColors.accentDeep,
+                          ),
+                          dataModuleStyle: const QrDataModuleStyle(
+                            dataModuleShape: QrDataModuleShape.circle,
+                            color: Color(0xFF16213A),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Text(L.checkInShowHint,
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodySmall(context)),
+                    ),
+                    const SizedBox(height: 22),
                     Text(L.scanTodayTitle, style: AppTypography.h4(context)),
                     const SizedBox(height: 10),
                     if (scannable.isEmpty)
@@ -198,6 +196,8 @@ class _ScanClientSheetState extends State<_ScanClientSheet> {
   }
 }
 
+/// A today's booking — tap to check in manually (fallback when the client
+/// can't scan). The primary path is the client scanning the QR above.
 class _ScanRow extends StatelessWidget {
   const _ScanRow(
       {required this.booking, required this.verifying, required this.onTap});
@@ -248,23 +248,16 @@ class _ScanRow extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.accent,
+                    color: p.cardAlt,
                     borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: p.border),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.qr_code_scanner_rounded,
-                          size: 15, color: Colors.white),
-                      const SizedBox(width: 5),
-                      Text(L.scanClient,
-                          style: GoogleFonts.nunito(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          )),
-                    ],
-                  ),
+                  child: Text(L.checkInManual,
+                      style: GoogleFonts.nunito(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w900,
+                        color: p.textSecondary,
+                      )),
                 ),
             ],
           ),

@@ -1320,6 +1320,48 @@ class L {
       _t('Scan client', 'Сканировать клиента', 'Mijozni skanerlash');
   static String get verifyingHandshake =>
       _t('Verifying…', 'Проверка…', 'Tekshirilmoqda…');
+
+  // ── Check-in: the barber SHOWS a QR, the client SCANS it ──
+  static String get checkInTitle =>
+      _t('Check-in', 'Отметка визита', 'Tashrifni belgilash');
+  static String get checkInShowHint => _t(
+      'Show this to your client — they scan it to check in.',
+      'Покажите это клиенту — он сканирует, чтобы отметиться.',
+      'Buni mijozga ko\'rsating — u skanerlab belgilanadi.');
+  static String get checkInManual =>
+      _t('Check in', 'Отметить', 'Belgilash');
+  static String get checkInScanTitle => _t("Scan the barber's code",
+      'Сканируйте код барбера', 'Barber kodini skanerlang');
+  static String get checkInScanHint => _t(
+      "Point at the barber's check-in QR",
+      'Наведите на QR-код барбера',
+      'Barberning QR-kodiga to\'g\'rilang');
+  static String get checkInNotBarberQr => _t(
+      "That's not a barber check-in code",
+      'Это не код отметки барбера',
+      'Bu barber belgilash kodi emas');
+  static String get checkInWrongBarber => _t(
+      "That code is for a different barber than your booking",
+      'Этот код другого барбера, не из вашей записи',
+      "Bu kod yozuvingizdagidan boshqa barberniki");
+  static String get checkedInOk =>
+      _t('Checked in — enjoy your cut! ✂️', 'Визит отмечен! ✂️', 'Belgilandi! ✂️');
+  static String get checkInTryLater => _t(
+      "Couldn't check in just now — ask your barber",
+      'Не удалось отметиться — обратитесь к барберу',
+      'Hozir belgilanmadi — barberga ayting');
+  static String get checkedInTitle =>
+      _t('Checked in', 'Визит отмечен', 'Belgilandi');
+  static String get checkedInSub => _t('Your visit is confirmed.',
+      'Ваш визит подтверждён.', 'Tashrifingiz tasdiqlandi.');
+  static String get checkInPromptTitle => _t('Check in at the chair',
+      'Отметьтесь у кресла', 'Kresloda belgilaning');
+  static String get checkInPromptSub => _t(
+      "Scan your barber's QR when you arrive to confirm your visit.",
+      'Отсканируйте QR барбера по прибытии, чтобы подтвердить визит.',
+      'Kelganingizda barber QR-kodini skanerlab tasdiqlang.');
+  static String get checkInScanCta => _t("Scan barber's QR",
+      'Сканировать QR барбера', 'Barber QR-kodini skanerlash');
   static String get scanTodayTitle =>
       _t("Today's check-ins", 'Сегодняшние визиты', 'Bugungi tashriflar');
   static String get scanEmpty => _t('No one left to check in today',

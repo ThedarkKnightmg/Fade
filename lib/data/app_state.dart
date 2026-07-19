@@ -1642,6 +1642,20 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
+  /// The payload the BARBER's check-in QR encodes. The client scans it, and the
+  /// app confirms it matches the barber on their booking before checking in.
+  /// (Flipped model: the barber shows a QR, the client scans — not the reverse.)
+  String get barberCheckInPayload => 'fade:barber:${meBarber.barber.id}';
+
+  /// Parse a scanned barber QR (`fade:barber:<id>`) to the barber id, or null.
+  static String? barberIdFromQr(String raw) {
+    final parts = raw.split(':');
+    if (parts.length >= 3 && parts[0] == 'fade' && parts[1] == 'barber') {
+      return parts[2];
+    }
+    return null;
+  }
+
   /// Overdue bookings (15+ min past, not checked in) — the no-show fail-safe.
   List<Booking> overdueBookings() {
     final now = DateTime.now();

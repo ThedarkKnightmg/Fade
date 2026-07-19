@@ -1,25 +1,69 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/calendar_link.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
+import '../barber/qr_scanner_screen.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 
-/// The client's "Booking Ticket": a dynamic QR the barber scans at the chair to
-/// verify the visit (locking their commission). Refreshes every 30s. The
-/// scan-streak toward VIP is ZERO-COST — it never grants a free/discounted cut.
+/// The client's "Booking Ticket" / check-in screen. Flipped model: the BARBER
+/// shows a QR and the client scans it here to confirm the visit (locking the
+/// barber's commission). The scan-streak toward VIP is ZERO-COST — it never
+/// grants a free/discounted cut.
 class BookingTicketScreen extends StatelessWidget {
   const BookingTicketScreen({super.key, required this.booking});
   final Booking booking;
+
+  /// Open the camera, scan the barber's QR, and — if it's the barber on THIS
+  /// booking — run the check-in handshake.
+  Future<void> _checkIn(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final raw = await Navigator.of(context).push<String>(
+      FadeThroughPageRoute(
+          child: QrScannerScreen(
+              title: L.checkInScanTitle, hint: L.checkInScanHint)),
+    );
+    if (raw == null || !context.mounted) return;
+    final barberId = AppState.barberIdFromQr(raw);
+    if (barberId == null) {
+      _toast(messenger, L.checkInNotBarberQr);
+      return;
+    }
+    if (barberId != booking.barber.id) {
+      _toast(messenger, L.checkInWrongBarber);
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    final blocked = AppState.instance.verifyAndComplete(booking.id);
+    if (!context.mounted) return;
+    if (blocked == null) {
+      _toast(messenger, L.checkedInOk);
+      Navigator.of(context).maybePop();
+    } else {
+      _toast(
+          messenger,
+          blocked == 'early'
+              ? L.scanTooEarly
+              : blocked == 'credit'
+                  ? L.checkInTryLater
+                  : L.scanAlreadyDone);
+    }
+  }
+
+  void _toast(ScaffoldMessengerState m, String msg) {
+    m
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+          SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,42 +93,13 @@ class BookingTicketScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 18),
-                // The QR on a bright card.
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.accent.withValues(alpha: 0.18),
-                          blurRadius: 26,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        _TicketQr(bookingId: booking.id, size: 220),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.autorenew_rounded,
-                                size: 13, color: Color(0xFF8A94A6)),
-                            const SizedBox(width: 5),
-                            Text(L.ticketRefreshHint,
-                                style: GoogleFonts.nunito(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF8A94A6),
-                                )),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                // Check-in: scan the barber's QR (or a "checked in" state once
+                // done). Replaces the old client-shown QR — the barber now
+                // holds the code and the client scans it.
+                _CheckInCard(
+                  checkedIn: booking.verifiedAt != null ||
+                      booking.status == BookingStatus.completed,
+                  onScan: () => _checkIn(context),
                 ),
                 const SizedBox(height: 14),
                 Center(
@@ -218,50 +233,78 @@ class _Row extends StatelessWidget {
   }
 }
 
-/// A REAL, scannable ticket QR. Encodes `fade:ticket:<bookingId>:<slice>`
-/// where the slice advances every 30s — so the refresh promise is genuine and
-/// a stale screenshot ages out.
-class _TicketQr extends StatefulWidget {
-  const _TicketQr({required this.bookingId, required this.size});
-  final String bookingId;
-  final double size;
-
-  @override
-  State<_TicketQr> createState() => _TicketQrState();
-}
-
-class _TicketQrState extends State<_TicketQr> {
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    // Re-encode on each 30s boundary.
-    _timer = Timer.periodic(
-        const Duration(seconds: 30), (_) => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
+/// The check-in card: a prompt to scan the barber's QR, or a "checked in"
+/// confirmation once the visit is verified.
+class _CheckInCard extends StatelessWidget {
+  const _CheckInCard({required this.checkedIn, required this.onScan});
+  final bool checkedIn;
+  final VoidCallback onScan;
 
   @override
   Widget build(BuildContext context) {
-    final slice = DateTime.now().millisecondsSinceEpoch ~/ 30000;
-    return QrImageView(
-      data: 'fade:ticket:${widget.bookingId}:$slice',
-      version: QrVersions.auto,
-      size: widget.size,
-      backgroundColor: Colors.white,
-      eyeStyle: const QrEyeStyle(
-        eyeShape: QrEyeShape.circle,
-        color: Color(0xFF1B2430),
+    final p = Paper.of(context);
+    if (checkedIn) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.green.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.green.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.verified_rounded,
+                size: 30, color: AppColors.green),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(L.checkedInTitle, style: AppTypography.h3(context)),
+                  const SizedBox(height: 2),
+                  Text(L.checkedInSub,
+                      style: AppTypography.bodySmall(context)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+      decoration: BoxDecoration(
+        color: p.card,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: p.border),
       ),
-      dataModuleStyle: const QrDataModuleStyle(
-        dataModuleShape: QrDataModuleShape.circle,
-        color: Color(0xFF1B2430),
+      child: Column(
+        children: [
+          Container(
+            width: 66,
+            height: 66,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.qr_code_scanner_rounded,
+                size: 32, color: AppColors.accent),
+          ),
+          const SizedBox(height: 14),
+          Text(L.checkInPromptTitle,
+              textAlign: TextAlign.center, style: AppTypography.h3(context)),
+          const SizedBox(height: 4),
+          Text(L.checkInPromptSub,
+              textAlign: TextAlign.center,
+              style: AppTypography.bodySmall(context)),
+          const SizedBox(height: 16),
+          PrimaryButton(
+            label: L.checkInScanCta,
+            icon: Icons.qr_code_scanner_rounded,
+            height: 54,
+            onPressed: onScan,
+          ),
+        ],
       ),
     );
   }

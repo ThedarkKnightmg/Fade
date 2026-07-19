@@ -240,6 +240,7 @@ class _BarberScheduleScreenState extends State<BarberScheduleScreen> {
                           breaks: dayBreaks,
                           end: _end,
                           onTapBooking: (b) => _openBooking(context, b),
+                          onTapBreak: (br) => _confirmRemoveBreak(context, br),
                         )
                       : _DayGrid(
                           controller: _grid,
@@ -1373,6 +1374,7 @@ class _SlotsView extends StatelessWidget {
     required this.breaks,
     required this.end,
     required this.onTapBooking,
+    required this.onTapBreak,
   });
 
   final DateTime day;
@@ -1380,6 +1382,7 @@ class _SlotsView extends StatelessWidget {
   final List<BarberBreak> breaks;
   final DateTime Function(Booking) end;
   final ValueChanged<Booking> onTapBooking;
+  final ValueChanged<BarberBreak> onTapBreak;
 
   /// The booking (if any) covering a slot. Cancelled/declined/no-show don't
   /// block the chip.
@@ -1395,9 +1398,15 @@ class _SlotsView extends StatelessWidget {
     return null;
   }
 
-  bool _breakAt(DateTime slot) {
+  bool _breakAt(DateTime slot) => _breakObjAt(slot) != null;
+
+  /// The break covering a slot, so tapping the chip can remove that exact one.
+  BarberBreak? _breakObjAt(DateTime slot) {
     final m = slot.hour * 60 + slot.minute;
-    return breaks.any((br) => m >= br.startMinutes && m < br.endMinutes);
+    for (final br in breaks) {
+      if (m >= br.startMinutes && m < br.endMinutes) return br;
+    }
+    return null;
   }
 
   @override
@@ -1475,23 +1484,38 @@ class _SlotsView extends StatelessWidget {
     }
 
     if (isBreak) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-        decoration: BoxDecoration(
-          color: p.textTertiary.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.coffee_rounded, size: 13, color: p.textTertiary),
-            const SizedBox(width: 4),
-            Text(time,
-                style: GoogleFonts.nunito(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: p.textTertiary)),
-          ],
+      // Tap to remove/edit this break — the grid used to render it as a dead
+      // grey chip, so a barber who set 9–14 hours was stuck with the seeded
+      // lunch and no way to change it. Now it behaves like the timeline view.
+      final br = _breakObjAt(t);
+      return GestureDetector(
+        onTap: br == null
+            ? null
+            : () {
+                HapticFeedback.selectionClick();
+                onTapBreak(br);
+              },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+          decoration: BoxDecoration(
+            color: p.textTertiary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: p.textTertiary.withValues(alpha: 0.22)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.coffee_rounded, size: 13, color: p.textTertiary),
+              const SizedBox(width: 4),
+              Text(time,
+                  style: GoogleFonts.nunito(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: p.textTertiary)),
+              const SizedBox(width: 3),
+              Icon(Icons.close_rounded, size: 12, color: p.textTertiary),
+            ],
+          ),
         ),
       );
     }
