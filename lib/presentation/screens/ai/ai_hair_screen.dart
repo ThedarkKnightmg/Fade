@@ -560,12 +560,25 @@ class _IntroView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
+        // The privacy note is now a full sentence (honest AI-upload
+        // disclosure), so the text must be allowed to WRAP — as a bare Row
+        // child it overflowed ~294px off the right edge.
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.lock_outline_rounded, size: 14, color: p.textTertiary),
-            const SizedBox(width: 5),
-            Text(L.photoPrivacy, style: AppTypography.caption(context)),
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(Icons.lock_outline_rounded,
+                  size: 14, color: p.textTertiary),
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                L.photoPrivacy,
+                style: AppTypography.caption(context),
+              ),
+            ),
           ],
         ),
       ],

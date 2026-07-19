@@ -13,11 +13,16 @@ class FilterPill extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.icon,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+
+  /// Optional leading glyph — makes each filter recognisable at a glance
+  /// (⭐ featured, 📍 nearby, ❤ saved…) instead of a plain word.
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -32,21 +37,47 @@ class FilterPill extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: EdgeInsets.fromLTRB(icon != null ? 12 : 16, 9, 16, 9),
           decoration: BoxDecoration(
             color: selected ? AppColors.accent : p.cardAlt,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: selected ? AppColors.accent : p.border,
             ),
+            // A soft accent glow lifts the SELECTED chip out of the row.
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.accent.withValues(alpha: 0.30),
+                      blurRadius: 12,
+                      spreadRadius: -3,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
           ),
-          child: Text(
-            label,
-            style: GoogleFonts.nunito(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w800,
-              color: selected ? Colors.white : p.textSecondary,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  size: 15,
+                  // Idle icons carry a touch of accent so the row isn't a wall
+                  // of grey; selected goes white to sit on the fill.
+                  color: selected ? Colors.white : AppColors.accent,
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                style: GoogleFonts.nunito(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                  color: selected ? Colors.white : p.textSecondary,
+                ),
+              ),
+            ],
           ),
         ),
       ),

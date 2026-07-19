@@ -570,6 +570,13 @@ String _homeFilterLabel(_HomeFilter f) => switch (f) {
       _HomeFilter.budget => L.mapFilterBudget,
     };
 
+IconData? _homeFilterIcon(_HomeFilter f) => switch (f) {
+      _HomeFilter.all => null,
+      _HomeFilter.premium => Icons.workspace_premium_rounded,
+      _HomeFilter.top => Icons.star_rounded,
+      _HomeFilter.budget => Icons.savings_rounded,
+    };
+
 /// Filterable shops list: chips (All / Premium / Top rated / Budget) above the
 /// cards so you narrow the list to what you want. Premium shops lead on "All".
 class _ShopsSection extends StatefulWidget {
@@ -666,6 +673,7 @@ class _ShopsSectionState extends State<_ShopsSection> {
                         for (final f in _HomeFilter.values) ...[
                           FilterPill(
                             label: _homeFilterLabel(f),
+                            icon: _homeFilterIcon(f),
                             selected: f == _f,
                             onTap: () => setState(() => _f = f),
                           ),

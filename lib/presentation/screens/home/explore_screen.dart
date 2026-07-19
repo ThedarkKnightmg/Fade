@@ -129,51 +129,39 @@ class _ExploreScreenState extends State<ExploreScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 150),
               children: [
-                // Standard header — back circle + screen title.
+                // Header = back button INLINE with the search bar. The old
+                // two-line "Shahardagi barcha barbershoplar" title row is gone —
+                // the search hint + the Shops/Barbers toggle already say what
+                // this screen is, so the title was just another stacked bar.
                 FadeSlideIn(
                   child: Row(
                     children: [
                       CircleBtn(
                         icon: Icons.arrow_back_rounded,
-                        size: 42,
+                        size: 44,
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
-                      const SizedBox(width: 12),
-                      // Expanded so a long title (the Uzbek "Shahardagi barcha
-                      // barbershoplar") wraps within the row instead of running
-                      // off the right edge.
+                      const SizedBox(width: 10),
                       Expanded(
-                        child: Text(
-                          L.pfEveryShop,
-                          style: AppTypography.h2(context),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        child: _SearchField(
+                          controller: _search,
+                          hint: _barbersMode
+                              ? L.searchBarbersHint
+                              : L.searchShopsHint,
+                          onChanged: (_) => setState(() {}),
+                          onClear: () {
+                            _search.clear();
+                            setState(() {});
+                          },
+                          onMapTap: () => Navigator.of(context).push(
+                            FadeThroughPageRoute(child: const ShopsMapScreen()),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                // Search pill — focus-aware, with the map shortcut riding
-                // as its trailing chip.
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 50),
-                  child: _SearchField(
-                    controller: _search,
-                    hint: _barbersMode
-                        ? L.searchBarbersHint
-                        : L.searchShopsHint,
-                    onChanged: (_) => setState(() {}),
-                    onClear: () {
-                      _search.clear();
-                      setState(() {});
-                    },
-                    onMapTap: () => Navigator.of(context).push(
-                      FadeThroughPageRoute(child: const ShopsMapScreen()),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 // Shops ⇄ Barbers — same switch as Home, so stylists are
                 // findable everywhere.
                 FadeSlideIn(
@@ -192,15 +180,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     child: _barbersMode
                         ? Row(
                             children: [
-                              for (final (f, label) in [
-                                (_BarberFilter.all, L.filterAll),
-                                (_BarberFilter.boosted,
-                                    '⚡ ${L.boostedPill}'),
-                                (_BarberFilter.vip, 'VIP'),
-                                (_BarberFilter.topRated, L.filterTopRated),
+                              for (final (f, label, icon) in [
+                                (_BarberFilter.all, L.filterAll, null),
+                                (_BarberFilter.boosted, L.boostedPill,
+                                    Icons.bolt_rounded),
+                                (_BarberFilter.vip, 'VIP',
+                                    Icons.workspace_premium_rounded),
+                                (_BarberFilter.topRated, L.filterTopRated,
+                                    Icons.star_rounded),
                               ]) ...[
                                 FilterPill(
                                   label: label,
+                                  icon: icon,
                                   selected: _bFilter == f,
                                   onTap: () =>
                                       setState(() => _bFilter = f),
@@ -211,15 +202,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           )
                         : Row(
                             children: [
-                              for (final (f, label) in [
-                                (_ExploreFilter.all, L.filterAll),
-                                (_ExploreFilter.featured, L.filterFeatured),
-                                (_ExploreFilter.nearby, L.filterNearby),
-                                (_ExploreFilter.topRated, L.filterTopRated),
-                                (_ExploreFilter.saved, L.filterSaved),
+                              for (final (f, label, icon) in [
+                                (_ExploreFilter.all, L.filterAll, null),
+                                (_ExploreFilter.featured, L.filterFeatured,
+                                    Icons.star_rounded),
+                                (_ExploreFilter.nearby, L.filterNearby,
+                                    Icons.near_me_rounded),
+                                (_ExploreFilter.topRated, L.filterTopRated,
+                                    Icons.trending_up_rounded),
+                                (_ExploreFilter.saved, L.filterSaved,
+                                    Icons.favorite_rounded),
                               ]) ...[
                                 FilterPill(
                                   label: label,
+                                  icon: icon,
                                   selected: _filter == f,
                                   onTap: () =>
                                       setState(() => _filter = f),
