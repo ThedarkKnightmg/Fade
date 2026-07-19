@@ -97,9 +97,13 @@ class _SupportSheetState extends State<_SupportSheet> {
         ),
         padding: EdgeInsets.fromLTRB(
             20, 12, 20, 20 + MediaQuery.of(context).padding.bottom),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 260),
-          child: _sent ? _thanks(p) : _form(p),
+        // Scrollable so the form never overflows when the keyboard is up (the
+        // autofocused 4-line field + chips + button exceed the space otherwise).
+        child: SingleChildScrollView(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            child: _sent ? _thanks(p) : _form(p),
+          ),
         ),
       ),
     );

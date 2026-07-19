@@ -10,6 +10,7 @@ import '../core/format/money.dart';
 import '../core/i18n/app_language.dart';
 import '../core/i18n/strings.dart';
 import '../core/notifications/notify.dart';
+import '../core/supabase/feedback_service.dart';
 import 'models/barber.dart';
 import 'models/barber_break.dart';
 import 'models/barbershop.dart';
@@ -1962,8 +1963,9 @@ class AppState extends ChangeNotifier {
   }
 
   // === Feedback / bug reports ===
-  // Stored locally (and kept across restarts) so nothing a user writes is
-  // lost; when the Supabase backend lands these sync to a `feedback` table.
+  // Sent to the `feedback` Edge Function (stores it + pings the owner on
+  // Telegram) AND kept locally, so it reaches a human but nothing is lost if
+  // the send fails offline.
   final List<String> _feedback = [];
   int get feedbackCount => _feedback.length;
 
@@ -1978,6 +1980,13 @@ class AppState extends ChangeNotifier {
     final sp = await SharedPreferences.getInstance();
     await sp.setStringList('feedback', _feedback);
     notifyListeners();
+    // Best-effort delivery — the local copy above is the fallback.
+    await FeedbackService.send(
+      category: category,
+      message: message,
+      contact: contact,
+      role: _activeRole.name,
+    );
   }
 
   // === Earned perks (variable-reward loop) ===
