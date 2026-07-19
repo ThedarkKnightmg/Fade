@@ -139,8 +139,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
                       const SizedBox(width: 12),
-                      Text(L.pfEveryShop,
-                          style: AppTypography.h2(context)),
+                      // Expanded so a long title (the Uzbek "Shahardagi barcha
+                      // barbershoplar") wraps within the row instead of running
+                      // off the right edge.
+                      Expanded(
+                        child: Text(
+                          L.pfEveryShop,
+                          style: AppTypography.h2(context),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                 ),
