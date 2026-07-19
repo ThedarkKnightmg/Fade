@@ -171,7 +171,7 @@ class ProfileScreen extends StatelessWidget {
         final state = AppState.instance;
         final user = state.user;
         final my = state.myBarber;
-        final cuts = state.totalCuts;
+        final cuts = state.fadePoints; // THE Fade-points number (badge-matched)
         final streak = 2 + (cuts % 7); // weeks on the books — "keep it lit"
         final upcoming =
             state.bookingsByStatus(BookingStatus.upcoming).length +
@@ -277,14 +277,14 @@ class ProfileScreen extends StatelessWidget {
                             ),
                           ),
                           const Spacer(),
-                          MiniPill('$cuts / 16 CUTS'),
+                          MiniPill('$cuts / ${AppState.fadePointsGoal} CUTS'),
                         ],
                       ),
                       const SizedBox(height: 14),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(99),
                         child: TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0, end: (cuts / 16).clamp(0, 1)),
+                          tween: Tween(begin: 0, end: (cuts / AppState.fadePointsGoal).clamp(0, 1)),
                           duration: const Duration(milliseconds: 900),
                           curve: Curves.easeOutCubic,
                           builder: (_, t, __) => LinearProgressIndicator(

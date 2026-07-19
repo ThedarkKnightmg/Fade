@@ -333,9 +333,9 @@ class _LoyaltyMini extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // One shared loyalty metric everywhere (home sheet, ticket, punch card).
-    const goal = AppState.vipStreakGoal;
-    final cuts = AppState.instance.loyaltyVisits;
+    // THE Fade-points number, same everywhere (badge, profile, sheet, ticket).
+    const goal = AppState.fadePointsGoal;
+    final cuts = AppState.instance.fadePoints;
     final into = cuts % goal;
     final unlocked = into == 0;
     final remaining = unlocked ? 0 : goal - into;

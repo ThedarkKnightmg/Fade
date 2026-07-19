@@ -1207,7 +1207,7 @@ class _PointsPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cuts = AppState.instance.totalCuts;
+    final cuts = AppState.instance.fadePoints;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -1272,10 +1272,10 @@ class _BonusSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // The ONE loyalty metric, shared with the ticket + punch card — real
-    // completed visits (no cosmetic +11 baseline that pinned the bar full).
-    const goal = AppState.vipStreakGoal;
-    final cuts = AppState.instance.loyaltyVisits;
+    // THE Fade-points number — same value the header badge and profile show,
+    // so tapping the "12" badge no longer opens a sheet that says "1".
+    const goal = AppState.fadePointsGoal;
+    final cuts = AppState.instance.fadePoints;
     final pct = (cuts / goal).clamp(0.0, 1.0);
     final remaining = goal - cuts;
     final streak = 2 + (cuts % 7);

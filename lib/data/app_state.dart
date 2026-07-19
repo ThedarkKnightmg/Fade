@@ -2101,6 +2101,18 @@ class AppState extends ChangeNotifier {
           .length +
       11;
 
+  /// THE Fade-points number shown everywhere — the header badge, the profile
+  /// card, the loyalty sheet, the ticket, and the booking confirmation all read
+  /// this, so the count never disagrees with itself. Includes the head-start
+  /// bonus (via totalCuts) so it feels substantial from day one.
+  int get fadePoints => totalCuts;
+
+  /// The milestone the Fade-points bar fills toward. 16 keeps a fresh user's
+  /// bar at a satisfying ~3/4 rather than pinned full (the +11 baseline would
+  /// blow past a smaller goal). Purely a DISPLAY goal — real VIP still unlocks
+  /// on the verified-scan streak ([vipStreakGoal]).
+  static const int fadePointsGoal = 16;
+
   /// "Member since" date — user joined when account was created.
   /// In mock data, treat 2024-03-12 as the member-since date.
   DateTime get memberSince => DateTime(2024, 3, 12);

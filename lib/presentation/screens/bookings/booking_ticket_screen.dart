@@ -74,9 +74,9 @@ class BookingTicketScreen extends StatelessWidget {
         animation: AppState.instance,
         builder: (context, _) {
           final s = AppState.instance;
-          final visits = s.loyaltyVisits; // the ONE shared loyalty metric
-          final atVip = visits >= AppState.vipStreakGoal;
-          final progress = (visits / AppState.vipStreakGoal).clamp(0.0, 1.0);
+          final visits = s.fadePoints; // THE Fade-points number, shown app-wide
+          final atVip = visits >= AppState.fadePointsGoal;
+          final progress = (visits / AppState.fadePointsGoal).clamp(0.0, 1.0);
           return SafeArea(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
