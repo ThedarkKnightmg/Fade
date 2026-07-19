@@ -645,42 +645,40 @@ class _ShopsSectionState extends State<_ShopsSection> {
             onChanged: (v) => setState(() => _barbersMode = v),
           ),
         ),
-        const SizedBox(height: 14),
-        if (!_barbersMode) ...[
-          // Filter chips (shop-specific — hidden in Barbers mode).
-          ScrollReveal(
-            child: SizedBox(
-              height: 40,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.zero,
-                children: [
-                  for (final f in _HomeFilter.values) ...[
-                    _HomeFilterChip(
-                      label: _homeFilterLabel(f),
-                      selected: f == _f,
-                      onTap: () => setState(() => _f = f),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
+        const SizedBox(height: 16),
+        // ONE control row instead of three stacked bars: in Shops mode the
+        // filter chips scroll on the left with "See all" pinned right; in
+        // Barbers mode (no filters) a slim label + "See all". The big
+        // "Barbershops" title is gone — the toggle above already says which
+        // side you're on, so repeating it just added clutter.
         ScrollReveal(
           child: Row(
             children: [
-              Text(
-                _barbersMode
-                    ? L.feedBarbers
-                    : _f == _HomeFilter.all
-                        ? L.barbershops
-                        : _homeFilterLabel(_f),
-                style: AppTypography.h2(context),
-              ),
-              const Spacer(),
+              if (!_barbersMode)
+                Expanded(
+                  child: SizedBox(
+                    height: 38,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.zero,
+                      children: [
+                        for (final f in _HomeFilter.values) ...[
+                          _HomeFilterChip(
+                            label: _homeFilterLabel(f),
+                            selected: f == _f,
+                            onTap: () => setState(() => _f = f),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: Text(L.feedBarbers, style: AppTypography.h3(context)),
+                ),
+              const SizedBox(width: 10),
               GestureDetector(
                 onTap: widget.onSeeAll,
                 behavior: HitTestBehavior.opaque,
@@ -696,7 +694,7 @@ class _ShopsSectionState extends State<_ShopsSection> {
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
         if (_barbersMode)
           for (final (i, e) in _barberList().indexed) ...[
             ScrollReveal(
@@ -728,28 +726,29 @@ class _HomeFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
+    // Flat: no per-chip drop shadow — a row of shadowed pills is what read as
+    // clutter. Selected = accent fill; unselected = a quiet tonal chip with a
+    // hairline, so the row settles instead of floating.
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 15),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? AppColors.accent : p.card,
+          color: selected ? AppColors.accent : p.cardAlt,
           borderRadius: BorderRadius.circular(99),
-          border: Border.all(color: selected ? AppColors.accent : p.border),
-          boxShadow: [
-            BoxShadow(
-                color: p.shadow, blurRadius: 10, offset: const Offset(0, 4)),
-          ],
+          border: Border.all(
+            color: selected ? AppColors.accent : p.border,
+          ),
         ),
         child: Text(
           label,
           style: GoogleFonts.nunito(
             fontSize: 13,
             fontWeight: FontWeight.w800,
-            color: selected ? Colors.white : p.text,
+            color: selected ? Colors.white : p.textSecondary,
           ),
         ),
       ),
