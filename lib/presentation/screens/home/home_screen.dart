@@ -20,6 +20,7 @@ import '../../../data/models/barbershop.dart';
 import '../../../data/models/booking.dart';
 import '../../widgets/barber_feed_kit.dart';
 import '../../widgets/barbershop_card.dart';
+import '../../widgets/category_chip.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../barbershop_detail/barbershop_detail_screen.dart';
@@ -663,7 +664,7 @@ class _ShopsSectionState extends State<_ShopsSection> {
                       padding: EdgeInsets.zero,
                       children: [
                         for (final f in _HomeFilter.values) ...[
-                          _HomeFilterChip(
+                          FilterPill(
                             label: _homeFilterLabel(f),
                             selected: f == _f,
                             onTap: () => setState(() => _f = f),
@@ -712,49 +713,8 @@ class _ShopsSectionState extends State<_ShopsSection> {
   }
 }
 
-class _HomeFilterChip extends StatelessWidget {
-  const _HomeFilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    // Flat: no per-chip drop shadow — a row of shadowed pills is what read as
-    // clutter. Selected = accent fill; unselected = a quiet tonal chip with a
-    // hairline, so the row settles instead of floating.
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? AppColors.accent : p.cardAlt,
-          borderRadius: BorderRadius.circular(99),
-          border: Border.all(
-            color: selected ? AppColors.accent : p.border,
-          ),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.nunito(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: selected ? Colors.white : p.textSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-}
+// _HomeFilterChip removed — Home and Explore now share FilterPill
+// (widgets/category_chip.dart) so the filter rows look identical on both.
 
 // ============================================================
 // Header bits.

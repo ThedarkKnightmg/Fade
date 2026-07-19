@@ -199,7 +199,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                 (_BarberFilter.vip, 'VIP'),
                                 (_BarberFilter.topRated, L.filterTopRated),
                               ]) ...[
-                                CountChip(
+                                FilterPill(
                                   label: label,
                                   selected: _bFilter == f,
                                   onTap: () =>
@@ -218,7 +218,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                 (_ExploreFilter.topRated, L.filterTopRated),
                                 (_ExploreFilter.saved, L.filterSaved),
                               ]) ...[
-                                CountChip(
+                                FilterPill(
                                   label: label,
                                   selected: _filter == f,
                                   onTap: () =>
@@ -344,8 +344,8 @@ class _SearchFieldState extends State<_SearchField> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOut,
-      height: 58,
-      padding: const EdgeInsets.fromLTRB(10, 0, 8, 0),
+      height: 56,
+      padding: const EdgeInsets.fromLTRB(16, 0, 6, 0),
       decoration: BoxDecoration(
         color: p.card,
         borderRadius: BorderRadius.circular(20),
@@ -366,19 +366,16 @@ class _SearchFieldState extends State<_SearchField> {
       ),
       child: Row(
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color:
-                  AppColors.accent.withValues(alpha: focused ? 0.16 : 0.10),
-              borderRadius: BorderRadius.circular(12),
+          // Plain leading glyph — brightens to accent on focus. No heavy tile,
+          // so the pill reads as one field instead of a boxed-in segment.
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Icon(
+              Icons.search_rounded,
+              size: 21,
+              color: focused ? AppColors.accent : p.textTertiary,
             ),
-            child: const Icon(Icons.search_rounded,
-                size: 20, color: AppColors.accent),
           ),
-          const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: widget.controller,
@@ -424,18 +421,21 @@ class _SearchFieldState extends State<_SearchField> {
               ),
             ),
           ),
-          Material(
-            color: AppColors.accent.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: widget.onMapTap,
-              borderRadius: BorderRadius.circular(12),
-              child: const SizedBox(
-                width: 40,
-                height: 40,
-                child: Icon(Icons.map_rounded,
-                    size: 19, color: AppColors.accent),
-              ),
+          // Thin divider, then the map shortcut as a quiet accent action —
+          // present but not competing with the search field.
+          Container(
+            width: 1,
+            height: 26,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            color: p.border,
+          ),
+          GestureDetector(
+            onTap: widget.onMapTap,
+            behavior: HitTestBehavior.opaque,
+            child: const SizedBox(
+              width: 40,
+              height: 40,
+              child: Icon(Icons.map_rounded, size: 20, color: AppColors.accent),
             ),
           ),
         ],
