@@ -34,6 +34,63 @@ class ShopRepository {
     return shops;
   }
 
+  /// Persist a brand-new shop the signed-in barber just created: the shop
+  /// (owned by them), their barber row, and the service menu. Returns the new
+  /// shop's real UUID, or null if there's no auth session or the write fails
+  /// (in which case the caller keeps the local-only copy).
+  static Future<String?> createShop({
+    required String name,
+    required String address,
+    required double lat,
+    required double lng,
+    required bool isPremium,
+    required String barberName,
+    required String bio,
+    required List<({String name, double price, int durationMin})> services,
+  }) async {
+    final uid = SupabaseService.currentUser?.id;
+    if (uid == null) return null; // no real session → local-only
+    try {
+      final shop = await SupabaseService.client
+          .from('barbershops')
+          .insert({
+            'owner_id': uid,
+            'name': name,
+            'address': address,
+            'lat': lat,
+            'lng': lng,
+            'is_premium': isPremium,
+          })
+          .select('id')
+          .single();
+      final shopId = shop['id'] as String;
+
+      await SupabaseService.client.from('barbers').insert({
+        'profile_id': uid,
+        'shop_id': shopId,
+        'display_name': barberName,
+        'bio': bio,
+        'rating': 5.0,
+        'is_active': true,
+      });
+      if (services.isNotEmpty) {
+        await SupabaseService.client.from('services').insert([
+          for (final s in services)
+            {
+              'shop_id': shopId,
+              'name': s.name,
+              'price': s.price,
+              'duration_min': s.durationMin,
+            },
+        ]);
+      }
+      return shopId;
+    } catch (e) {
+      // ignore: avoid_print
+      return null;
+    }
+  }
+
   static Barbershop _mapShop(Map<String, dynamic> row) {
     final barbers = ((row['barbers'] as List?) ?? const [])
         .map((b) => _mapBarber(b as Map<String, dynamic>))

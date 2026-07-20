@@ -413,7 +413,32 @@ class AppState extends ChangeNotifier {
       isOwner: claimLeader,
       photo: leaderPhoto,
     ));
+    // Persist the shop to Supabase so it's real and on the map for everyone,
+    // not just this device. Best-effort + async: the local shop above is shown
+    // instantly; the real one swaps in on the catalogue reload.
+    unawaited(_persistNewShop(shop));
     return shop;
+  }
+
+  /// Write a just-created shop to Supabase (when real catalogue is on and a
+  /// session exists), then refresh so the map/list carry the real row.
+  Future<void> _persistNewShop(Barbershop shop) async {
+    if (!SupabaseConfig.useRealCatalogue) return;
+    final barber = shop.barbers.isNotEmpty ? shop.barbers.first : null;
+    final newId = await ShopRepository.createShop(
+      name: shop.name,
+      address: shop.address,
+      lat: shop.lat,
+      lng: shop.lng,
+      isPremium: shop.isPremium,
+      barberName: barber?.name ?? 'Barber',
+      bio: barber?.bio ?? '',
+      services: shop.services
+          .map((s) =>
+              (name: s.name, price: s.price, durationMin: s.durationMinutes))
+          .toList(),
+    );
+    if (newId != null) await loadCatalogue();
   }
 
   // ═══════════════════ Flow B — coworker onboarding ═══════════════════
