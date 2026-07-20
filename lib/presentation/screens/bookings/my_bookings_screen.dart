@@ -12,6 +12,7 @@ import '../../../data/models/booking.dart';
 import '../../widgets/directions_sheet.dart';
 import '../../widgets/late_cancel_sheet.dart';
 import '../../widgets/paper_kit.dart';
+import '../../widgets/review_visit_sheet.dart';
 import '../../widgets/primary_button.dart';
 import '../booking/booking_flow_screen.dart';
 import 'booking_ticket_screen.dart';
@@ -28,6 +29,16 @@ class MyBookingsScreen extends StatefulWidget {
 
 class _MyBookingsScreenState extends State<MyBookingsScreen> {
   BookingStatus _tab = BookingStatus.upcoming;
+
+  @override
+  void initState() {
+    super.initState();
+    // Settle any visit whose time has passed, so it moves out of Upcoming and
+    // into Past (asking for a review) even if the app stayed open.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppState.instance.settlePastBookings();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -520,6 +531,17 @@ class _BookingNote extends StatelessWidget {
             ),
           ],
           if (!isActive) ...[
+            // A completed, unreviewed visit prompts for a review.
+            if (b.status == BookingStatus.completed &&
+                !AppState.instance.hasReviewed(b.id)) ...[
+              const SizedBox(height: 12),
+              PrimaryButton(
+                label: L.leaveReview,
+                icon: Icons.star_rounded,
+                height: 48,
+                onPressed: () => showReviewVisitSheet(context, b),
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               children: [

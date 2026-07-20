@@ -11,6 +11,8 @@ import '../core/i18n/app_language.dart';
 import '../core/i18n/strings.dart';
 import '../core/notifications/notify.dart';
 import '../core/supabase/feedback_service.dart';
+import '../core/supabase/supabase_config.dart';
+import 'shop_repository.dart';
 import 'models/barber.dart';
 import 'models/barber_break.dart';
 import 'models/barbershop.dart';
@@ -2093,6 +2095,74 @@ class AppState extends ChangeNotifier {
           .toList()
         ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
+  // ── Visit settlement + reviews ─────────────────────────────────────────
+  /// Bookings the client has already reviewed (so we stop nudging).
+  final Set<String> _reviewedBookings = {};
+
+  /// Turn a confirmed visit whose time has passed into a completed one, so it
+  /// drops out of the "upcoming" hero and becomes reviewable. Uses the END of
+  /// the slot (start + duration) plus a small grace, so a visit still in
+  /// progress isn't prematurely closed. Returns true if anything changed.
+  bool _settlePastBookings() {
+    final now = DateTime.now();
+    var changed = false;
+    for (var i = 0; i < _bookings.length; i++) {
+      final b = _bookings[i];
+      if (b.clientName != null) continue; // only the user's own bookings
+      if (b.status != BookingStatus.upcoming) continue;
+      final end = b.dateTime
+          .add(Duration(minutes: b.service.durationMinutes))
+          .add(const Duration(minutes: 10)); // grace
+      if (end.isBefore(now)) {
+        _bookings[i] = b.copyWith(
+          status: BookingStatus.completed,
+          completedAt: b.dateTime
+              .add(Duration(minutes: b.service.durationMinutes)),
+        );
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  /// Public entry: settle passed visits and notify if anything moved. Safe to
+  /// call from a screen's initState (not during build).
+  void settlePastBookings() {
+    if (_settlePastBookings()) notifyListeners();
+  }
+
+  bool hasReviewed(String bookingId) => _reviewedBookings.contains(bookingId);
+
+  /// Completed visits the user hasn't reviewed yet — what we nudge them about.
+  List<Booking> get bookingsAwaitingReview => _bookings
+      .where((b) =>
+          b.clientName == null &&
+          b.status == BookingStatus.completed &&
+          !_reviewedBookings.contains(b.id))
+      .toList()
+    ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+  /// Record a client's review of a visit and stop nudging for it.
+  void reviewVisit(
+    Booking booking, {
+    double? shopStars,
+    String? shopText,
+    double? barberStars,
+    String? barberText,
+  }) {
+    addDualReview(
+      shopId: booking.barbershop.id,
+      barberId: booking.barber.id,
+      barberName: booking.barber.name,
+      shopStars: shopStars,
+      shopText: shopText,
+      barberStars: barberStars,
+      barberText: barberText,
+    );
+    _reviewedBookings.add(booking.id);
+    notifyListeners();
+  }
+
   /// Total completed cuts (used for stats / membership card).
   int get totalCuts =>
       _bookings
@@ -2242,6 +2312,25 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// When the real-catalogue flag is on, pull the live shops from Supabase and
+  /// swap them in for the mock list — every screen reads MockData.barbershops,
+  /// so replacing its contents flips the whole app to real data in one place.
+  /// On any failure the mock list is left untouched, so the app never launches
+  /// blank because the network hiccuped.
+  Future<void> loadCatalogue() async {
+    if (!SupabaseConfig.useRealCatalogue) return;
+    try {
+      final shops =
+          await ShopRepository.fetchShops().timeout(const Duration(seconds: 8));
+      MockData.barbershops
+        ..clear()
+        ..addAll(shops);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('loadCatalogue failed, keeping mock: $e');
+    }
+  }
+
   Future<void> load() async {
     final sp = await SharedPreferences.getInstance();
     // Auth stage + the provider that vouched. Read together: a stage with no
@@ -2368,6 +2457,12 @@ class AppState extends ChangeNotifier {
         // Corrupt cache — fall back to the seeded bookings.
       }
     }
+    _reviewedBookings
+      ..clear()
+      ..addAll(sp.getStringList('reviewedBookings') ?? const []);
+    // Reopening after a visit's time has passed: settle it so it leaves the
+    // "upcoming" hero and starts asking for a review.
+    _settlePastBookings();
     // ── Wallet / boosts / VIP / loyalty — durable, like bookings. ──
     _walletSom = sp.getInt('walletSom') ?? _walletSom;
     _boosts = sp.getInt('boosts') ?? _boosts;
@@ -2524,6 +2619,7 @@ class AppState extends ChangeNotifier {
     final mine =
         _bookings.where((b) => b.clientName == null).map(_bookingToMap).toList();
     await sp.setString('bookings', jsonEncode(mine));
+    await sp.setStringList('reviewedBookings', _reviewedBookings.toList());
     // ── Wallet / boosts / VIP / loyalty — durable, like bookings. ──
     await sp.setInt('walletSom', _walletSom);
     await sp.setInt('boosts', _boosts);

@@ -21,6 +21,7 @@ import '../../../data/models/booking.dart';
 import '../../widgets/barber_feed_kit.dart';
 import '../../widgets/barbershop_card.dart';
 import '../../widgets/category_chip.dart';
+import '../../widgets/review_visit_sheet.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../barbershop_detail/barbershop_detail_screen.dart';
@@ -539,6 +540,17 @@ class HomeScreen extends StatelessWidget {
                     child: _BookingsCard(
                       upcoming: confirmedBookings,
                       onTap: onOpenBookings,
+                    ),
+                  ),
+                ],
+                // A visit whose time passed but hasn't been reviewed — ask.
+                if (state.bookingsAwaitingReview.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  _CelebrateIn(
+                    child: _ReviewNudgeCard(
+                      booking: state.bookingsAwaitingReview.first,
+                      onTap: () => showReviewVisitSheet(
+                          context, state.bookingsAwaitingReview.first),
                     ),
                   ),
                 ],
@@ -1911,6 +1923,92 @@ class _BookAgainCard extends StatelessWidget {
                   fontSize: 13.5,
                   fontWeight: FontWeight.w900,
                   color: AppColors.accentDeep,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown after a visit's time has passed but it's not yet reviewed — a warm
+/// gold nudge that opens the review sheet for that exact booking.
+class _ReviewNudgeCard extends StatelessWidget {
+  const _ReviewNudgeCard({required this.booking, required this.onTap});
+
+  final Booking booking;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return PressableScale(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: p.card,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.gold.withValues(alpha: 0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gold.withValues(alpha: 0.18),
+              blurRadius: 18,
+              spreadRadius: -4,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: AppColors.gold.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: const Icon(Icons.star_rounded,
+                  color: AppColors.gold, size: 28),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    L.howWasVisit,
+                    style: GoogleFonts.nunito(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: p.text,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${booking.barber.name} · ${booking.barbershop.name}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.bodySmall(context),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: AppColors.gold,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                L.rateYourVisit,
+                style: GoogleFonts.nunito(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
                 ),
               ),
             ),

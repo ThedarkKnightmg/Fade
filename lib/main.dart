@@ -24,6 +24,9 @@ Future<void> main() async {
   await Notify.init();
   // Restore the saved profile + prefs so signed-in users skip onboarding.
   await AppState.instance.load();
+  // Pull the live shop catalogue (no-op unless SupabaseConfig.useRealCatalogue);
+  // falls back to the mock list on any error, so startup is never blocked.
+  await AppState.instance.loadCatalogue();
   // Localize dates/times to the saved language — without this every DateFormat
   // (weekday/month names) renders in English even in RU/UZ.
   await initializeDateFormatting();

@@ -56,7 +56,7 @@ class SupabaseConfig {
   /// shows the mock catalogue (the demo); when true it reads the live catalogue
   /// via ShopRepository and shows an honest empty state where there's no supply.
   /// Keeps the demo working until real shops are onboarded.
-  static const bool useRealCatalogue = false;
+  static const bool useRealCatalogue = true;
 
   static bool get isSet => url.isNotEmpty && publishableKey.isNotEmpty;
 

@@ -492,6 +492,12 @@ class L {
       'Напишите пару слов ✍️', "Avval bir necha so'z yozing ✍️");
   static String get reviewThanks => _t('Thanks for your review ✂️',
       'Спасибо за отзыв ✂️', 'Sharhingiz uchun rahmat ✂️');
+  static String get howWasVisit =>
+      _t('How was your visit?', 'Как прошёл визит?', 'Tashrifingiz qanday o‘tdi?');
+  static String get leaveReview =>
+      _t('Leave a review', 'Оставить отзыв', 'Sharh qoldirish');
+  static String get rateYourVisit => _t('Rate your visit',
+      'Оцените визит', 'Tashrifingizni baholang');
   static String reviewsCount(int n) =>
       _t('$n reviews', '$n отзывов', '$n sharh');
 
