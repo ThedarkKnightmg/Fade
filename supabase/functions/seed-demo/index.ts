@@ -14,11 +14,20 @@ const admin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+const COVER = (seed: string) =>
+  `https://images.unsplash.com/${seed}?auto=format&fit=crop&w=800&q=70`;
+
 const SHOPS = [
   {
     name: "The Sharp Edge",
     address: "Amir Temur Avenue, Tashkent",
     lat: 41.3111, lng: 69.2797, premium: true,
+    tagline: "Premium cuts, classic soul",
+    description: "A refined chair on Amir Temur — precision fades and a proper hot-towel finish.",
+    cover: COVER("photo-1503951914875-452162b0f3f1"),
+    hours: "Mon–Sat · 10:00–21:00",
+    tags: ["Premium", "Fades", "Beard"],
+    priceLevel: 3, featured: true,
     barber: { name: "Davron", email: "davron@seed.fade.uz", bio: "Fades & classic cuts", rating: 4.9 },
     services: [
       { name: "Haircut", price: 90000, min: 45 },
@@ -30,6 +39,12 @@ const SHOPS = [
     name: "Northside Barbers",
     address: "Yunusobod district, Tashkent",
     lat: 41.3640, lng: 69.2894, premium: false,
+    tagline: "Your neighbourhood barber since 2008",
+    description: "Friendly, no-fuss cuts for the whole mahalla.",
+    cover: COVER("photo-1585747860715-2ba37e788b70"),
+    hours: "Every day · 09:00–20:00",
+    tags: ["Family", "Kids"],
+    priceLevel: 2, featured: false,
     barber: { name: "Sardor", email: "sardor@seed.fade.uz", bio: "Neighbourhood barber since 2008", rating: 4.7 },
     services: [
       { name: "Haircut", price: 60000, min: 40 },
@@ -40,6 +55,12 @@ const SHOPS = [
     name: "Chilanzar Cuts",
     address: "Chilonzor, Tashkent",
     lat: 41.2755, lng: 69.2035, premium: false,
+    tagline: "Skin fades done right",
+    description: "Sharp skin fades, clean line-ups and a proper straight-razor shave.",
+    cover: COVER("photo-1521490878406-4f74a34c9e2a"),
+    hours: "Tue–Sun · 10:00–22:00",
+    tags: ["Skin fade", "Shave"],
+    priceLevel: 2, featured: false,
     barber: { name: "Jasur", email: "jasur@seed.fade.uz", bio: "Skin fades a speciality", rating: 4.8 },
     services: [
       { name: "Skin fade", price: 75000, min: 45 },
@@ -54,8 +75,13 @@ const json = (b: unknown, s = 200) =>
 
 Deno.serve(async () => {
   try {
-    // Clean any prior seed run: delete the @seed.fade.uz auth users (their
-    // profiles + owned shops + barbers cascade away).
+    // Clean any prior seed run. NOTE: barbershops.owner_id is ON DELETE SET
+    // NULL, so deleting the seed user does NOT remove their shop — it just
+    // orphans it. So delete the shops explicitly by name first (services
+    // cascade), THEN the seed users (profiles + barbers cascade).
+    for (const shop of SHOPS) {
+      await admin.from("barbershops").delete().eq("name", shop.name);
+    }
     const { data: list } = await admin.auth.admin.listUsers();
     for (const u of list.users) {
       if (u.email?.endsWith("@seed.fade.uz")) {
@@ -86,6 +112,13 @@ Deno.serve(async () => {
           lat: shop.lat,
           lng: shop.lng,
           is_premium: shop.premium,
+          tagline: shop.tagline,
+          description: shop.description,
+          cover_image_url: shop.cover,
+          opening_hours: shop.hours,
+          tags: shop.tags,
+          price_level: shop.priceLevel,
+          is_featured: shop.featured,
         })
         .select("id")
         .single();

@@ -22,7 +22,9 @@ class ShopRepository {
   /// Every shop, premium first (mirrors how the mock list ranks).
   static Future<List<Barbershop>> fetchShops() async {
     final rows = await SupabaseService.client.from('barbershops').select(
-          'id, name, address, lat, lng, is_premium, '
+          'id, name, address, lat, lng, is_premium, tagline, description, '
+          'cover_image_url, gallery_urls, opening_hours, tags, price_level, '
+          'is_featured, '
           'barbers(id, display_name, bio, photo_url, rating, is_active), '
           'services(id, name, price, duration_min)',
         );
@@ -109,24 +111,34 @@ class ShopRepository {
         : rated.map((b) => b.rating).reduce((a, b) => a + b) / rated.length;
 
     final id = row['id'] as String;
+    String orEmpty(String key, String fallback) {
+      final v = (row[key] as String?)?.trim();
+      return (v == null || v.isEmpty) ? fallback : v;
+    }
+
+    final gallery =
+        ((row['gallery_urls'] as List?) ?? const []).cast<String>();
+    final tags = ((row['tags'] as List?) ?? const []).cast<String>();
+
     return Barbershop(
       id: id,
       name: (row['name'] as String?) ?? 'Barbershop',
-      tagline: 'On Fade',
-      description: '',
+      tagline: orEmpty('tagline', 'On Fade'),
+      description: (row['description'] as String?) ?? '',
       address: (row['address'] as String?) ?? '',
       distanceKm: 0, // set from device location when that's wired
       rating: double.parse(avg.toStringAsFixed(1)),
       reviewCount: 0,
-      coverImageUrl: 'https://picsum.photos/seed/$id/800/600',
-      galleryUrls: const [],
+      coverImageUrl: orEmpty(
+          'cover_image_url', 'https://picsum.photos/seed/$id/800/600'),
+      galleryUrls: gallery,
       services: services,
       barbers: barbers,
       reviews: const [],
-      openingHours: 'Set your hours',
-      isFeatured: false,
-      priceLevel: 2,
-      tags: const [],
+      openingHours: orEmpty('opening_hours', 'Set your hours'),
+      isFeatured: (row['is_featured'] as bool?) ?? false,
+      priceLevel: (row['price_level'] as int?) ?? 2,
+      tags: tags,
       isPremium: (row['is_premium'] as bool?) ?? false,
       lat: (row['lat'] as num?)?.toDouble() ?? 41.3111,
       lng: (row['lng'] as num?)?.toDouble() ?? 69.2797,
