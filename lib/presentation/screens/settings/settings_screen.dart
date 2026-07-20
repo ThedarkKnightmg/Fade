@@ -7,6 +7,7 @@ import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/supabase/supabase_service.dart';
 import '../../../data/app_state.dart';
 import '../../widgets/morph_icon.dart';
 import '../../widgets/paper_kit.dart';
@@ -242,6 +243,71 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
+  /// Permanent account deletion — the option the privacy/deletion pages promise.
+  /// Confirms first, deletes the server account (cascades the user's data), then
+  /// wipes local state and returns to the gate. Best-effort on the server call:
+  /// if it fails (offline, or a local-only session), we still clear the device.
+  Future<void> _deleteAccount(BuildContext context) async {
+    final p = Paper.of(context);
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: p.bg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(L.deleteAccountQ, style: AppTypography.h2(ctx)),
+              const SizedBox(height: 6),
+              Text(L.deleteAccountBody, style: AppTypography.bodySmall(ctx)),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: PrimaryButton(
+                      label: L.stay,
+                      height: 50,
+                      style: PrimaryButtonStyle.ghost,
+                      onPressed: () => Navigator.pop(ctx, false),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: PrimaryButton(
+                      label: L.deleteForever,
+                      height: 50,
+                      onPressed: () => Navigator.pop(ctx, true),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (yes != true || !context.mounted) return;
+
+    // Best-effort server-side deletion (the local wipe below always runs).
+    try {
+      if (SupabaseService.isReady && SupabaseService.currentUser != null) {
+        await SupabaseService.client.functions.invoke('delete-account');
+        await SupabaseService.client.auth.signOut();
+      }
+    } catch (_) {
+      // Offline or local-only session — device is still cleared below.
+    }
+    if (!context.mounted) return;
+    AppState.instance.signOut(); // wipes bookings, chats, wallet, identity
+    Navigator.of(context).pushAndRemoveUntil(
+      FadeThroughPageRoute(child: const LoginScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
@@ -401,8 +467,14 @@ class SettingsScreen extends StatelessWidget {
                       _Tile(
                         icon: Icons.logout_rounded,
                         label: L.signOut,
-                        labelColor: AppColors.red,
                         onTap: () => _signOut(context),
+                      ),
+                      _Divider(),
+                      _Tile(
+                        icon: Icons.delete_outline_rounded,
+                        label: L.deleteAccount,
+                        labelColor: AppColors.red,
+                        onTap: () => _deleteAccount(context),
                       ),
                     ],
                   ),

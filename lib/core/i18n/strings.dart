@@ -391,6 +391,18 @@ class L {
   static String get signOut => _t('Sign out', 'Выйти', 'Chiqish');
   static String get signOutBody => _t('Your notes stay right here.',
       'Ваши данные останутся здесь.', 'Maʼlumotlaringiz shu yerda qoladi.');
+  static String get deleteAccount =>
+      _t('Delete account', 'Удалить аккаунт', 'Hisobni o‘chirish');
+  static String get deleteAccountQ => _t('Delete your account?',
+      'Удалить аккаунт?', 'Hisobni o‘chirasizmi?');
+  static String get deleteAccountBody => _t(
+      'This permanently removes your account and personal data — bookings, messages, reviews and profile. This can’t be undone.',
+      'Это навсегда удалит ваш аккаунт и данные — записи, сообщения, отзывы и профиль. Отменить нельзя.',
+      'Bu hisobingiz va shaxsiy maʼlumotlaringizni — yozuvlar, xabarlar, sharhlar va profilni butunlay o‘chiradi. Buni qaytarib bo‘lmaydi.');
+  static String get deleteForever =>
+      _t('Delete forever', 'Удалить навсегда', 'Butunlay o‘chirish');
+  static String get deletingAccount =>
+      _t('Deleting…', 'Удаление…', 'O‘chirilmoqda…');
   static String get cutsLabel => _t('cuts', 'стрижек', 'soch');
   static String get upcomingLabel => _t('upcoming', 'визитов', 'tashrif');
   static String get savedShops => _t('saved shops', 'избранное', 'saqlangan');

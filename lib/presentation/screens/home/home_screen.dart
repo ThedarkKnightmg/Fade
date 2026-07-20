@@ -1325,7 +1325,10 @@ class _BonusSheet extends StatelessWidget {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-          child: Column(
+          // Scrollable so the loyalty sheet never overflows: it's height-capped
+          // (opened without isScrollControlled) and its earned-passes list grows.
+          child: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1487,6 +1490,7 @@ class _BonusSheet extends StatelessWidget {
                 onPressed: onProfile,
               ),
             ],
+          ),
           ),
         ),
       ),

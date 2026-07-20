@@ -35,7 +35,12 @@ class CalendarSyncScreen extends StatelessWidget {
                       onTap: () => Navigator.of(context).maybePop(),
                     ),
                     const SizedBox(width: 12),
-                    Text(L.calendarSyncLabel, style: AppTypography.h2(context)),
+                    Expanded(
+                      child: Text(L.calendarSyncLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.h2(context)),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 18),

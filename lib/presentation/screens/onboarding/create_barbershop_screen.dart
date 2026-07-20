@@ -137,7 +137,12 @@ class _CreateBarbershopScreenState extends State<CreateBarbershopScreen> {
                     onTap: () => Navigator.of(context).maybePop(),
                   ),
                   const SizedBox(width: 12),
-                  Text(L.csTitle, style: AppTypography.h1(context)),
+                  Expanded(
+                    child: Text(L.csTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.h1(context)),
+                  ),
                 ],
               ),
             ),

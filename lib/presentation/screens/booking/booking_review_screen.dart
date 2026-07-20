@@ -76,7 +76,12 @@ class BookingReviewScreen extends StatelessWidget {
                     onTap: () => Navigator.of(context).maybePop(),
                   ),
                   const SizedBox(width: 10),
-                  Text(L.reviewBookingTitle, style: AppTypography.h3(context)),
+                  Expanded(
+                    child: Text(L.reviewBookingTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.h3(context)),
+                  ),
                 ],
               ),
             ),
