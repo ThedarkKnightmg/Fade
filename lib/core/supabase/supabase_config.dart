@@ -52,6 +52,12 @@ class SupabaseConfig {
   /// showing a code screen no code ever arrives at.
   static const bool smsConfigured = false;
 
+  /// Flip to true when real barbershops exist in Supabase. While false the app
+  /// shows the mock catalogue (the demo); when true it reads the live catalogue
+  /// via ShopRepository and shows an honest empty state where there's no supply.
+  /// Keeps the demo working until real shops are onboarded.
+  static const bool useRealCatalogue = false;
+
   static bool get isSet => url.isNotEmpty && publishableKey.isNotEmpty;
 
   static bool get telegramLoginConfigured => isSet && telegramBot.isNotEmpty;
