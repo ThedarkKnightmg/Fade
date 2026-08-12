@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const _navy = Color(0xFF16294B);
 const _blue = Color(0xFF2E8BFF);
 const _scissors = Icons.content_cut_rounded;
 
