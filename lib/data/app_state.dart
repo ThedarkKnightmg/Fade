@@ -36,6 +36,7 @@ import 'mock_data.dart';
 part 'app_state/plumbing.dart';
 part 'app_state/legal_consent.dart';
 part 'app_state/fade_points.dart';
+part 'app_state/wallet.dart';
 
 /// Which side of the marketplace the user is currently using.
 enum AppRole { client, barber }
@@ -178,7 +179,7 @@ class BoostPack {
 /// as their personal "master". Uses ChangeNotifier so any widget
 /// can listen and rebuild when state changes.
 class AppState extends ChangeNotifier
-    with AppStatePlumbing, LegalConsentState, FadePointsState {
+    with AppStatePlumbing, LegalConsentState, FadePointsState, WalletState {
   AppState._() {
     _seedBookings();
     _seedChats();
@@ -734,6 +735,7 @@ class AppState extends ChangeNotifier
   List<Booking> get _completedMine =>
       _mine().where((b) => b.status == BookingStatus.completed).toList();
   int get barberCompletedCount => _completedMine.length;
+  @override
   double get barberTotalEarned =>
       _completedMine.fold(0.0, (sum, b) => sum + b.service.price);
 
@@ -752,6 +754,7 @@ class AppState extends ChangeNotifier
   }
 
   /// so'm earned (completed cuts) since Monday this week.
+  @override
   int get barberEarnedThisWeekSom {
     final monday = _weekMonday;
     final nextMonday = monday.add(const Duration(days: 7));
@@ -1318,113 +1321,17 @@ class AppState extends ChangeNotifier
   // holds while the subscription is pure upside. Client-side for now;
   // enforced server-side once the backend lands.
   static const double vipNewClientFeePercent = 2.5;
-  double get effectiveNewClientFeePercent =>
-      barberVip ? vipNewClientFeePercent : newClientFeePercent.toDouble();
 
-  int _walletSom = 42000;
-  int get walletSom => _walletSom;
-  bool get walletLow => _walletSom < 12000;
+  // The wallet balance, ledger and commission maths live in
+  // app_state/wallet.dart. The two rates stay here because statics are not
+  // inherited from a mixin.
 
-  // ── The three "coins" in the skeuomorphic wallet ──────────────────────
-  // Credit = the prepaid spendable balance (walletSom; top-up refills it,
-  // commission fees draw from it). Boost packs & VIP settle via an external
-  // provider, not this balance. Earned = money made from completed cuts (real,
-  // lifetime). Tips = a modest mock (~12% of earned). Total = the sum shown in
-  // the wallet pocket; the week-gain drives the "▲ this week" delta line.
-  int get walletEarnedSom => Money.toSom(barberTotalEarned);
-  int get walletTipsSom => (walletEarnedSom * 0.12).round();
-  int get walletTotalSom => _walletSom + walletEarnedSom + walletTipsSom;
-  int get walletWeekGainSom => (barberEarnedThisWeekSom * 1.12).round();
-
-  final List<WalletTx> _ledger = [];
-  bool _ledgerSeeded = false;
-  List<WalletTx> get walletLedger {
-    _ensureLedgerSeed();
-    return List.unmodifiable(_ledger);
-  }
-
-  void _ensureLedgerSeed() {
-    if (_ledgerSeeded) return;
-    _ledgerSeeded = true;
-    final now = DateTime.now();
-    _ledger.addAll([
-      WalletTx(
-          label: 'Top-up',
-          amountSom: 50000,
-          credit: true,
-          at: now.subtract(const Duration(days: 6))),
-      WalletTx(
-          label: 'Sardor A.',
-          sub: 'New-client fee',
-          amountSom: 3500,
-          credit: false,
-          at: now.subtract(const Duration(days: 5))),
-      WalletTx(
-          label: 'Jasur T.',
-          sub: 'New-client fee',
-          amountSom: 4500,
-          credit: false,
-          at: now.subtract(const Duration(days: 3))),
-    ]);
-  }
-
-
-  /// Flat commission: every Fade booking pays the platform rate — 5% standard,
-  /// 2.5% for VIP. Only manually-logged walk-ins (the barber's own off-platform
-  /// clients) are free, since Fade never handled them.
-  int commissionSomFor(Booking b) {
-    if (b.isWalkIn) return 0;
-    return (Money.toSom(b.service.price) * effectiveNewClientFeePercent / 100)
-        .round();
-  }
-
-  /// The undiscounted 5% fee — used to show a VIP barber what the discount saved.
-  int commissionFullSomFor(Booking b) {
-    if (b.isWalkIn) return 0;
-    return (Money.toSom(b.service.price) * newClientFeePercent / 100).round();
-  }
-
-  void _chargeCommission(String id) {
-    final b = _bookingById(id);
-    if (b == null || b.isWalkIn) return; // off-platform walk-ins never charge
-    _ensureLedgerSeed();
-    final fee = commissionSomFor(b);
-    if (fee <= 0) return;
-    _walletSom -= fee;
-    if (_walletSom < 0) _walletSom = 0; // never show a negative balance
-    final vip = barberVip;
-    if (vip) {
-      final saved = commissionFullSomFor(b) - fee;
-      if (saved > 0) _vipCommissionSavedSom += saved;
-    }
-    // Every booking is labelled with the rate applied so the barber SEES it.
-    _ledger.insert(
-      0,
-      WalletTx(
-        label: b.clientName ?? b.barber.name,
-        sub: 'Booking fee · ${vip ? '2.5%' : '5%'} · ${b.service.name}',
-        amountSom: fee,
-        credit: false,
-        at: DateTime.now(),
-      ),
-    );
-    notifyListeners();
-  }
-
+  @override
   Booking? _bookingById(String id) {
     for (final b in _bookings) {
       if (b.id == id) return b;
     }
     return null;
-  }
-
-  /// Top-up is a provider-handoff stub — no real money moves here.
-  void topUpWallet(int som) {
-    _ensureLedgerSeed();
-    _walletSom += som;
-    _ledger.insert(0,
-        WalletTx(label: 'Top-up', amountSom: som, credit: true, at: DateTime.now()));
-    notifyListeners();
   }
 
   /// The barber's white-label handle + personal booking link (Tier 3 — a
@@ -1496,6 +1403,7 @@ class AppState extends ChangeNotifier
   // bookings on/after this, so bookings charged the full 5% BEFORE subscribing
   // aren't mis-counted as savings.
   DateTime? _vipSince;
+  @override
   bool get barberVip =>
       _vipUntil != null && _vipUntil!.isAfter(DateTime.now());
   DateTime? get vipUntil => _vipUntil;
@@ -1509,6 +1417,10 @@ class AppState extends ChangeNotifier
   // this figure (which is exactly why the platform's give-back stays small).
   int _vipCommissionSavedSom = 0;
   int get vipCommissionSavedSom => _vipCommissionSavedSom;
+
+  /// Credited by the wallet each time the VIP rate undercuts the standard one.
+  @override
+  void _recordVipSaving(int som) => _vipCommissionSavedSom += som;
 
   /// The VIP "you saved X this month" figure: 2.5 points off every booking this
   /// month. (Break-even vs. the 200k subscription is ~8M so'm of monthly
