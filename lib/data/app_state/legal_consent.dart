@@ -11,11 +11,7 @@ part of '../app_state.dart';
 /// `_readEpoch`, the reset path). Parts share the library's privacy scope, so
 /// the code can be split by domain without widening any API or touching the
 /// 260-odd `AppState.instance` call sites.
-mixin LegalConsentState on ChangeNotifier {
-  /// Provided by [AppState]. Declared here so the mixin can persist without
-  /// depending on the concrete class (which would be circular).
-  Future<void> _save();
-
+mixin LegalConsentState on ChangeNotifier, AppStatePlumbing {
   DateTime? _consentAt;
   String? _consentVersion;
 

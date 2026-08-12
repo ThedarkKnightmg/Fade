@@ -33,7 +33,9 @@ import 'mock_data.dart';
 // share the library's privacy scope, so each domain can keep its private state
 // private while still reaching shared plumbing like _save() — and every
 // `AppState.instance` call site stays untouched.
+part 'app_state/plumbing.dart';
 part 'app_state/legal_consent.dart';
+part 'app_state/fade_points.dart';
 
 /// Which side of the marketplace the user is currently using.
 enum AppRole { client, barber }
@@ -175,7 +177,8 @@ class BoostPack {
 /// the current user, their bookings, and the barber they've chosen
 /// as their personal "master". Uses ChangeNotifier so any widget
 /// can listen and rebuild when state changes.
-class AppState extends ChangeNotifier with LegalConsentState {
+class AppState extends ChangeNotifier
+    with AppStatePlumbing, LegalConsentState, FadePointsState {
   AppState._() {
     _seedBookings();
     _seedChats();
@@ -2464,115 +2467,12 @@ class AppState extends ChangeNotifier with LegalConsentState {
   static const int fadePointsGoal = 16;
 
   // ═══════════════════ Fade Points — cashback wallet ══════════════════════════
-  // 1 point = 1 UZS. On each completed booking the client earns [pointsEarnRatePct]%
-  // of the price as points (2,500 on a 100,000 cut) — a cashback funded from
-  // Fade's own commission (half of the standard 5%). Points spend as a discount
-  // at checkout (min [pointsMinRedemptionSom]); the BARBER IS ALWAYS PAID FULL
-  // PRICE — the discount comes from the points reserve, never the barber. Points
-  // expire [pointsExpiryDays] after they're earned, and expired points become
-  // platform profit (breakage).
-  //
-  // SECURITY: this is a client-side ledger today, like the rest of the app's
-  // economy. Points redeemable as money are STORED VALUE and MUST move to a
-  // server-authoritative ledger before real payments (kPaymentsLive) — otherwise
-  // a rooted user edits their own balance. Redemption-at-checkout is Phase 3.
+  // Statics stay on the class (they are read as `AppState.pointsMinRedemptionSom`
+  // and are not inherited from a mixin). The ledger itself lives in
+  // app_state/fade_points.dart.
   static const double pointsEarnRatePct = 2.5; // = half the standard 5% commission
   static const int pointsMinRedemptionSom = 10000;
   static const int pointsExpiryDays = 180; // 6 months
-
-  // Point lots: (amount so'm, earnedAt). Spent oldest-first; oldest expire first.
-  final List<({int amount, DateTime earnedAt})> _pointLots = [];
-  int _lastPointsEarned = 0;
-  int get lastPointsEarned => _lastPointsEarned;
-
-  // Server-authoritative balance (Phase 3B). Null until fetched / when offline;
-  // then the local lots below are the mirror. The SERVER is the source of truth.
-  int? _serverPointsBalance;
-  String? _serverReferralCode;
-
-  /// Pull the real balance + referral code from the server (best-effort).
-  Future<void> refreshServerLoyalty() async {
-    final bal = await SupabaseLoyalty.balance();
-    if (bal != null) {
-      _serverPointsBalance = bal;
-      notifyListeners();
-    }
-  }
-
-  /// This user's shareable referral code (server-minted, cached). Falls back to
-  /// a local placeholder only when there's no session.
-  Future<String> referralCode() async {
-    _serverReferralCode ??= await SupabaseLoyalty.myReferralCode();
-    return _serverReferralCode ?? 'FADE';
-  }
-
-  /// Live spendable balance (so'm) — the server figure when we have it, else the
-  /// local mirror (the point lots below).
-  int get pointsBalanceSom {
-    if (_serverPointsBalance != null) return _serverPointsBalance!;
-    final now = DateTime.now();
-    return _pointLots
-        .where((l) => now.difference(l.earnedAt).inDays <= pointsExpiryDays)
-        .fold(0, (s, l) => s + l.amount);
-  }
-
-  /// Points a completed booking earns — [pointsEarnRatePct]% of its so'm price.
-  int pointsEarnedFor(Booking b) =>
-      (Money.toSom(b.service.price) * pointsEarnRatePct / 100).round();
-
-  void _earnFadePoints(Booking b) {
-    final pts = pointsEarnedFor(b);
-    if (pts <= 0) return;
-    _pointLots.add((amount: pts, earnedAt: DateTime.now()));
-    _lastPointsEarned = pts;
-  }
-
-  /// The most a client may apply to a booking of [priceSom]: their balance,
-  /// capped at the price, and only once past the minimum threshold.
-  int redeemablePointsFor(int priceSom) {
-    final bal = pointsBalanceSom;
-    if (bal < pointsMinRedemptionSom) return 0;
-    return bal < priceSom ? bal : priceSom;
-  }
-
-  /// Spend up to [som] points (oldest lots first). Returns the amount applied.
-  /// The barber is still paid full price — the discount is funded from the
-  /// reserve (Fade's set-aside commission), never the barber.
-  int redeemPoints(int som) {
-    _expirePoints();
-    var want = som.clamp(0, pointsBalanceSom);
-    if (want < pointsMinRedemptionSom) return 0;
-    final applied = want;
-    _pointLots.sort((a, b) => a.earnedAt.compareTo(b.earnedAt)); // oldest first
-    while (want > 0 && _pointLots.isNotEmpty) {
-      final lot = _pointLots.first;
-      if (lot.amount <= want) {
-        want -= lot.amount;
-        _pointLots.removeAt(0);
-      } else {
-        _pointLots[0] = (amount: lot.amount - want, earnedAt: lot.earnedAt);
-        want = 0;
-      }
-    }
-    _save();
-    notifyListeners();
-    return applied;
-  }
-
-  void _expirePoints() {
-    final now = DateTime.now();
-    _pointLots.removeWhere(
-        (l) => now.difference(l.earnedAt).inDays > pointsExpiryDays);
-  }
-
-  /// When the soonest-expiring points lapse (for a "use by" nudge); null if none.
-  DateTime? get pointsNextExpiry {
-    _expirePoints();
-    if (_pointLots.isEmpty) return null;
-    final earliest =
-        _pointLots.map((l) => l.earnedAt).reduce((a, b) => a.isBefore(b) ? a : b);
-    return earliest.add(const Duration(days: pointsExpiryDays));
-  }
 
   /// "Member since" date — user joined when account was created.
   /// In mock data, treat 2024-03-12 as the member-since date.
