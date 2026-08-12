@@ -1,3 +1,4 @@
+import '../../../core/map/map_attribution.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -110,6 +111,7 @@ class BookingReviewScreen extends StatelessWidget {
                               tileProvider: CachedTileProvider(),
                               userAgentPackageName: 'com.barber.app',
                             ),
+                            const MapAttribution(),
                             MarkerLayer(
                               markers: [
                                 Marker(
@@ -143,7 +145,7 @@ class BookingReviewScreen extends StatelessWidget {
                                 child: Text(shop.name,
                                     style: AppTypography.h3(context)),
                               ),
-                              MiniPill('★ ${shop.rating.toStringAsFixed(1)}'),
+                              MiniPill('★ ${AppState.instance.shopRating(shop).toStringAsFixed(1)}'),
                             ],
                           ),
                           const SizedBox(height: 10),

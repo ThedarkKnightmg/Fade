@@ -13,7 +13,9 @@ import '../../widgets/morph_icon.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../auth/login_screen.dart';
+import '../legal/legal_doc_screen.dart';
 import '../payment/payment_sheet.dart';
+import '../referral/invite_sheet.dart';
 import 'calendar_sync_screen.dart';
 import 'support_sheet.dart';
 import 'verify_contact_screen.dart';
@@ -443,6 +445,23 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 22),
 
+                // Invite friends & earn — opens the referral sheet (real
+                // server-minted code + share + enter-a-friend's-code).
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 132),
+                  child: _Card(
+                    children: [
+                      _Tile(
+                        icon: Icons.card_giftcard_rounded,
+                        label: L.inviteRow,
+                        value: L.inviteSub,
+                        onTap: () => showInviteSheet(context),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 22),
+
                 // Help & feedback — report a bug, pitch an idea, or just talk.
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 135),
@@ -453,6 +472,39 @@ class SettingsScreen extends StatelessWidget {
                         label: L.helpFeedback,
                         value: L.helpFeedbackSub,
                         onTap: () => showSupportSheet(context),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 22),
+
+                // Legal — Terms of Use & Privacy Policy, opened as native
+                // in-app readers (required to be reachable for Google Play).
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 140),
+                  child: _SectionLabel(L.legalSection),
+                ),
+                const SizedBox(height: 10),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 145),
+                  child: _Card(
+                    children: [
+                      _Tile(
+                        icon: Icons.description_outlined,
+                        label: L.termsOfUse,
+                        onTap: () => Navigator.of(context).push(
+                          FadeThroughPageRoute(
+                              child: const LegalDocScreen(docKey: 'terms')),
+                        ),
+                      ),
+                      _Divider(),
+                      _Tile(
+                        icon: Icons.privacy_tip_outlined,
+                        label: L.privacyPolicy,
+                        onTap: () => Navigator.of(context).push(
+                          FadeThroughPageRoute(
+                              child: const LegalDocScreen(docKey: 'privacy')),
+                        ),
                       ),
                     ],
                   ),

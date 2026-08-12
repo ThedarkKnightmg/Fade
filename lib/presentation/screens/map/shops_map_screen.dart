@@ -1,3 +1,4 @@
+import '../../../core/map/map_attribution.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -152,9 +153,11 @@ class _ShopsMapScreenState extends State<ShopsMapScreen>
     return null;
   }
 
-  /// Which real barbershop a listing opens.
-  Barbershop _shopFor(MapListing l) =>
-      MockData.barbershops[l.shopIndex % MockData.barbershops.length];
+  /// Which real barbershop a listing opens. Null when the catalogue is empty —
+  /// the modulo would otherwise divide by zero.
+  Barbershop? _shopFor(MapListing l) => MockData.barbershops.isEmpty
+      ? null
+      : MockData.barbershops[l.shopIndex % MockData.barbershops.length];
 
   /// A representative "haircut from" price (USD) — varied by tier so the
   /// price tags read like a real listings map.
@@ -376,23 +379,13 @@ class _ShopsMapScreenState extends State<ShopsMapScreen>
             ),
           ),
         ),
-        // Map attribution (required by OpenStreetMap / CARTO).
-        Positioned(
-          left: 10,
-          top: topPad,
-          child: IgnorePointer(
-            child: Opacity(
-              opacity: 0.6,
-              child: Text(
-                '© CARTO · OSM',
-                style: GoogleFonts.nunito(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: p.text,
-                ),
-              ),
-            ),
-          ),
+        // Map attribution (required by OpenStreetMap / CARTO). Uses the shared
+        // widget so all nine map surfaces credit identically — and so it's
+        // tappable through to the OSM copyright page, which the licence wants.
+        const Positioned(
+          left: 6,
+          bottom: 6,
+          child: MapAttribution(alignment: Alignment.bottomLeft),
         ),
         // Zoom + locate controls.
         Positioned(
@@ -440,6 +433,11 @@ class _ShopsMapScreenState extends State<ShopsMapScreen>
                     key: ValueKey(selected.id),
                     builder: (_) {
                       final shop = _shopFor(selected);
+                      // Empty catalogue → nothing to open; show no card rather
+                      // than crashing on a null shop.
+                      if (shop == null) {
+                        return const SizedBox.shrink(key: ValueKey('empty'));
+                      }
                       return _ShopCard(
                         shop: shop,
                         index: MockData.barbershops.indexOf(shop),
@@ -1540,7 +1538,7 @@ class _ShopCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              MiniPill('★ ${shop.rating.toStringAsFixed(1)}'),
+              MiniPill('★ ${AppState.instance.shopRating(shop).toStringAsFixed(1)}'),
             ],
           ),
           const SizedBox(height: 10),

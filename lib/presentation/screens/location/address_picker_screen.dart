@@ -1,3 +1,4 @@
+import '../../../core/map/map_attribution.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -231,6 +232,7 @@ class _AddressPickerScreenState extends State<AddressPickerScreen> {
             duration: Duration(milliseconds: 220),
           ),
         ),
+        const MapAttribution(),
       ],
     );
   }

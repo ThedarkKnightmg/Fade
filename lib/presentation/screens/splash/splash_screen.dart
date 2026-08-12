@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../data/app_state.dart';
+import '../legal/consent_screen.dart';
 import '../onboarding/barber_registration_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../root_shell.dart';
@@ -23,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void _navigateNext() {
     if (!mounted) return;
     final state = AppState.instance;
-    final Widget next;
+    Widget next;
     switch (state.authStage) {
       case AuthStage.anonymous:
         next = const OnboardingScreen();
@@ -35,6 +36,15 @@ class _SplashScreenState extends State<SplashScreen> {
         next = const BarberRegistrationScreen();
       case AuthStage.ready:
         next = const RootShell();
+    }
+    // Legal consent is a chokepoint for EVERY entry, not just first run. The
+    // gate used to live only on the anonymous→onboarding path, which meant an
+    // already-signed-in user never saw it, and bumping [AppState.legalVersion]
+    // after a document change could never re-prompt anyone (the only screen
+    // reading it was one they could no longer reach). Wrapping the resolved
+    // destination here covers anonymous, identified and ready alike.
+    if (state.needsLegalConsent) {
+      next = ConsentScreen(next: next);
     }
     Navigator.of(context).pushReplacement(FadeThroughPageRoute(child: next));
   }

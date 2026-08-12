@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/i18n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import '../../data/app_state.dart';
 import '../../data/mock_data.dart';
 import '../../data/models/barbershop.dart';
 import 'paper_kit.dart';
@@ -139,7 +140,9 @@ class BarbershopCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _RatingChip(rating: shop.rating),
+                          // Live average: the seed rating blended with every
+                          // user review, so rating a shop 4★ moves this number.
+                          _RatingChip(rating: AppState.instance.shopRating(shop)),
                         ],
                       ),
                     ),

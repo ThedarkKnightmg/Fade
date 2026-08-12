@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
@@ -98,9 +99,41 @@ class BookingTicketScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 18),
-                // Check-in: scan the barber's QR (or a "checked in" state once
-                // done). Replaces the old client-shown QR — the barber now
-                // holds the code and the client scans it.
+                // The client SHOWS this QR; the barber scans it to complete the
+                // visit server-side (minting points). A "checked in" state once
+                // done. The scan-the-barber's-code path stays as a fallback.
+                if (booking.verifiedAt == null &&
+                    booking.status != BookingStatus.completed)
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(26),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.accent.withValues(alpha: 0.16),
+                            blurRadius: 24,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      child: QrImageView(
+                        data: s.bookingQrPayload(booking),
+                        size: 200,
+                        backgroundColor: Colors.white,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.circle,
+                          color: AppColors.accentDeep,
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.circle,
+                          color: Color(0xFF16213A),
+                        ),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 14),
                 _CheckInCard(
                   checkedIn: booking.verifiedAt != null ||
                       booking.status == BookingStatus.completed,

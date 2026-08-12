@@ -210,7 +210,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    MiniPill('★ ${shop.rating.toStringAsFixed(1)}'),
+                    MiniPill('★ ${AppState.instance.shopRating(shop).toStringAsFixed(1)}'),
                   ],
                 ),
               ),

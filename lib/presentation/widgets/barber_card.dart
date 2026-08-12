@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/i18n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import '../../data/app_state.dart';
 import '../../data/models/barber.dart';
 import 'paper_kit.dart';
 
@@ -74,7 +75,7 @@ class BarberCard extends StatelessWidget {
                 Row(
                   children: [
                     MiniPill(
-                      '★ ${barber.rating.toStringAsFixed(1)}',
+                      '★ ${AppState.instance.barberTalentRating(barber).toStringAsFixed(1)}',
                       style: MiniPillStyle.accent,
                     ),
                     const SizedBox(width: 8),

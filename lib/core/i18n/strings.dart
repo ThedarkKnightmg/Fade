@@ -279,6 +279,139 @@ class L {
       _t('Credit topped up ✓', 'Кредит пополнен ✓', "Kredit to'ldirildi ✓");
 
   // ── Help & feedback ──
+  static String get clientWord => _t('Client', 'Клиент', 'Mijoz');
+  static String get beforeWord => _t('Before', 'До', 'Oldin');
+  static String get afterWord => _t('After', 'После', 'Keyin');
+  static String get dragToCompare => _t('Drag to compare',
+      'Потяните для сравнения', 'Solishtirish uchun torting');
+  static String get aiWorking => _t('Cutting your new look…',
+      'Создаём новый образ…', "Yangi qiyofa yaratilmoqda…");
+
+  // ── Chat ─────────────────────────────────────────────────────────────
+  static String get lastSeenRecently =>
+      _t('last seen recently', 'был(а) недавно', 'yaqinda kirgan');
+  static String get comingSoon =>
+      _t('Coming soon', 'Скоро', 'Tez orada');
+  static String get stickersBarber =>
+      _t('Barbershop', 'Барбершоп', 'Sartaroshxona');
+  static String get stickersReactions =>
+      _t('Reactions', 'Реакции', 'Reaksiyalar');
+
+  // ── Consent gate (first run) ─────────────────────────────────────────
+  static String get consentTitle =>
+      _t('Before we start', 'Прежде чем начать', 'Boshlashdan oldin');
+  static String get consentSub => _t(
+      'Please review and accept our terms. It takes a minute — you can read the full documents any time in Settings.',
+      'Пожалуйста, ознакомьтесь и примите наши условия. Полные документы всегда доступны в настройках.',
+      "Iltimos, shartlarimizni koʻrib chiqing va qabul qiling. Toʻliq hujjatlar sozlamalarda doim mavjud.");
+  static String get consentCheckbox => _t(
+      'I have read and agree to the Terms of Use and Privacy Policy',
+      'Я прочитал(а) и принимаю Условия использования и Политику конфиденциальности',
+      "Men Foydalanish shartlari va Maxfiylik siyosatini oʻqidim va roziman");
+  static String get consentOpenTerms =>
+      _t('Read Terms of Use', 'Условия использования', 'Foydalanish shartlari');
+  static String get consentOpenPrivacy => _t('Read Privacy Policy',
+      'Политика конфиденциальности', 'Maxfiylik siyosati');
+  static String get consentContinue =>
+      _t('Agree & continue', 'Принять и продолжить', 'Qabul qilib davom etish');
+  static String get consentAgeNote => _t(
+      'You must be 16 or older to use Fade.',
+      'Вам должно быть 16 лет или больше.',
+      "Fade’dan foydalanish uchun 16 yoshdan katta boʻlishingiz kerak.");
+
+  // ── Legal (Terms of Use / Privacy Policy) ────────────────────────────
+  static String get legalSection =>
+      _t('Legal', 'Правовая информация', 'Huquqiy');
+  static String get termsOfUse => _t(
+      'Terms of Use', 'Условия использования', 'Foydalanish shartlari');
+  static String get privacyPolicy => _t('Privacy Policy',
+      'Политика конфиденциальности', 'Maxfiylik siyosati');
+  static String get lastUpdated =>
+      _t('Last updated', 'Обновлено', 'Yangilangan');
+  // Acceptance line on the sign-in screen, built as
+  //   [prefix] (Terms of Use) [mid] (Privacy Policy) [suffix]
+  // so the two links stay tappable while each language keeps natural word order.
+  static String get agreePrefix => _t(
+      'By continuing, you agree to our ',
+      'Продолжая, вы соглашаетесь с ',
+      'Davom ettirib, siz ');
+  static String get agreeMid => _t(' and ', ' и ', ' va ');
+  static String get agreeSuffix =>
+      _t('.', '.', 'ga rozilik bildirasiz.');
+
+  // ── Reliability & loyalty ────────────────────────────────────────────
+  static String get relTrusted =>
+      _t('Trusted regular', 'Надёжный клиент', 'Ishonchli mijoz');
+  static String get relNew =>
+      _t('New client', 'Новый клиент', 'Yangi mijoz');
+  static String get relWatch =>
+      _t('Missed a slot before', 'Пропускал запись', 'Avval kelmagan');
+  static String get relRestricted =>
+      _t('Frequent no-shows', 'Часто не приходит', 'Tez-tez kelmaydi');
+  static String get trustedTag => _t('Trusted', 'Надёжный', 'Ishonchli');
+  static String get trustedPerk => _t('Instant booking, no deposit',
+      'Мгновенная бронь, без залога', "Tez band qilish, garovsiz");
+  static String trustedIn(int n) => _t(
+      n == 1 ? '1 visit to Trusted' : '$n visits to Trusted',
+      n == 1 ? '1 визит до статуса «Надёжный»' : '$n визита до «Надёжного»',
+      "$n tashrif — Ishonchli maqomga");
+  static String get trustedPerksTitle =>
+      _t('Trusted perks', 'Привилегии «Надёжного»', 'Ishonchli imtiyozlari');
+  // Fade Points cashback wallet.
+  static String get fadePointsSpend => _t('Ready to spend on your next cut',
+      'Можно потратить на следующую стрижку',
+      "Keyingi soch olishga sarflashga tayyor");
+  static String get fadePointsRule => _t(
+      'Earn on every cut · min 10,000 to spend · 6-month expiry',
+      'Баллы за каждую стрижку · от 10 000 · срок 6 мес.',
+      "Har olishda ball · 10 000 dan · 6 oy muddat");
+  static String get vipStatusTitle =>
+      _t('VIP progress', 'Прогресс VIP', 'VIP jarayoni');
+  static String pointsEarnedToast(int n) =>
+      _t('+$n Fade Points', '+$n баллов Fade', "+$n Fade ball");
+  // Referrals.
+  static String get inviteRow =>
+      _t('Invite friends & earn', 'Пригласить друзей', "Do‘stlarni taklif qiling");
+  static String get inviteTitle => _t('Invite friends, earn points',
+      'Пригласите друзей и зарабатывайте', "Do‘st taklif qiling, ball yig‘ing");
+  static String get inviteSub => _t(
+      'You earn 5,000 Fade Points when a friend gets their first cut.',
+      'Вы получаете 5 000 баллов, когда друг подстрижётся впервые.',
+      "Do‘stingiz birinchi marta soch oldirsa, 5 000 ball olasiz.");
+  static String get inviteYourCode => _t('Your code', 'Ваш код', 'Sizning kodingiz');
+  static String get inviteShare => _t('Share', 'Поделиться', 'Ulashish');
+  static String get inviteHaveCode =>
+      _t("Have a friend's code?", 'Есть код друга?', "Do‘st kodi bormi?");
+  static String get inviteApply => _t('Apply', 'Применить', 'Qo‘llash');
+  static String get inviteApplied => _t('Code applied — enjoy your first cut!',
+      'Код применён — приятной первой стрижки!',
+      "Kod qo‘llandi — birinchi olishdan zavqlaning!");
+  static String get inviteFailed =>
+      _t("That code didn't work", 'Код не подошёл', "Kod ishlamadi");
+  static String inviteShareMessage(String code) => _t(
+      'Book barbers on Fade ✂️ Use my code $code and we both win. https://fade.uz/i/$code',
+      'Барбершопы в Fade ✂️ Введи мой код $code — бонус нам обоим. https://fade.uz/i/$code',
+      "Fade’da sartaroshlar ✂️ Mening kodim $code — ikkalamizga bonus. https://fade.uz/i/$code");
+  static String get tPerkInstant => _t('Instant booking — no waiting to be confirmed',
+      'Мгновенная бронь — без ожидания подтверждения',
+      "Tez band qilish — tasdiqni kutmasdan");
+  static String get tPerkPriority => _t('Priority — you jump the barber’s queue',
+      'Приоритет — вы первыми в очереди барбера',
+      "Ustuvorlik — sartarosh navbatida birinchi");
+  static String get tPerkNoDeposit => _t('No deposit or card hold, ever',
+      'Никогда никакого залога', "Hech qachon garov yo‘q");
+  static String get tPerkFreeCancel => _t('Free cancellation — no late fees',
+      'Бесплатная отмена — без штрафов', "Bepul bekor qilish — jarimasiz");
+  static String get tPerkBadge => _t('A Trusted badge barbers see on your booking',
+      'Значок «Надёжный», который видит барбер',
+      "Sartarosh ko‘radigan Ishonchli nishoni");
+  static String freeCutIn(int n) => _t(
+      n == 1 ? '1 visit to a free cut' : '$n visits to a free cut',
+      n == 1 ? '1 визит до бесплатной' : '$n визита до бесплатной',
+      "$n tashrif — bepul olishga");
+  static String get freeCutReady =>
+      _t('Free cut earned!', 'Бесплатная стрижка!', 'Bepul soch olish!');
+
   static String get helpFeedback =>
       _t('Help & feedback', 'Помощь и отзыв', 'Yordam va fikr');
   static String get helpFeedbackSub => _t(

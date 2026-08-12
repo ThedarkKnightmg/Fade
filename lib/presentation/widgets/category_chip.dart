@@ -85,6 +85,67 @@ class FilterPill extends StatelessWidget {
   }
 }
 
+/// Filter as a TEXT TAB with a growing accent underline — no box, no border,
+/// no fill. Replaces the boxed pill row: the Shops/Barbers switch above is the
+/// primary (boxed) control, so the filters read as a quiet secondary strip
+/// beneath it instead of a second wall of buttons competing for attention.
+class FilterTab extends StatelessWidget {
+  const FilterTab({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      // IntrinsicWidth is REQUIRED: these tabs live in a horizontally
+      // scrolling list, where children get UNBOUNDED width. A stretch-aligned
+      // Column can't resolve that and collapses to nothing (the filters
+      // vanished). IntrinsicWidth pins the column to the label's own width,
+      // which is also exactly what the underline should span.
+      child: IntrinsicWidth(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          // stretch => the underline inherits the label's width for free.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            style: GoogleFonts.nunito(
+              fontSize: 15.5,
+              fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+              color: selected ? AppColors.accent : p.textSecondary,
+            ),
+            child: Text(label, textAlign: TextAlign.center),
+          ),
+          const SizedBox(height: 7),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            height: selected ? 3 : 0,
+            decoration: BoxDecoration(
+              color: AppColors.accent,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Filter chip with a count badge — "All Notes (26)" style.
 /// Active: ink pill, white text, lime count bubble.
 /// Idle: white pill, hairline border, grey count.

@@ -58,8 +58,15 @@ String _aiHairDescription(Hairstyle style, String color) {
   };
   // Reads as: "<style>, <colour> hair, photoreal…" — and we nudge the model to
   // keep the same person (the mask is what truly protects the face).
-  return '$desc, $c hair, photorealistic, sharp detail, natural hair texture, '
-      'same person, same face, unchanged facial features';
+  //
+  // The detail terms matter: Workers AI caps num_steps at 20, so we can't buy
+  // sharpness with more steps — the prompt is the only lever left. Naming the
+  // strand-level texture and the lighting is what stops the output reading as a
+  // soft blurry wig.
+  return '$desc, $c hair, photorealistic portrait photograph, '
+      'individual hair strands, sharp fine detail, realistic hair texture, '
+      'clean defined hairline, natural scalp, soft studio lighting, '
+      'high detail, 4k, same person, same face, unchanged facial features';
 }
 
 /// Caps the longest edge of [photo] at 768px (aspect-ratio preserved) before
@@ -651,176 +658,434 @@ class _ResultView extends StatelessWidget {
     final color = HairColor.options[colorIndex];
     final realistic = result?.ok == true;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 30),
+    final p = Paper.of(context);
+    // Hero-first layout: the look you're trying on fills the screen, and the
+    // controls sit in a panel beneath it. The old layout put the photo inside a
+    // scrolling form, so your own face scrolled away the moment you reached for
+    // a style — the one thing you actually came to look at.
+    return Column(
       children: [
-        Row(
-          children: [
-            Text(L.yourAiPreview, style: AppTypography.h2(context)),
-            const Spacer(),
-            CircleBtn(icon: Icons.close_rounded, size: 42, onTap: onClose),
-          ],
-        ),
-        const SizedBox(height: 14),
-        // The result image area.
-        ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: AspectRatio(
-            aspectRatio: 3 / 4,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (realistic)
-                  Image.memory(result!.image!,
-                      fit: BoxFit.cover, gaplessPlayback: true)
-                else ...[
-                  // Base photo (or demo face) + stylised preview overlay.
-                  if (photo == null)
-                    const CustomPaint(
-                      painter: FacePlaceholderPainter(
-                        skin: Color(0xFFE7C9A9),
-                        bg: Color(0xFF16243B),
-                      ),
-                    )
-                  else
-                    Image.memory(photo!,
-                        fit: BoxFit.cover,
-                        gaplessPlayback: true,
-                        errorBuilder: (_, __, ___) =>
-                            const ColoredBox(color: Color(0xFF16243B))),
-                  Center(
-                    child: FractionallySizedBox(
-                      widthFactor: 0.72,
-                      heightFactor: 0.66,
-                      alignment: const Alignment(0, -0.5),
-                      child: CustomPaint(
-                        painter: HairOverlayPainter(
-                          silhouette: style.silhouette,
-                          color: color,
-                        ),
-                      ),
+        Expanded(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // ── The look ──────────────────────────────────────────────
+              if (realistic && photo != null)
+                // A real render AND the original → let them drag between the
+                // two. Seeing the change IS the product.
+                _CompareView(before: photo!, after: result!.image!)
+              else if (realistic)
+                Image.memory(result!.image!,
+                    fit: BoxFit.cover, gaplessPlayback: true)
+              else ...[
+                if (photo == null)
+                  const CustomPaint(
+                    painter: FacePlaceholderPainter(
+                      skin: Color(0xFFE7C9A9),
+                      bg: Color(0xFF16243B),
                     ),
-                  ),
-                ],
-                if (generating)
-                  Container(
-                    color: AppColors.navy.withValues(alpha: 0.55),
-                    child: const Center(
-                      child: SizedBox(
-                        width: 30,
-                        height: 30,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
+                  )
+                else
+                  Image.memory(photo!,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, __, ___) =>
+                          const ColoredBox(color: Color(0xFF16243B))),
+                Center(
+                  child: FractionallySizedBox(
+                    widthFactor: 0.72,
+                    heightFactor: 0.66,
+                    alignment: const Alignment(0, -0.5),
+                    child: CustomPaint(
+                      painter: HairOverlayPainter(
+                        silhouette: style.silhouette,
+                        color: color,
                       ),
-                    ),
-                  ),
-                // Badge: realistic vs preview.
-                Positioned(
-                  left: 12,
-                  top: 12,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: realistic
-                          ? AppColors.accent
-                          : AppColors.navy.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          realistic
-                              ? Icons.auto_awesome_rounded
-                              : Icons.brush_rounded,
-                          size: 12,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          realistic ? L.stAiRender : L.stStylisedPreview,
-                          style: GoogleFonts.nunito(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
               ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        // Connect-AI banner when there's no realistic engine yet.
-        if (!realistic && !generating)
-          _ConnectAiBanner(onConnect: onConnect, message: result?.message),
-        // Real face read — shape, confidence and why the top cut suits it.
-        if (analysis != null) ...[
-          const SizedBox(height: 10),
-          _FaceReadCard(analysis: analysis!),
-        ],
-        const SizedBox(height: 14),
-        Text(L.pickACut, style: AppTypography.h3(context)),
-        const SizedBox(height: 10),
-        _StyleStrip(
-          selectedId: styleId,
-          onPick: onPickStyle,
-          recommendedId: analysis?.recommended.id,
-        ),
-        const SizedBox(height: 16),
-        Text(L.hairColour, style: AppTypography.h3(context)),
-        const SizedBox(height: 10),
-        _ColorStrip(selected: colorIndex, onPick: onPickColor),
-        const SizedBox(height: 18),
-        Row(
-          children: [
-            Expanded(
-              child: PrimaryButton(
-                label: L.newPhoto,
-                icon: Icons.cameraswitch_rounded,
-                height: 54,
-                style: PrimaryButtonStyle.ghost,
-                onPressed: onRetake,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: PrimaryButton(
-                label: L.bookThisLook,
-                height: 54,
-                onPressed: () {
-                  AppState.instance.setDesiredStyle(style.id);
-                  final my = AppState.instance.myBarber;
-                  final shop = my?.shop ?? MockData.barbershops.first;
-                  Navigator.of(context).push(
-                    FadeThroughPageRoute(
-                      child: BookingFlowScreen(
-                        shop: shop,
-                        preselectedBarberId: my?.barber.id,
+
+              // ── Top scrim so the controls stay readable on any photo ──
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                height: 130,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.45),
+                          Colors.black.withValues(alpha: 0),
+                        ],
                       ),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
+              Positioned(
+                left: 14,
+                right: 14,
+                top: 10,
+                child: Row(
+                  children: [
+                    _GlassBadge(
+                      icon: realistic
+                          ? Icons.auto_awesome_rounded
+                          : Icons.brush_rounded,
+                      label: realistic ? L.stAiRender : L.stStylisedPreview,
+                      accent: realistic,
+                    ),
+                    const Spacer(),
+                    _GlassIconBtn(
+                        icon: Icons.close_rounded, onTap: onClose),
+                  ],
+                ),
+              ),
+
+              // ── Working state: a scanning sweep, not a bare spinner ───
+              if (generating) _GeneratingOverlay(),
+            ],
+          ),
+        ),
+
+        // ── Controls panel ──────────────────────────────────────────────
+        Container(
+          decoration: BoxDecoration(
+            color: p.bg,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(26)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 24,
+                offset: const Offset(0, -6),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // One compact line instead of two stacked cards: what the AI
+                // read in your face, and the cut it suggests.
+                if (analysis != null) ...[
+                  _FaceReadLine(analysis: analysis!),
+                  const SizedBox(height: 12),
+                ],
+                if (!realistic && !generating) ...[
+                  _ConnectAiBanner(
+                      onConnect: onConnect, message: result?.message),
+                  const SizedBox(height: 12),
+                ],
+                _StyleStrip(
+                  selectedId: styleId,
+                  onPick: onPickStyle,
+                  recommendedId: analysis?.recommended.id,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ColorStrip(
+                          selected: colorIndex, onPick: onPickColor),
+                    ),
+                    const SizedBox(width: 10),
+                    _GhostSquare(
+                        icon: Icons.cameraswitch_rounded, onTap: onRetake),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                PrimaryButton(
+                  label: L.bookThisLook,
+                  height: 54,
+                  onPressed: () {
+                    AppState.instance.setDesiredStyle(style.id);
+                    final my = AppState.instance.myBarber;
+                    final shop = my?.shop ??
+                        (MockData.barbershops.isEmpty
+                            ? null
+                            : MockData.barbershops.first);
+                    if (shop == null) return; // empty catalogue → nothing to book
+                    Navigator.of(context).push(
+                      FadeThroughPageRoute(
+                        child: BookingFlowScreen(
+                          shop: shop,
+                          preselectedBarberId: my?.barber.id,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ],
     );
   }
 }
 
-/// Shows the *measured* face read: detected shape, a confidence chip, and the
-/// one-line reason the recommended cut fits. Makes the recommendation feel
-/// earned rather than random.
-class _FaceReadCard extends StatelessWidget {
-  const _FaceReadCard({required this.analysis});
+/// Before/after comparison — drag the handle to wipe between the original photo
+/// and the AI render. This is the payoff of the whole feature: a single result
+/// image tells you nothing about what actually changed.
+class _CompareView extends StatefulWidget {
+  const _CompareView({required this.before, required this.after});
+
+  final Uint8List before;
+  final Uint8List after;
+
+  @override
+  State<_CompareView> createState() => _CompareViewState();
+}
+
+class _CompareViewState extends State<_CompareView> {
+  double _split = 0.55; // fraction of width showing the "after"
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        void setFromDx(double dx) =>
+            setState(() => _split = (dx / c.maxWidth).clamp(0.06, 0.94));
+        return GestureDetector(
+          onHorizontalDragUpdate: (d) => setFromDx(d.localPosition.dx),
+          onTapDown: (d) => setFromDx(d.localPosition.dx),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // BEFORE fills the frame…
+              Image.memory(widget.before,
+                  fit: BoxFit.cover, gaplessPlayback: true),
+              // …and AFTER is revealed from the left up to the split.
+              ClipRect(
+                clipper: _LeftClipper(_split),
+                child: Image.memory(widget.after,
+                    fit: BoxFit.cover, gaplessPlayback: true),
+              ),
+              // Labels on each side of the divider.
+              Positioned(
+                left: 14,
+                bottom: 16,
+                child: _GlassBadge(label: L.afterWord, accent: true),
+              ),
+              Positioned(
+                right: 14,
+                bottom: 16,
+                child: _GlassBadge(label: L.beforeWord),
+              ),
+              // The divider + grab handle.
+              Positioned(
+                left: c.maxWidth * _split - 1,
+                top: 0,
+                bottom: 0,
+                width: 2,
+                child: const ColoredBox(color: Colors.white),
+              ),
+              Positioned(
+                left: c.maxWidth * _split - 20,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.28),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.code_rounded,
+                        size: 20, color: AppColors.accentDeep),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Clips a child to the left [fraction] of the available width.
+class _LeftClipper extends CustomClipper<Rect> {
+  _LeftClipper(this.fraction);
+  final double fraction;
+
+  @override
+  Rect getClip(Size size) =>
+      Rect.fromLTWH(0, 0, size.width * fraction, size.height);
+
+  @override
+  bool shouldReclip(_LeftClipper old) => old.fraction != fraction;
+}
+
+/// A translucent pill that stays legible over any photo.
+class _GlassBadge extends StatelessWidget {
+  const _GlassBadge({this.icon, required this.label, this.accent = false});
+
+  final IconData? icon;
+  final String label;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(icon == null ? 12 : 9, 6, 12, 6),
+      decoration: BoxDecoration(
+        color: accent
+            ? AppColors.accent.withValues(alpha: 0.92)
+            : Colors.black.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: Colors.white),
+            const SizedBox(width: 5),
+          ],
+          Text(
+            label,
+            style: GoogleFonts.nunito(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlassIconBtn extends StatelessWidget {
+  const _GlassIconBtn({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.45),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 21, color: Colors.white),
+      ),
+    );
+  }
+}
+
+class _GhostSquare extends StatelessWidget {
+  const _GhostSquare({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          color: p.cardAlt,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: p.border),
+        ),
+        child: Icon(icon, size: 21, color: p.textSecondary),
+      ),
+    );
+  }
+}
+
+/// While the model runs: a soft sweep across the photo, so it reads as the AI
+/// working on YOUR image rather than a generic spinner on a grey wash.
+class _GeneratingOverlay extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.navy.withValues(alpha: 0.45),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Breathe(
+            period: const Duration(milliseconds: 1500),
+            builder: (context, t) => Align(
+              alignment: Alignment(0, -1 + 2 * t),
+              child: Container(
+                height: 90,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: 0),
+                      Colors.white.withValues(alpha: 0.20),
+                      Colors.white.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation(Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  L.aiWorking,
+                  style: GoogleFonts.nunito(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The face read as ONE compact line (shape · confidence · why), replacing the
+/// old card so the panel keeps its room for the controls.
+class _FaceReadLine extends StatelessWidget {
+  const _FaceReadLine({required this.analysis});
 
   final StyleAnalysis analysis;
 
@@ -828,46 +1093,51 @@ class _FaceReadCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = Paper.of(context);
     final pct = (analysis.confidence * 100).round();
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: clayDecoration(p, color: p.cardAlt, radius: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.face_retouching_natural_rounded,
-                  size: 18, color: AppColors.accent),
-              const SizedBox(width: 8),
-              Text('${L.faceShapeLabel}: ${analysis.shape.label}',
-                  style: AppTypography.h4(context)),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.accentSoft,
-                  borderRadius: BorderRadius.circular(999),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.face_retouching_natural_rounded,
+                size: 16, color: AppColors.accent),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                '${analysis.shape.label} · ${analysis.recommended.name}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.nunito(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w900,
+                  color: p.text,
                 ),
-                child: Text('$pct% ${L.matchWord}',
-                    style: GoogleFonts.nunito(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.accentDeep)),
               ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(analysis.reason, style: AppTypography.bodySmall(context)),
-          if (analysis.alsoGood.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              '${L.alsoGreatOnYou}: '
-              '${analysis.alsoGood.map((s) => s.name).join(', ')}',
-              style: AppTypography.caption(context),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.accentSoft,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text('$pct% ${L.matchWord}',
+                  style: GoogleFonts.nunito(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.accentDeep)),
             ),
           ],
-        ],
-      ),
+        ),
+        const SizedBox(height: 3),
+        // The "why" — what makes the recommendation feel earned rather than
+        // random. One line, so it informs without eating the panel.
+        Text(
+          analysis.reason,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTypography.caption(context),
+        ),
+      ],
     );
   }
 }

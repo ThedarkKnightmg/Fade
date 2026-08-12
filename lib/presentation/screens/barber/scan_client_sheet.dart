@@ -4,12 +4,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
 import '../../widgets/paper_kit.dart';
+import '../../widgets/primary_button.dart';
+import 'qr_scanner_screen.dart';
 
 /// Barber "Check-in": the barber SHOWS this QR and the client scans it to
 /// confirm the visit (flipped from the old model where the barber scanned the
@@ -36,6 +39,36 @@ class _CheckInSheet extends StatefulWidget {
 
 class _CheckInSheetState extends State<_CheckInSheet> {
   String? _verifyingId;
+
+  /// Open the camera, scan a client's booking-ticket QR, and complete it on the
+  /// server (which mints the client's points + any referral, verifying we're the
+  /// assigned barber). Falls back to the local handshake for demo/offline.
+  Future<void> _scanTicket() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final raw = await navigator.push<String>(
+      FadeThroughPageRoute(
+          child: QrScannerScreen(title: L.scanClient, hint: L.scanPointHint)),
+    );
+    if (raw == null || !mounted) return;
+    final id = AppState.bookingIdFromQr(raw);
+    if (id == null) {
+      messenger.showSnackBar(SnackBar(content: Text(L.checkInNotBarberQr)));
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    final earned = await AppState.instance.completeScannedBooking(id);
+    if (!mounted) return;
+    navigator.maybePop();
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(earned != null && earned > 0
+            ? '${L.verifiedCheckedIn} · ${L.pointsEarnedToast(earned)}'
+            : L.verifiedCheckedIn),
+        behavior: SnackBarBehavior.floating,
+      ));
+  }
 
   Future<void> _verify(Booking b) async {
     setState(() => _verifyingId = b.id);
@@ -112,6 +145,14 @@ class _CheckInSheetState extends State<_CheckInSheet> {
                   const SizedBox(width: 10),
                   Text(L.checkInTitle, style: AppTypography.h2(context)),
                 ],
+              ),
+              const SizedBox(height: 14),
+              // Primary path: scan the client's ticket → server completion.
+              PrimaryButton(
+                label: L.scanClient,
+                icon: Icons.qr_code_scanner_rounded,
+                height: 52,
+                onPressed: _scanTicket,
               ),
               const SizedBox(height: 16),
               Flexible(

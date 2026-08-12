@@ -24,9 +24,18 @@ Future<void> main() async {
   await Notify.init();
   // Restore the saved profile + prefs so signed-in users skip onboarding.
   await AppState.instance.load();
-  // Pull the live shop catalogue (no-op unless SupabaseConfig.useRealCatalogue);
-  // falls back to the mock list on any error, so startup is never blocked.
-  await AppState.instance.loadCatalogue();
+  // Pull the live shop catalogue (no-op unless SupabaseConfig.useRealCatalogue).
+  // NOT awaited: on a cold start with bad signal this could hold the first frame
+  // for the full 8-second timeout, i.e. a frozen launch. The scissors intro
+  // covers the fetch, and loadCatalogue() calls notifyListeners() when it lands,
+  // so the catalogue repaints itself.
+  AppState.instance.loadCatalogue();
+  // Best-effort pull of the server-authoritative Fade-Points balance (Phase 3B);
+  // unawaited so it never blocks startup, falls back to the local mirror.
+  AppState.instance.refreshServerLoyalty();
+  // Pull bookings the server says are mine — as a client AND as a barber. This
+  // is what makes a request booked on one phone show up on the other one.
+  AppState.instance.syncBookings();
   // Localize dates/times to the saved language — without this every DateFormat
   // (weekday/month names) renders in English even in RU/UZ.
   await initializeDateFormatting();
@@ -47,17 +56,30 @@ class BarberApp extends StatefulWidget {
   State<BarberApp> createState() => _BarberAppState();
 }
 
-class _BarberAppState extends State<BarberApp> {
+class _BarberAppState extends State<BarberApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
     AppState.instance.addListener(_onState);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     AppState.instance.removeListener(_onState);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Coming back to the app re-pulls the server's view of my bookings and
+    // points, so a request made on another device (or a barber's accept) shows
+    // up without needing a restart.
+    if (state == AppLifecycleState.resumed) {
+      AppState.instance.syncBookings();
+      AppState.instance.refreshServerLoyalty();
+    }
   }
 
   void _onState() => setState(() {});

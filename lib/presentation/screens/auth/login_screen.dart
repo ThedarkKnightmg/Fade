@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/animations/app_animations.dart';
@@ -9,6 +10,7 @@ import '../../../data/app_state.dart';
 import '../../widgets/google_login_button.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/telegram_login_button.dart';
+import '../legal/legal_doc_screen.dart';
 import '../onboarding/barber_registration_screen.dart';
 import '../root_shell.dart';
 import 'register_screen.dart';
@@ -151,6 +153,11 @@ class LoginScreen extends StatelessWidget {
                 delay: const Duration(milliseconds: 270),
                 child: _TrustNote(isBarber: _isBarber),
               ),
+              const SizedBox(height: 14),
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 300),
+                child: const _AcceptanceLine(),
+              ),
               // No provider configured at all — only reachable in a misbuilt
               // release. Say so instead of showing an empty screen.
               if (!tg && !google)
@@ -162,6 +169,52 @@ class LoginScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The sign-in consent line. Google Play (and the Google API Services User Data
+/// policy) require the Terms and Privacy Policy to be reachable at sign-up; this
+/// is that link, with each document opening the native in-app reader. Built from
+/// prefix + two tappable labels + suffix so every language keeps natural order.
+class _AcceptanceLine extends StatelessWidget {
+  const _AcceptanceLine();
+
+  void _open(BuildContext context, String docKey) {
+    Navigator.of(context).push(
+      FadeThroughPageRoute(child: LegalDocScreen(docKey: docKey)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final base = AppTypography.caption(context);
+    final link = base.copyWith(
+      color: AppColors.accent,
+      fontWeight: FontWeight.w800,
+    );
+    return Text.rich(
+      TextSpan(
+        style: base.copyWith(color: p.textTertiary),
+        children: [
+          TextSpan(text: L.agreePrefix),
+          TextSpan(
+            text: L.termsOfUse,
+            style: link,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => _open(context, 'terms'),
+          ),
+          TextSpan(text: L.agreeMid),
+          TextSpan(
+            text: L.privacyPolicy,
+            style: link,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => _open(context, 'privacy'),
+          ),
+          TextSpan(text: L.agreeSuffix),
+        ],
       ),
     );
   }

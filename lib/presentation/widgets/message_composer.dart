@@ -19,11 +19,15 @@ class MessageComposer extends StatefulWidget {
     required this.controller,
     required this.onSend,
     this.hintText,
+    this.onSticker,
   });
 
   final TextEditingController controller;
   final VoidCallback onSend;
   final String? hintText;
+
+  /// Opens the sticker sheet. Null hides the sticker button.
+  final VoidCallback? onSticker;
 
   @override
   State<MessageComposer> createState() => _MessageComposerState();
@@ -80,28 +84,51 @@ class _MessageComposerState extends State<MessageComposer>
         children: [
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.only(left: 8, right: 8),
               decoration: BoxDecoration(
                 color: p.bg,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: p.border),
               ),
-              child: TextField(
-                controller: widget.controller,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _send(),
-                style: GoogleFonts.nunito(
-                    fontWeight: FontWeight.w600, color: p.text),
-                decoration: InputDecoration(
-                  isCollapsed: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                  border: InputBorder.none,
-                  hintText: widget.hintText,
-                  hintStyle: GoogleFonts.nunito(
-                      fontWeight: FontWeight.w600, color: p.textSecondary),
-                ),
+              // Telegram keeps the emoji and attachment glyphs INSIDE the
+              // field, flanking the text, rather than outside the pill.
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Sticker sheet — the emoji glyph now actually opens
+                  // something instead of being decoration.
+                  _FieldGlyph(
+                    icon: Icons.emoji_emotions_outlined,
+                    color: p.textTertiary,
+                    onTap: widget.onSticker,
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: widget.controller,
+                      minLines: 1,
+                      maxLines: 4,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _send(),
+                      style: GoogleFonts.nunito(
+                          fontWeight: FontWeight.w600, color: p.text),
+                      decoration: InputDecoration(
+                        isCollapsed: true,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 14),
+                        border: InputBorder.none,
+                        filled: false,
+                        hintText: widget.hintText,
+                        hintStyle: GoogleFonts.nunito(
+                            fontWeight: FontWeight.w600,
+                            color: p.textSecondary),
+                      ),
+                    ),
+                  ),
+                  _FieldGlyph(
+                    icon: Icons.attach_file_rounded,
+                    color: p.textTertiary,
+                  ),
+                ],
               ),
             ),
           ),
@@ -112,6 +139,31 @@ class _MessageComposerState extends State<MessageComposer>
             onTap: _send,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A flat glyph tucked inside the composer field (emoji / attach).
+class _FieldGlyph extends StatelessWidget {
+  const _FieldGlyph({required this.icon, required this.color, this.onTap});
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 11),
+        child: SizedBox(
+          width: 34,
+          height: 26,
+          child: Icon(icon, size: 21, color: color),
+        ),
       ),
     );
   }
@@ -166,6 +218,8 @@ class _SendButton extends StatelessWidget {
                 : null,
           ),
           child: ClipOval(
+            // Always the send arrow — no voice messages in Fade, so a mic would
+            // be a button that does nothing.
             child: AnimatedBuilder(
               animation: launch,
               builder: (context, _) => _LaunchGlyph(

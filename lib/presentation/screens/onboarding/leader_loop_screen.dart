@@ -1,3 +1,4 @@
+import '../../../core/map/map_attribution.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -363,6 +364,7 @@ class _LeaderLoopScreenState extends State<LeaderLoopScreen> {
                         keepBuffer: 3,
                         panBuffer: 1,
                       ),
+                      const MapAttribution(),
                     ],
                   ),
                   // Ground shadow at the true centre.

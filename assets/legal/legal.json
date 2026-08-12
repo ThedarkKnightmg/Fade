@@ -1,0 +1,765 @@
+{
+  "terms": {
+    "title": {
+      "en": "Terms of Use",
+      "ru": "Условия использования",
+      "uz": "Foydalanish shartlari"
+    },
+    "updated": "16 July 2026",
+    "intro": {
+      "en": "These Terms govern your use of the Fade mobile application (“Fade”), operated by Fade in Uzbekistan. By creating an account or using Fade, you agree to these Terms. If you do not agree, do not use Fade.",
+      "ru": "Настоящие Условия регулируют использование вами мобильного приложения Fade («Fade»), управляемого Fade в Узбекистане. Создавая учётную запись или используя Fade, вы соглашаетесь с настоящими Условиями. Если вы не согласны, не используйте Fade.",
+      "uz": "Ushbu Shartlar Oʻzbekistonda Fade tomonidan boshqariladigan Fade mobil ilovasidan (“Fade”) foydalanishingizni tartibga soladi. Hisob qaydnomasi yaratish yoki Fade’dan foydalanish orqali siz ushbu Shartlarga rozilik bildirasiz. Agar rozi boʻlmasangiz, Fade’dan foydalanmang."
+    },
+    "sections": [
+      {
+        "title": {
+          "en": "1. What Fade is — and what it is not",
+          "ru": "1. Что такое Fade — и чем оно не является",
+          "uz": "1. Fade nima va nima emas"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "Fade is a marketplace that connects clients with independent barbers and barbershops. Fade provides the platform for discovery, booking, and communication. **Fade does not provide haircut services itself** and is **not a party to the service agreement between a client and a barber**. Barbers are independent providers solely responsible for their own work, pricing, licensing, taxes, insurance, hygiene and conduct.",
+              "ru": "Fade — это площадка, которая связывает клиентов с независимыми барберами и барбершопами. Fade предоставляет платформу для поиска, бронирования и общения. **Fade сам не оказывает услуги по стрижке** и **не является стороной договора об оказании услуг между клиентом и барбером**. Барберы являются независимыми исполнителями, единолично отвечающими за собственную работу, ценообразование, лицензирование, налоги, страхование, гигиену и поведение.",
+              "uz": "Fade — bu mijozlarni mustaqil sartaroshlar va sartaroshxonalar bilan bogʻlaydigan bozor maydonchasi. Fade qidirish, band qilish va aloqa uchun platforma taqdim etadi. **Fade soch olish xizmatlarini oʻzi koʻrsatmaydi** va **mijoz bilan sartarosh oʻrtasidagi xizmat shartnomasining tarafi emas**. Sartaroshlar mustaqil provayderlar boʻlib, oʻz ishi, narxlari, litsenziyasi, soliqlari, sugʻurtasi, gigiyenasi va xatti-harakati uchun yolgʻiz oʻzlari javobgardir."
+            }
+          },
+          {
+            "type": "p",
+            "text": {
+              "en": "**We do not vet, background-check, or supervise users.** Any badge, rating, “verified” marker or similar indicator reflects only limited automated checks (for example, that a phone number was confirmed) and nothing more. It is not a guarantee of a barber’s identity, skill, licensing, safety, hygiene or suitability. You are responsible for your own choices about which barbers to see and for your conduct at appointments.",
+              "ru": "**Мы не проверяем, не проводим проверку биографии и не контролируем пользователей.** Любой значок, рейтинг, отметка «подтверждён» или аналогичный индикатор отражает лишь ограниченные автоматические проверки (например, что номер телефона был подтверждён) и ничего более. Это не является гарантией личности барбера, его навыков, лицензирования, безопасности, гигиены или пригодности. Вы несёте ответственность за собственный выбор того, к каким барберам обращаться, и за своё поведение на приёмах.",
+              "uz": "**Biz foydalanuvchilarni tekshirmaymiz, ularning shaxsiy tarixini oʻrganmaymiz yoki nazorat qilmaymiz.** Har qanday nishon, reyting, “tasdiqlangan” belgisi yoki shunga oʻxshash koʻrsatkich faqat cheklangan avtomatik tekshiruvlarni (masalan, telefon raqami tasdiqlanganini) aks ettiradi, boshqa hech narsani emas. Bu sartaroshning shaxsi, mahorati, litsenziyasi, xavfsizligi, gigiyenasi yoki muvofiqligi kafolati emas. Qaysi sartaroshlarga borishni tanlash va qabul vaqtidagi xatti-harakatingiz uchun oʻzingiz javobgarsiz."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "2. Eligibility & accounts",
+          "ru": "2. Право на использование и учётные записи",
+          "uz": "2. Foydalanish huquqi va hisob qaydnomalari"
+        },
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              {
+                "en": "You must be at least 16 years old to use Fade.",
+                "ru": "Для использования Fade вам должно быть не менее 16 лет.",
+                "uz": "Fade’dan foydalanish uchun kamida 16 yoshda boʻlishingiz kerak."
+              },
+              {
+                "en": "You must provide accurate information and keep your account details current.",
+                "ru": "Вы обязаны предоставлять достоверную информацию и поддерживать данные своей учётной записи в актуальном состоянии.",
+                "uz": "Siz aniq maʼlumot taqdim etishingiz va hisob qaydnomangiz maʼlumotlarini dolzarb saqlashingiz kerak."
+              },
+              {
+                "en": "Sign-in uses a phone number verified through Telegram, a Google account, or an SMS code. You are responsible for activity on your account.",
+                "ru": "Вход выполняется по номеру телефона, подтверждённому через Telegram, учётную запись Google или SMS-код. Вы несёте ответственность за действия в своей учётной записи.",
+                "uz": "Tizimga kirish Telegram orqali tasdiqlangan telefon raqami, Google hisobi yoki SMS kodi orqali amalga oshiriladi. Hisob qaydnomangizdagi faoliyat uchun siz javobgarsiz."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "3. Bookings",
+          "ru": "3. Бронирования",
+          "uz": "3. Band qilishlar"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "A booking is a request to a barber, who may confirm or decline it. A confirmed booking is an arrangement between you and the barber. Please arrive on time and cancel in good time if your plans change.",
+              "ru": "Бронирование — это запрос барберу, который может подтвердить или отклонить его. Подтверждённое бронирование является договорённостью между вами и барбером. Пожалуйста, приходите вовремя и заблаговременно отменяйте бронирование, если ваши планы меняются.",
+              "uz": "Band qilish — bu sartaroshga yuborilgan soʻrov boʻlib, u uni tasdiqlashi yoki rad etishi mumkin. Tasdiqlangan band qilish — bu siz va sartarosh oʻrtasidagi kelishuv. Iltimos, oʻz vaqtida yeting va rejalaringiz oʻzgarsa, oldindan bekor qiling."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "4. Cancellations, no-shows, fees & refunds",
+          "ru": "4. Отмены, неявки, сборы и возвраты",
+          "uz": "4. Bekor qilishlar, kelmay qolishlar, toʻlovlar va pul qaytarishlar"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "To protect barbers’ time, Fade may apply cancellation or no-show fees where a client fails to attend a confirmed booking without cancelling in reasonable time. Any such fees, and any platform commission charged to barbers, are shown in the app before they apply. Where payment features are enabled they are provided through third-party payment providers; Fade does not store your full card details. We may introduce, vary or withdraw fees, commission rates and payment features at any time, effective for bookings made after the change is shown in the app.",
+              "ru": "В целях защиты времени барберов Fade может применять сборы за отмену или неявку в случаях, когда клиент не является на подтверждённое бронирование, не отменив его в разумный срок. Любые такие сборы, а также любая комиссия платформы, взимаемая с барберов, отображаются в приложении до их применения. Там, где включены платёжные функции, они предоставляются через сторонних поставщиков платёжных услуг; Fade не хранит полные данные вашей карты. Мы можем вводить, изменять или отменять сборы, ставки комиссии и платёжные функции в любое время, с вступлением в силу для бронирований, сделанных после того, как изменение отображено в приложении.",
+              "uz": "Sartaroshlarning vaqtini himoya qilish uchun, agar mijoz oqilona vaqt ichida bekor qilmasdan tasdiqlangan band qilishga kelmasa, Fade bekor qilish yoki kelmay qolish toʻlovlarini qoʻllashi mumkin. Bunday har qanday toʻlovlar va sartaroshlardan olinadigan har qanday platforma komissiyasi ular qoʻllanilishidan oldin ilovada koʻrsatiladi. Toʻlov funksiyalari yoqilgan joyda ular uchinchi tomon toʻlov provayderlari orqali taqdim etiladi; Fade sizning toʻliq karta maʼlumotlaringizni saqlamaydi. Biz istalgan vaqtda toʻlovlar, komissiya stavkalari va toʻlov funksiyalarini joriy etishimiz, oʻzgartirishimiz yoki bekor qilishimiz mumkin boʻlib, bu oʻzgarish ilovada koʻrsatilgandan keyin amalga oshirilgan band qilishlar uchun kuchga kiradi."
+            }
+          },
+          {
+            "type": "p",
+            "text": {
+              "en": "**All fees, commissions, subscription charges, boosts and other amounts paid to Fade are final and non-refundable, to the maximum extent permitted by law.** Cancelling a booking, changing your mind, not attending, or being dissatisfied with a haircut does not entitle you to a refund of any Fade fee. Because Fade does not provide the haircut and is not a party to the service (section 1), **Fade is not responsible for refunds, redos, discounts or price disputes in respect of the service itself** — those are solely between the client and the barber, and Fade has no obligation to mediate, reverse, fund or intervene in them. Where money is genuinely owed to a barber for a completed booking, it is paid to the barber under the payout terms shown in the app; it is not a refund from Fade to the client. Nothing in this section removes a refund right that applicable law makes mandatory and that cannot be waived.",
+              "ru": "**Все сборы, комиссии, платежи за подписку, продвижения и иные суммы, уплаченные Fade, являются окончательными и не подлежат возврату в максимальной степени, допускаемой законом.** Отмена бронирования, изменение вашего решения, неявка или неудовлетворённость стрижкой не даёт вам права на возврат какого-либо сбора Fade. Поскольку Fade не оказывает услугу стрижки и не является стороной услуги (раздел 1), **Fade не несёт ответственности за возвраты, переделки, скидки или ценовые споры в отношении самой услуги** — они касаются исключительно клиента и барбера, и Fade не обязан выступать посредником, отменять, финансировать или вмешиваться в них. Там, где деньги действительно причитаются барберу за выполненное бронирование, они выплачиваются барберу в соответствии с условиями выплат, отображёнными в приложении; это не является возвратом от Fade клиенту. Ничто в настоящем разделе не отменяет право на возврат, которое применимое законодательство делает обязательным и от которого нельзя отказаться.",
+              "uz": "**Fade’ga toʻlangan barcha toʻlovlar, komissiyalar, obuna toʻlovlari, kuchaytirishlar va boshqa summalar qonun ruxsat etgan maksimal darajada yakuniy va qaytarilmaydi.** Band qilishni bekor qilish, fikringizni oʻzgartirish, kelmaslik yoki soch olishdan norozi boʻlish sizga hech qanday Fade toʻlovini qaytarish huquqini bermaydi. Fade soch olish xizmatini koʻrsatmagani va xizmatning tarafi boʻlmagani uchun (1-boʻlim), **Fade xizmatning oʻziga nisbatan pul qaytarishlar, qayta bajarishlar, chegirmalar yoki narx nizolari uchun javobgar emas** — bular faqat mijoz va sartarosh oʻrtasidadir va Fade ularda vositachilik qilish, bekor qilish, moliyalashtirish yoki aralashish majburiyatiga ega emas. Bajarilgan band qilish uchun sartaroshga haqiqatan pul qarzdor boʻlgan holda, u ilovada koʻrsatilgan toʻlov shartlari asosida sartaroshga toʻlanadi; bu Fade’dan mijozga pul qaytarish emas. Ushbu boʻlimdagi hech narsa amaldagi qonun majburiy qilgan va voz kechib boʻlmaydigan pul qaytarish huquqini bekor qilmaydi."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "5. Points, wallet balances & promotional items",
+          "ru": "5. Баллы, балансы кошелька и рекламные объекты",
+          "uz": "5. Ballar, hamyon balanslari va targʻibot buyumlari"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "Fade may offer loyalty points, streaks, promotional boosts, subscription tiers, in-app wallet balances and similar items. Except where they represent money actually owed to a barber for completed bookings, **these items have no monetary value, are not your property, are not redeemable for cash, and cannot be transferred or sold.** We may change, devalue, suspend, expire or withdraw any such item, or the programme as a whole, at any time and without compensation. Balances representing money owed for completed bookings are payable in accordance with the payout terms shown in the app.",
+              "ru": "Fade может предлагать баллы лояльности, серии, рекламные продвижения, уровни подписки, балансы кошелька в приложении и аналогичные объекты. За исключением случаев, когда они представляют деньги, фактически причитающиеся барберу за выполненные бронирования, **эти объекты не имеют денежной стоимости, не являются вашей собственностью, не подлежат обмену на наличные и не могут быть переданы или проданы.** Мы можем изменять, обесценивать, приостанавливать, аннулировать по истечении срока или отзывать любой такой объект либо программу в целом в любое время и без компенсации. Балансы, представляющие деньги, причитающиеся за выполненные бронирования, подлежат выплате в соответствии с условиями выплат, отображёнными в приложении.",
+              "uz": "Fade sodiqlik ballari, ketma-ketliklar, targʻibot kuchaytirishlari, obuna darajalari, ilova ichidagi hamyon balanslari va shunga oʻxshash buyumlarni taklif qilishi mumkin. Ular bajarilgan band qilishlar uchun sartaroshga haqiqatan qarzdor boʻlgan pulni ifodalagan hollar bundan mustasno, **bu buyumlar pul qiymatiga ega emas, sizning mulkingiz emas, naqd pulga almashtirilmaydi va oʻtkazib yoki sotib boʻlmaydi.** Biz istalgan vaqtda va hech qanday tovon toʻlamasdan har qanday bunday buyumni yoki dasturni butunligicha oʻzgartirishimiz, qiymatini tushirishimiz, toʻxtatib turishimiz, muddatini tugatishimiz yoki bekor qilishimiz mumkin. Bajarilgan band qilishlar uchun qarzdor boʻlgan pulni ifodalovchi balanslar ilovada koʻrsatilgan toʻlov shartlariga muvofiq toʻlanadi."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "6. Reviews and content you post",
+          "ru": "6. Отзывы и контент, который вы публикуете",
+          "uz": "6. Sharhlar va siz joylashtirgan kontent"
+        },
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              {
+                "en": "You may post reviews, photos, and messages. You are responsible for what you post and must have the right to post it.",
+                "ru": "Вы можете публиковать отзывы, фотографии и сообщения. Вы несёте ответственность за то, что публикуете, и должны иметь право на публикацию этого.",
+                "uz": "Siz sharhlar, fotosuratlar va xabarlar joylashtirishingiz mumkin. Siz joylashtirgan narsangiz uchun javobgarsiz va uni joylashtirish huquqiga ega boʻlishingiz kerak."
+              },
+              {
+                "en": "Reviews must reflect genuine experiences. Fake, incentivised, or malicious reviews are prohibited, and may be limited to clients with a completed booking.",
+                "ru": "Отзывы должны отражать подлинный опыт. Поддельные, оплаченные или злонамеренные отзывы запрещены, а возможность оставлять отзывы может быть ограничена кругом клиентов с выполненным бронированием.",
+                "uz": "Sharhlar haqiqiy tajribalarni aks ettirishi kerak. Soxta, ragʻbatlantirilgan yoki gʻarazli sharhlar taqiqlanadi va bajarilgan band qilishga ega mijozlar bilan cheklanishi mumkin."
+              },
+              {
+                "en": "Do not post unlawful, hateful, deceptive, or infringing content. We may remove or refuse any content, at our discretion and without notice, but we are under no obligation to monitor, screen or moderate content and do not endorse anything users post.",
+                "ru": "Не публикуйте незаконный, разжигающий ненависть, вводящий в заблуждение или нарушающий права контент. Мы можем удалять или отклонять любой контент по своему усмотрению и без уведомления, но мы не обязаны отслеживать, проверять или модерировать контент и не одобряем то, что публикуют пользователи.",
+                "uz": "Noqonuniy, nafratli, aldamchi yoki huquqbuzarlik kontentini joylashtirmang. Biz oʻz xohishimizga koʻra va ogohlantirishsiz har qanday kontentni olib tashlashimiz yoki rad etishimiz mumkin, biroq biz kontentni kuzatish, tekshirish yoki moderatsiya qilish majburiyatiga ega emasmiz va foydalanuvchilar joylashtirgan hech narsani maʼqullamaymiz."
+              },
+              {
+                "en": "By posting content you grant us a worldwide, non-exclusive, royalty-free, transferable, sub-licensable licence to host, store, reproduce, adapt, publish and display it for the purpose of operating and promoting Fade. If you close your account, we will remove content that identifies you, including photos of you; a review or rating you left may remain in anonymised form (without your name or profile photo) so a barber’s overall record stays accurate, and the licence above continues for that anonymised content only.",
+                "ru": "Публикуя контент, вы предоставляете нам всемирную, неисключительную, безвозмездную, передаваемую, сублицензируемую лицензию на его размещение, хранение, воспроизведение, адаптацию, публикацию и отображение в целях функционирования и продвижения Fade. Если вы закроете свою учётную запись, мы удалим контент, идентифицирующий вас, включая ваши фотографии; оставленный вами отзыв или оценка может сохраниться в анонимизированной форме (без вашего имени или фотографии профиля), чтобы общая репутация барбера оставалась точной, и указанная выше лицензия продолжает действовать только в отношении такого анонимизированного контента.",
+                "uz": "Kontent joylashtirish orqali siz bizga Fade’ni ishlatish va targʻib qilish maqsadida uni joylashtirish, saqlash, koʻpaytirish, moslashtirish, nashr etish va namoyish qilish uchun butun dunyo boʻyicha, eksklyuziv boʻlmagan, royaltisiz, oʻtkaziladigan, quyi litsenziyalanadigan litsenziya berasiz. Agar hisob qaydnomangizni yopsangiz, biz sizni aniqlaydigan kontentni, jumladan sizning fotosuratlaringizni olib tashlaymiz; siz qoldirgan sharh yoki reyting sartaroshning umumiy yozuvi aniq boʻlib qolishi uchun anonimlashtirilgan shaklda (ismingiz yoki profil fotosuratisiz) qolishi mumkin va yuqoridagi litsenziya faqat oʻsha anonimlashtirilgan kontent uchun davom etadi."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "7. Acceptable use",
+          "ru": "7. Допустимое использование",
+          "uz": "7. Maqbul foydalanish"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "Do not misuse Fade: no impersonation, no attempts to defraud clients or barbers, no interference with the app’s security, no automated scraping of other users’ data, and no use of the app for anything unlawful.",
+              "ru": "Не злоупотребляйте Fade: никакого выдавания себя за других, никаких попыток обмануть клиентов или барберов, никакого вмешательства в безопасность приложения, никакого автоматизированного сбора данных других пользователей и никакого использования приложения для чего-либо незаконного.",
+              "uz": "Fade’ni suiisteʼmol qilmang: oʻzingizni boshqa shaxs qilib koʻrsatmang, mijozlar yoki sartaroshlarni aldashga urinmang, ilovaning xavfsizligiga aralashmang, boshqa foydalanuvchilar maʼlumotlarini avtomatik yigʻmang va ilovadan biror noqonuniy maqsadda foydalanmang."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "8. Barbers & shops",
+          "ru": "8. Барберы и салоны",
+          "uz": "8. Sartaroshlar va sartaroshxonalar"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "If you list yourself as a barber or create a shop, you confirm you are entitled to offer those services, that your information and photos are accurate and yours to use, and that you will honour confirmed bookings. Creating a shop on the map represents that the shop is real. You act as an independent provider, not our employee, agent or partner, and you are solely responsible for your licensing, permits, taxes, insurance, health and safety obligations, and for the service you deliver. If you receive a client’s personal data through Fade, you must use it only to carry out that booking, keep it secure, not use it for marketing or any other purpose without the client’s consent, and comply with applicable data-protection law; you are an independent controller of that data and responsible for your own compliance. You will indemnify us in accordance with section 13 for any claim arising from your services, your listing, or your handling of client data.",
+              "ru": "Если вы регистрируетесь как барбер или создаёте салон, вы подтверждаете, что имеете право предлагать эти услуги, что ваша информация и фотографии достоверны и вы вправе их использовать, и что вы будете исполнять подтверждённые бронирования. Создание салона на карте означает подтверждение того, что салон реален. Вы действуете как независимый исполнитель, а не как наш работник, агент или партнёр, и вы единолично несёте ответственность за своё лицензирование, разрешения, налоги, страхование, обязательства в области охраны здоровья и безопасности, а также за оказываемую вами услугу. Если вы получаете персональные данные клиента через Fade, вы должны использовать их только для выполнения этого бронирования, обеспечивать их безопасность, не использовать их для маркетинга или любой иной цели без согласия клиента и соблюдать применимое законодательство о защите данных; вы являетесь независимым контролёром этих данных и отвечаете за собственное соблюдение требований. Вы обязуетесь возместить нам убытки в соответствии с разделом 13 по любому требованию, вытекающему из ваших услуг, вашего объявления или вашего обращения с данными клиента.",
+              "uz": "Agar oʻzingizni sartarosh sifatida roʻyxatga olsangiz yoki sartaroshxona yaratsangiz, siz oʻsha xizmatlarni taklif qilish huquqiga ega ekanligingizni, maʼlumot va fotosuratlaringiz aniq va foydalanishga oʻzingizga tegishli ekanligini hamda tasdiqlangan band qilishlarni bajarishingizni tasdiqlaysiz. Xaritada sartaroshxona yaratish sartaroshxona haqiqiy ekanligini bildiradi. Siz bizning xodimimiz, agentimiz yoki hamkorimiz emas, balki mustaqil provayder sifatida ish yuritasiz va oʻz litsenziyangiz, ruxsatnomalaringiz, soliqlaringiz, sugʻurtangiz, sogʻliq va xavfsizlik majburiyatlaringiz hamda koʻrsatadigan xizmatingiz uchun yolgʻiz oʻzingiz javobgarsiz. Agar Fade orqali mijozning shaxsiy maʼlumotlarini olsangiz, undan faqat oʻsha band qilishni bajarish uchun foydalanishingiz, uni xavfsiz saqlashingiz, mijozning roziligisiz marketing yoki boshqa har qanday maqsadda foydalanmasligingiz va amaldagi maʼlumotlarni himoya qilish qonuniga rioya qilishingiz kerak; siz oʻsha maʼlumotlarning mustaqil nazoratchisisiz va oʻzingiz qonunga rioya qilishingiz uchun javobgarsiz. Xizmatlaringiz, roʻyxatingiz yoki mijoz maʼlumotlarini qayta ishlashingizdan kelib chiqadigan har qanday daʼvo uchun 13-boʻlimga muvofiq bizning zararimizni qoplaysiz."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "9. AI features",
+          "ru": "9. Функции ИИ",
+          "uz": "9. Sunʼiy intellekt funksiyalari"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "Any AI hairstyle preview or similar generated imagery is **illustrative only**. It is an approximation produced by an automated system, is not a prediction or promise of any real-world result, and must not be relied on. A barber is under no obligation to reproduce it. We make no representation as to the accuracy, suitability or appropriateness of generated output.",
+              "ru": "Любой предпросмотр причёски с помощью ИИ или аналогичное сгенерированное изображение носит **исключительно иллюстративный характер**. Это приближение, созданное автоматизированной системой, оно не является прогнозом или обещанием какого-либо реального результата и на него нельзя полагаться. Барбер не обязан воспроизводить его. Мы не даём никаких заверений относительно точности, пригодности или уместности сгенерированного результата.",
+              "uz": "Har qanday sunʼiy intellekt soch turmagi koʻrinishi yoki shunga oʻxshash yaratilgan tasvir **faqat tasviriy xarakterga ega**. Bu avtomatlashtirilgan tizim tomonidan yaratilgan taxminiy koʻrinish boʻlib, hech qanday real natijaning bashorati yoki vaʼdasi emas va unga tayanmaslik kerak. Sartarosh uni takrorlash majburiyatiga ega emas. Biz yaratilgan natijaning aniqligi, mosligi yoki maqbulligi haqida hech qanday kafolat bermaymiz."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "10. Availability & changes to the service",
+          "ru": "10. Доступность и изменения сервиса",
+          "uz": "10. Xizmatning mavjudligi va oʻzgarishlari"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "We may add, modify, suspend, limit or discontinue Fade or any of its features, in whole or in part, at any time and without notice or liability. We can’t promise that Fade will always be available, uninterrupted, timely, secure or error-free, or that data will never be lost, and we are not obliged to retain or provide copies of your content.",
+              "ru": "Мы можем добавлять, изменять, приостанавливать, ограничивать или прекращать Fade или любую из его функций, полностью или частично, в любое время и без уведомления или ответственности. Мы не можем обещать, что Fade всегда будет доступен, бесперебоен, своевременен, безопасен или свободен от ошибок, или что данные никогда не будут утеряны, и мы не обязаны сохранять или предоставлять копии вашего контента.",
+              "uz": "Biz istalgan vaqtda, ogohlantirishsiz yoki javobgarliksiz Fade’ni yoki uning har qanday funksiyalarini toʻliq yoki qisman qoʻshishimiz, oʻzgartirishimiz, toʻxtatib turishimiz, cheklashimiz yoki bekor qilishimiz mumkin. Biz Fade doimo mavjud, uzluksiz, oʻz vaqtida, xavfsiz yoki xatosiz boʻlishini yoki maʼlumotlar hech qachon yoʻqolmasligini vaʼda qila olmaymiz va kontentingiz nusxalarini saqlash yoki taqdim etish majburiyatiga ega emasmiz."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "11. Disclaimers",
+          "ru": "11. Оговорки об отказе от ответственности",
+          "uz": "11. Kafolatlarni rad etish"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "We want Fade to work well for you, but we do not warrant that it will. To the fullest extent permitted by law, **Fade is provided “as is” and “as available”, without warranties of any kind, whether express, implied or statutory**, including any implied warranties of merchantability, satisfactory quality, fitness for a particular purpose, accuracy, or non-infringement.",
+              "ru": "Мы хотим, чтобы Fade хорошо работал для вас, но мы не гарантируем этого. В максимальной степени, допускаемой законом, **Fade предоставляется «как есть» и «как доступно», без каких-либо гарантий, будь то явных, подразумеваемых или установленных законом**, включая любые подразумеваемые гарантии товарной пригодности, удовлетворительного качества, пригодности для конкретной цели, точности или ненарушения прав.",
+              "uz": "Biz Fade siz uchun yaxshi ishlashini istaymiz, biroq buni kafolatlamaymiz. Qonun ruxsat etgan eng toʻliq darajada, **Fade “boricha” va “mavjud holicha” taqdim etiladi, hech qanday turdagi kafolatlarsiz, xoh oshkora, xoh nazarda tutilgan, xoh qonuniy boʻlsin**, jumladan sotuvga yaroqlilik, qoniqarli sifat, muayyan maqsadga muvofiqlik, aniqlik yoki huquqbuzarlik yoʻqligi haqidagi har qanday nazarda tutilgan kafolatlarsiz."
+            }
+          },
+          {
+            "type": "p",
+            "text": {
+              "en": "In particular, we can’t promise that any barber will meet your expectations, that listings, availability, prices, ratings or distances are accurate or current, that bookings will be honoured, or that any user is who they claim to be. The haircut and any related service is the barber’s responsibility alone.",
+              "ru": "В частности, мы не можем обещать, что какой-либо барбер оправдает ваши ожидания, что объявления, доступность, цены, рейтинги или расстояния точны или актуальны, что бронирования будут исполнены или что какой-либо пользователь является тем, за кого себя выдаёт. Стрижка и любая связанная с ней услуга являются исключительной ответственностью барбера.",
+              "uz": "Xususan, biz biror sartarosh sizning kutganlaringizga javob berishini, roʻyxatlar, mavjudlik, narxlar, reytinglar yoki masofalar aniq yoki dolzarb ekanligini, band qilishlar bajarilishini yoki biror foydalanuvchi oʻzini kim deb daʼvo qilsa oʻsha ekanligini vaʼda qila olmaymiz. Soch olish va har qanday tegishli xizmat faqat sartaroshning javobgarligidir."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "12. Limitation of liability",
+          "ru": "12. Ограничение ответственности",
+          "uz": "12. Javobgarlikni cheklash"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "**You choose which barbers to visit and how you use Fade, and you are responsible for those decisions and for your interactions with other users.** To the fullest extent permitted by law:",
+              "ru": "**Вы выбираете, к каким барберам обращаться и как использовать Fade, и вы несёте ответственность за эти решения и за ваше взаимодействие с другими пользователями.** В максимальной степени, допускаемой законом:",
+              "uz": "**Qaysi sartaroshlarga tashrif buyurishni va Fade’dan qanday foydalanishni siz tanlaysiz va oʻsha qarorlar hamda boshqa foydalanuvchilar bilan oʻzaro munosabatlaringiz uchun siz javobgarsiz.** Qonun ruxsat etgan eng toʻliq darajada:"
+            }
+          },
+          {
+            "type": "ul",
+            "items": [
+              {
+                "en": "We are not liable for any indirect, incidental, special, punitive or consequential loss, or for loss of profit, revenue, goodwill, opportunity or data, however arising.",
+                "ru": "Мы не несём ответственности за любые косвенные, случайные, специальные, штрафные или опосредованные убытки, а также за упущенную выгоду, потерю дохода, деловой репутации, возможностей или данных, каким бы образом они ни возникли.",
+                "uz": "Biz qanday yuzaga kelishidan qatʼi nazar, har qanday bilvosita, tasodifiy, maxsus, jazoviy yoki oqibatli zarar uchun yoki foyda, daromad, ishbilarmonlik obroʻsi, imkoniyat yoki maʼlumot yoʻqotilishi uchun javobgar emasmiz."
+              },
+              {
+                "en": "**We are not liable for, and owe no compensation for, any disappointment, dissatisfaction, distress, emotional, moral or reputational harm, embarrassment, wasted time or expense, or for the outcome, quality or safety of any haircut or service**, however caused.",
+                "ru": "**Мы не несём ответственности и не выплачиваем компенсацию за любое разочарование, неудовлетворённость, страдание, эмоциональный, моральный или репутационный вред, смущение, потраченное впустую время или расходы, а также за результат, качество или безопасность любой стрижки или услуги**, какова бы ни была их причина.",
+                "uz": "**Biz har qanday umidsizlik, norozilik, ruhiy iztirob, hissiy, maʼnaviy yoki obroʻga oid zarar, xijolat, behuda sarflangan vaqt yoki xarajat uchun, yoxud har qanday soch olish yoki xizmatning natijasi, sifati yoki xavfsizligi uchun javobgar emasmiz va tovon toʻlamaymiz**, u qanday sodir boʻlishidan qatʼi nazar."
+              },
+              {
+                "en": "We are not liable for the acts, omissions, conduct or content of any barber, client or other third party, including anything that occurs before, during or after an appointment.",
+                "ru": "Мы не несём ответственности за действия, бездействие, поведение или контент любого барбера, клиента или иного третьего лица, включая всё, что происходит до, во время или после приёма.",
+                "uz": "Biz har qanday sartarosh, mijoz yoki boshqa uchinchi tomonning xatti-harakatlari, harakatsizligi, yurish-turishi yoki kontenti uchun, jumladan qabuldan oldin, uning davomida yoki keyin yuzaga keladigan har qanday narsa uchun javobgar emasmiz."
+              },
+              {
+                "en": "**Our total aggregate liability arising out of or in connection with these Terms or your use of Fade is limited to the greater of (a) the total fees or commission you actually paid to us in the three (3) months immediately before the event giving rise to the claim, or (b) 500,000 UZS.**",
+                "ru": "**Наша совокупная общая ответственность, вытекающая из настоящих Условий или в связи с ними либо с вашим использованием Fade, ограничена большей из величин: (a) общей суммой сборов или комиссии, фактически уплаченных вами нам за три (3) месяца, непосредственно предшествующих событию, послужившему основанием для требования, или (b) 500,000 UZS.**",
+                "uz": "**Ushbu Shartlardan yoki Fade’dan foydalanishingizdan kelib chiqadigan yoki ular bilan bogʻliq boʻlgan bizning umumiy yigʻma javobgarligimiz quyidagilardan kattarogʻi bilan cheklanadi: (a) daʼvoga sabab boʻlgan voqeadan bevosita oldingi uch (3) oy ichida bizga haqiqatan toʻlagan umumiy toʻlovlaringiz yoki komissiyangiz, yoki (b) 500,000 UZS.**"
+              }
+            ]
+          },
+          {
+            "type": "p",
+            "text": {
+              "en": "Nothing in these Terms excludes or limits liability that cannot lawfully be excluded or limited, including liability for death or personal injury caused by our negligence, for fraud or fraudulent misrepresentation, or any other liability that cannot be limited or excluded under the law of the Republic of Uzbekistan.",
+              "ru": "Ничто в настоящих Условиях не исключает и не ограничивает ответственность, которая не может быть законно исключена или ограничена, включая ответственность за смерть или причинение вреда здоровью вследствие нашей небрежности, за мошенничество или мошенническое введение в заблуждение, либо любую иную ответственность, которая не может быть ограничена или исключена согласно законодательству Республики Узбекистан.",
+              "uz": "Ushbu Shartlardagi hech narsa qonuniy ravishda istisno qilib yoki cheklab boʻlmaydigan javobgarlikni, jumladan bizning ehtiyotsizligimiz natijasida yuzaga kelgan oʻlim yoki shaxsiy jarohat uchun javobgarlikni, firibgarlik yoki firibgarona yolgʻon maʼlumot berish uchun javobgarlikni yoki Oʻzbekiston Respublikasi qonunchiligiga koʻra cheklab yoki istisno qilib boʻlmaydigan har qanday boshqa javobgarlikni istisno qilmaydi yoki cheklamaydi."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "13. Indemnity",
+          "ru": "13. Возмещение убытков",
+          "uz": "13. Zararlarni qoplash"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "If you use Fade as a barber, a shop, or otherwise in the course of a business, you agree to indemnify and hold harmless Fade, its officers, employees and agents from any claim, demand, loss, liability, cost or expense (including reasonable legal fees) arising out of or connected with your use of Fade, your services, your content, your breach of these Terms or of any law, or any dispute between you and another user.",
+              "ru": "Если вы используете Fade как барбер, салон или иным образом в ходе предпринимательской деятельности, вы соглашаетесь возместить убытки и оградить от вреда Fade, его должностных лиц, работников и агентов от любого требования, претензии, убытка, обязательства, издержек или расходов (включая разумные расходы на юридические услуги), вытекающих из вашего использования Fade, ваших услуг, вашего контента, вашего нарушения настоящих Условий или любого закона либо любого спора между вами и другим пользователем или связанных с ними.",
+              "uz": "Agar Fade’dan sartarosh, sartaroshxona sifatida yoki boshqacha tarzda tadbirkorlik faoliyati doirasida foydalansangiz, siz Fade’dan foydalanishingiz, xizmatlaringiz, kontentingiz, ushbu Shartlarni yoki biror qonunni buzishingiz yoki siz bilan boshqa foydalanuvchi oʻrtasidagi har qanday nizodan kelib chiqadigan yoki ular bilan bogʻliq har qanday daʼvo, talab, zarar, javobgarlik, xarajat yoki sarf-xarajat (jumladan oqilona yuridik toʻlovlar)dan Fade’ni, uning mansabdor shaxslari, xodimlari va agentlarini himoya qilishga hamda zararlardan holi qilishga rozilik bildirasiz."
+            }
+          },
+          {
+            "type": "p",
+            "text": {
+              "en": "If you use Fade as a consumer, you are responsible for, and agree to reimburse us for, loss we actually suffer that is caused by your own content, your breach of these Terms, or your unlawful conduct.",
+              "ru": "Если вы используете Fade как потребитель, вы несёте ответственность за убытки, которые мы фактически понесли и которые вызваны вашим собственным контентом, вашим нарушением настоящих Условий или вашим противоправным поведением, и соглашаетесь возместить их нам.",
+              "uz": "Agar Fade’dan isteʼmolchi sifatida foydalansangiz, siz oʻz kontentingiz, ushbu Shartlarni buzishingiz yoki noqonuniy xatti-harakatingiz natijasida biz haqiqatan koʻrgan zarar uchun javobgarsiz va uni bizga qoplashga rozilik bildirasiz."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "14. Suspension & termination",
+          "ru": "14. Приостановление и прекращение",
+          "uz": "14. Toʻxtatib turish va tugatish"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "We may suspend, restrict or close any account, remove any content, or withdraw access to Fade at any time, with or without notice and at our sole discretion, including where we reasonably believe these Terms have been broken or other users are at risk. We are not liable to you for doing so. You may stop using Fade and delete your account at any time. Sections that by their nature should survive termination — including sections 11, 12, 13 and 16 — will survive.",
+              "ru": "Мы можем приостановить, ограничить или закрыть любую учётную запись, удалить любой контент или отозвать доступ к Fade в любое время, с уведомлением или без него и по нашему единоличному усмотрению, в том числе когда мы обоснованно полагаем, что настоящие Условия были нарушены или что другие пользователи подвергаются риску. Мы не несём перед вами ответственности за такие действия. Вы можете прекратить использование Fade и удалить свою учётную запись в любое время. Разделы, которые по своей природе должны сохранять действие после прекращения — включая разделы 11, 12, 13 и 16 — сохраняют своё действие.",
+              "uz": "Biz istalgan vaqtda, ogohlantirish bilan yoki ogohlantirishsiz va faqat oʻz xohishimizga koʻra, jumladan ushbu Shartlar buzilgan yoki boshqa foydalanuvchilar xavf ostida deb oqilona hisoblasak, har qanday hisob qaydnomasini toʻxtatib turishimiz, cheklashimiz yoki yopishimiz, har qanday kontentni olib tashlashimiz yoki Fade’ga kirishni bekor qilishimiz mumkin. Buning uchun biz sizning oldingizda javobgar emasmiz. Siz istalgan vaqtda Fade’dan foydalanishni toʻxtatishingiz va hisob qaydnomangizni oʻchirishingiz mumkin. Oʻz mohiyatiga koʻra tugatilgandan keyin ham amal qilishi kerak boʻlgan boʻlimlar — jumladan 11, 12, 13 va 16-boʻlimlar — amal qilishda davom etadi."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "15. Third-party services",
+          "ru": "15. Сторонние сервисы",
+          "uz": "15. Uchinchi tomon xizmatlari"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "Fade relies on third parties including Google, Telegram, hosting and payment providers. Their services are governed by their own terms, and we are not responsible for their acts, omissions, availability or content.",
+              "ru": "Fade полагается на третьих лиц, включая Google, Telegram, поставщиков хостинга и платёжных услуг. Их сервисы регулируются их собственными условиями, и мы не несём ответственности за их действия, бездействие, доступность или контент.",
+              "uz": "Fade Google, Telegram, xosting va toʻlov provayderlari kabi uchinchi tomonlarga tayanadi. Ularning xizmatlari oʻz shartlari bilan tartibga solinadi va biz ularning xatti-harakatlari, harakatsizligi, mavjudligi yoki kontenti uchun javobgar emasmiz."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "16. Governing law & disputes",
+          "ru": "16. Применимое право и споры",
+          "uz": "16. Amaldagi qonun va nizolar"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "These Terms are governed by the laws of the Republic of Uzbekistan. Before starting any formal proceedings, you agree to first send us written notice of the dispute at the contact address below and to attempt to resolve it informally for at least 30 days, counted from the date we receive that notice. The courts of the Republic of Uzbekistan have exclusive jurisdiction over any dispute, without prejudice to any mandatory rights you have under the law of your country of residence.",
+              "ru": "Настоящие Условия регулируются законодательством Республики Узбекистан. Прежде чем начать какое-либо формальное разбирательство, вы соглашаетесь сначала направить нам письменное уведомление о споре по указанному ниже контактному адресу и попытаться разрешить его в неформальном порядке в течение не менее 30 дней, отсчитываемых с даты получения нами этого уведомления. Суды Республики Узбекистан обладают исключительной юрисдикцией в отношении любого спора, без ущерба для любых императивных прав, которыми вы обладаете согласно законодательству страны вашего проживания.",
+              "uz": "Ushbu Shartlar Oʻzbekiston Respublikasi qonunlari bilan tartibga solinadi. Har qanday rasmiy ish yuritishni boshlashdan oldin, siz avval nizo haqida quyidagi aloqa manziliga yozma xabar yuborishga va biz oʻsha xabarni olgan sanadan boshlab kamida 30 kun davomida uni norasmiy tarzda hal qilishga urinishga rozilik bildirasiz. Oʻzbekiston Respublikasi sudlari har qanday nizo boʻyicha eksklyuziv yurisdiksiyaga ega boʻlib, bu siz yashash mamlakatingiz qonunchiligiga koʻra ega boʻlgan har qanday majburiy huquqlaringizga zarar yetkazmaydi."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "17. General",
+          "ru": "17. Общие положения",
+          "uz": "17. Umumiy qoidalar"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "If any provision is found unenforceable, the rest remains in force and that provision is modified to the minimum extent necessary. Our failure to enforce a provision is not a waiver of it. We may assign or transfer these Terms, including to a successor of our business; you may not. These Terms, together with the Privacy Policy, are the entire agreement between us. We are not liable for any failure or delay caused by events beyond our reasonable control.",
+              "ru": "Если какое-либо положение будет признано не имеющим исковой силы, остальные положения сохраняют силу, а данное положение изменяется в минимально необходимой степени. Неприменение нами какого-либо положения не означает отказа от него. Мы можем уступать или передавать настоящие Условия, в том числе правопреемнику нашего бизнеса; вы не можете. Настоящие Условия вместе с Политикой конфиденциальности составляют полное соглашение между нами. Мы не несём ответственности за любое неисполнение или задержку, вызванные событиями вне нашего разумного контроля.",
+              "uz": "Agar biror qoida ijro etib boʻlmaydigan deb topilsa, qolganlari kuchda qoladi va oʻsha qoida zarur boʻlgan minimal darajada oʻzgartiriladi. Bizning biror qoidani ijro ettirmasligimiz undan voz kechish emas. Biz ushbu Shartlarni, jumladan biznesimizning huquqiy vorisiga oʻtkazishimiz yoki topshirishimiz mumkin; siz esa yoʻq. Ushbu Shartlar Maxfiylik siyosati bilan birgalikda oʻrtamizdagi toʻliq kelishuvni tashkil etadi. Biz oqilona nazoratimizdan tashqaridagi voqealar tufayli yuzaga kelgan har qanday nosozlik yoki kechikish uchun javobgar emasmiz."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "18. Changes",
+          "ru": "18. Изменения",
+          "uz": "18. Oʻzgarishlar"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "We may update these Terms. Minor changes take effect when the updated version is posted in the app, with a revised “Last updated” date. For material changes — for example to fees, commission, or the liability section — we will give you reasonable advance notice in the app (such as a notice you acknowledge, or a message to you) before they take effect. Continuing to use Fade after a change takes effect means you accept it; if you do not agree, you should stop using Fade and may close your account.",
+              "ru": "Мы можем обновлять настоящие Условия. Незначительные изменения вступают в силу с момента размещения обновлённой версии в приложении с пересмотренной датой «Последнее обновление». Для существенных изменений — например, в отношении сборов, комиссии или раздела об ответственности — мы заблаговременно уведомим вас в приложении в разумный срок (например, уведомлением, которое вы подтверждаете, или сообщением вам) до их вступления в силу. Продолжение использования Fade после вступления изменения в силу означает ваше согласие с ним; если вы не согласны, вам следует прекратить использование Fade и вы можете закрыть свою учётную запись.",
+              "uz": "Biz ushbu Shartlarni yangilashimiz mumkin. Kichik oʻzgarishlar yangilangan versiya ilovada “Oxirgi yangilangan” sanasi qayta koʻrsatilgan holda joylashtirilganda kuchga kiradi. Muhim oʻzgarishlar uchun — masalan, toʻlovlar, komissiya yoki javobgarlik boʻlimidagi — biz ular kuchga kirishidan oldin ilovada sizga oqilona muddatdan avval xabar beramiz (masalan, siz tasdiqlaydigan bildirishnoma yoki sizga yuborilgan xabar orqali). Oʻzgarish kuchga kirgandan keyin Fade’dan foydalanishda davom etish uni qabul qilganingizni bildiradi; agar rozi boʻlmasangiz, Fade’dan foydalanishni toʻxtatishingiz va hisob qaydnomangizni yopishingiz mumkin."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "19. Contact",
+          "ru": "19. Контакты",
+          "uz": "19. Aloqa"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "Questions? Contact us at support@fade.uz.",
+              "ru": "Вопросы? Свяжитесь с нами по адресу support@fade.uz.",
+              "uz": "Savollaringiz bormi? support@fade.uz orqali biz bilan bogʻlaning."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "privacy": {
+    "title": {
+      "en": "Privacy Policy",
+      "ru": "Политика конфиденциальности",
+      "uz": "Maxfiylik siyosati"
+    },
+    "updated": "16 July 2026",
+    "intro": {
+      "en": "This Privacy Policy explains what personal data the Fade mobile application (“Fade”, “we”, “us”) collects, why, and the choices you have. Fade is operated by Fade in Uzbekistan. By using Fade you agree to this Policy.",
+      "ru": "Настоящая Политика конфиденциальности разъясняет, какие персональные данные собирает мобильное приложение Fade («Fade», «мы», «нас»), почему и какие у вас есть возможности выбора. Fade управляется Fade в Узбекистане. Используя Fade, вы соглашаетесь с настоящей Политикой.",
+      "uz": "Ushbu Maxfiylik siyosati Fade mobil ilovasi (“Fade”, “biz”) qanday shaxsiy maʼlumotlarni, nima uchun toʻplashini va sizda qanday tanlov borligini tushuntiradi. Fade Oʻzbekistonda Fade tomonidan boshqariladi. Fade’dan foydalanish orqali siz ushbu Siyosatga rozilik bildirasiz."
+    },
+    "sections": [
+      {
+        "title": {
+          "en": "1. Data we collect",
+          "ru": "1. Данные, которые мы собираем",
+          "uz": "1. Biz toʻplaydigan maʼlumotlar"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "We collect the following personal data:",
+              "ru": "Мы собираем следующие персональные данные:",
+              "uz": "Biz quyidagi shaxsiy maʼlumotlarni toʻplaymiz:"
+            }
+          },
+          {
+            "type": "ul",
+            "items": [
+              {
+                "en": "**Identity** — your full name. Used to show barbers who booked and to label your account.",
+                "ru": "**Личность** — ваше полное имя. Используется, чтобы показывать барберам, кто забронировал, и подписывать вашу учётную запись.",
+                "uz": "**Shaxs** — toʻliq ismingiz. Sartaroshlarga kim band qilganini koʻrsatish va hisob qaydnomangizni belgilash uchun ishlatiladi."
+              },
+              {
+                "en": "**Phone number** — your mobile number, verified through Telegram or an SMS code. Used to confirm you are a real person and let a barber contact you about a booking.",
+                "ru": "**Номер телефона** — ваш мобильный номер, подтверждённый через Telegram или SMS-код. Используется для подтверждения того, что вы реальный человек, и чтобы барбер мог связаться с вами по поводу бронирования.",
+                "uz": "**Telefon raqami** — Telegram yoki SMS kodi orqali tasdiqlangan mobil raqamingiz. Siz haqiqiy shaxs ekanligingizni tasdiqlash va sartaroshga band qilish yuzasidan siz bilan bogʻlanish imkonini berish uchun ishlatiladi."
+              },
+              {
+                "en": "**Email** — your Google account email, if you sign in with Google. Used to create and secure your account.",
+                "ru": "**Электронная почта** — адрес электронной почты вашей учётной записи Google, если вы входите через Google. Используется для создания и защиты вашей учётной записи.",
+                "uz": "**Elektron pochta** — agar Google orqali kirsangiz, Google hisobingiz elektron pochtasi. Hisob qaydnomangizni yaratish va himoya qilish uchun ishlatiladi."
+              },
+              {
+                "en": "**Precise location** — your device location, only while the app is open and only if you allow it. Used to show barbershops near you and give directions.",
+                "ru": "**Точное местоположение** — местоположение вашего устройства, только когда приложение открыто и только если вы это разрешите. Используется, чтобы показывать барбершопы рядом с вами и прокладывать маршруты.",
+                "uz": "**Aniq joylashuv** — qurilmangizning joylashuvi, faqat ilova ochiq boʻlganda va faqat siz ruxsat bersangiz. Yaqin atrofdagi sartaroshxonalarni koʻrsatish va yoʻnalish berish uchun ishlatiladi."
+              },
+              {
+                "en": "**Photos** — profile photo; shop and work photos (barbers); a selfie you choose for the AI hairstyle preview. Used to build your profile, list a shop, and generate a preview.",
+                "ru": "**Фотографии** — фотография профиля; фотографии салона и работ (для барберов); селфи, которое вы выбираете для предпросмотра причёски с помощью ИИ. Используется для создания вашего профиля, размещения салона и генерации предпросмотра.",
+                "uz": "**Fotosuratlar** — profil fotosurati; sartaroshxona va ish fotosuratlari (sartaroshlar uchun); sunʼiy intellekt soch turmagi koʻrinishi uchun tanlagan selfingiz. Profilingizni yaratish, sartaroshxonani roʻyxatga olish va koʻrinish yaratish uchun ishlatiladi."
+              },
+              {
+                "en": "**Bookings & activity** — appointments, messages with a barber, reviews you write. Used to operate the booking and messaging features.",
+                "ru": "**Бронирования и активность** — записи на приём, переписка с барбером, отзывы, которые вы пишете. Используется для работы функций бронирования и обмена сообщениями.",
+                "uz": "**Band qilishlar va faoliyat** — qabullar, sartarosh bilan yozishmalar, siz yozgan sharhlar. Band qilish va yozishmalar funksiyalarini ishlatish uchun ishlatiladi."
+              },
+              {
+                "en": "**Device & technical** — app version, basic diagnostics. Used to keep the app working and fix problems.",
+                "ru": "**Устройство и технические данные** — версия приложения, базовая диагностика. Используется для поддержания работоспособности приложения и устранения проблем.",
+                "uz": "**Qurilma va texnik maʼlumot** — ilova versiyasi, asosiy diagnostika. Ilovani ishlashda saqlash va muammolarni bartaraf etish uchun ishlatiladi."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "2. How we collect it",
+          "ru": "2. Как мы их собираем",
+          "uz": "2. Biz uni qanday toʻplaymiz"
+        },
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              {
+                "en": "**Telegram login:** when you choose “Continue with Telegram”, Telegram shares the phone number it has already verified for you, and your Telegram display name. We never see your Telegram password.",
+                "ru": "**Вход через Telegram:** когда вы выбираете «Продолжить через Telegram», Telegram передаёт номер телефона, который он уже подтвердил для вас, и ваше отображаемое имя в Telegram. Мы никогда не видим ваш пароль Telegram.",
+                "uz": "**Telegram orqali kirish:** siz “Telegram bilan davom etish”ni tanlaganingizda, Telegram siz uchun allaqachon tasdiqlagan telefon raqamini va Telegram’dagi koʻrsatiladigan ismingizni ulashadi. Biz hech qachon Telegram parolingizni koʻrmaymiz."
+              },
+              {
+                "en": "**Google Sign-In:** Google shares your name, email address, and profile picture. We never see your Google password.",
+                "ru": "**Вход через Google:** Google передаёт ваше имя, адрес электронной почты и фотографию профиля. Мы никогда не видим ваш пароль Google.",
+                "uz": "**Google orqali kirish:** Google ismingizni, elektron pochta manzilingizni va profil rasmingizni ulashadi. Biz hech qachon Google parolingizni koʻrmaymiz."
+              },
+              {
+                "en": "**Directly from you:** details you type, photos you add, and permissions you grant (location, camera).",
+                "ru": "**Непосредственно от вас:** данные, которые вы вводите, фотографии, которые вы добавляете, и разрешения, которые вы предоставляете (местоположение, камера).",
+                "uz": "**Bevosita sizdan:** siz kiritadigan maʼlumotlar, qoʻshadigan fotosuratlar va siz beradigan ruxsatlar (joylashuv, kamera)."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "3. The AI hairstyle preview",
+          "ru": "3. Предпросмотр причёски с помощью ИИ",
+          "uz": "3. Sunʼiy intellekt soch turmagi koʻrinishi"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "If you use the AI hairstyle preview, the selfie you choose is sent to a third-party AI image service to generate the preview. We ask for your explicit consent the first time before anything is sent, and we use that photo only to create your preview — we don’t add it to your profile or show it to barbers or other users, and we don’t use it for any other purpose. The third-party service processes the image under its own terms and privacy policy, which we do not control. If you choose not to consent, nothing is sent from your device and the rest of the app works normally.",
+              "ru": "Если вы используете предпросмотр причёски с помощью ИИ, выбранное вами селфи отправляется стороннему сервису обработки изображений на базе ИИ для генерации предпросмотра. Мы запрашиваем ваше явное согласие в первый раз, прежде чем что-либо будет отправлено, и используем эту фотографию только для создания вашего предпросмотра — мы не добавляем её в ваш профиль, не показываем её барберам или другим пользователям и не используем её для любой иной цели. Сторонний сервис обрабатывает изображение на своих собственных условиях и в соответствии со своей политикой конфиденциальности, которые мы не контролируем. Если вы решите не давать согласие, ничего с вашего устройства не отправляется, а остальная часть приложения работает как обычно.",
+              "uz": "Agar sunʼiy intellekt soch turmagi koʻrinishidan foydalansangiz, siz tanlagan selfi koʻrinishni yaratish uchun uchinchi tomon sunʼiy intellekt tasvir xizmatiga yuboriladi. Biz biror narsa yuborilishidan oldin birinchi marta sizning aniq roziligingizni soʻraymiz va oʻsha fotosuratdan faqat sizning koʻrinishingizni yaratish uchun foydalanamiz — biz uni profilingizga qoʻshmaymiz yoki sartaroshlarga yoxud boshqa foydalanuvchilarga koʻrsatmaymiz va uni boshqa hech qanday maqsadda ishlatmaymiz. Uchinchi tomon xizmati tasvirni oʻzining shartlari va maxfiylik siyosati asosida qayta ishlaydi, biz esa buni nazorat qilmaymiz. Agar rozilik bermaslikni tanlasangiz, qurilmangizdan hech narsa yuborilmaydi va ilovaning qolgan qismi odatdagidek ishlaydi."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "4. Who we share it with",
+          "ru": "4. С кем мы ими делимся",
+          "uz": "4. Biz uni kim bilan ulashamiz"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "We do not sell your personal data or share it for others’ advertising. We share it only with the service providers needed to run Fade:",
+              "ru": "Мы не продаём ваши персональные данные и не передаём их для рекламы других лиц. Мы передаём их только тем поставщикам услуг, которые необходимы для работы Fade:",
+              "uz": "Biz sizning shaxsiy maʼlumotlaringizni sotmaymiz yoki uni boshqalarning reklamasi uchun ulashmaymiz. Biz uni faqat Fade’ni ishlatish uchun zarur boʻlgan xizmat provayderlari bilan ulashamiz:"
+            }
+          },
+          {
+            "type": "ul",
+            "items": [
+              {
+                "en": "**Supabase** — our secure database, authentication, and hosting provider.",
+                "ru": "**Supabase** — наш поставщик защищённой базы данных, аутентификации и хостинга.",
+                "uz": "**Supabase** — bizning xavfsiz maʼlumotlar bazasi, autentifikatsiya va xosting provayderimiz."
+              },
+              {
+                "en": "**Telegram** — to verify your phone number at login.",
+                "ru": "**Telegram** — для подтверждения вашего номера телефона при входе.",
+                "uz": "**Telegram** — kirish vaqtida telefon raqamingizni tasdiqlash uchun."
+              },
+              {
+                "en": "**Google** — to authenticate you if you use Google Sign-In.",
+                "ru": "**Google** — для вашей аутентификации, если вы используете вход через Google.",
+                "uz": "**Google** — agar Google orqali kirishdan foydalansangiz, sizni autentifikatsiya qilish uchun."
+              },
+              {
+                "en": "**The SMS provider** — if you sign in with an SMS code, your phone number is shared with our SMS gateway solely to deliver that verification code.",
+                "ru": "**Поставщик SMS** — если вы входите с помощью SMS-кода, ваш номер телефона передаётся нашему SMS-шлюзу исключительно для доставки этого кода подтверждения.",
+                "uz": "**SMS provayderi** — agar SMS kodi orqali kirsangiz, telefon raqamingiz faqat oʻsha tasdiqlash kodini yetkazish uchun bizning SMS shlyuzimiz bilan ulashiladi."
+              },
+              {
+                "en": "**The AI image service** — only the selfie you submit for a preview, and only with your consent (see section 3).",
+                "ru": "**Сервис обработки изображений на базе ИИ** — только селфи, которое вы отправляете для предпросмотра, и только с вашего согласия (см. раздел 3).",
+                "uz": "**Sunʼiy intellekt tasvir xizmati** — faqat siz koʻrinish uchun yuborgan selfi va faqat sizning roziligingiz bilan (3-boʻlimga qarang)."
+              },
+              {
+                "en": "**A barber you book** — sees your name and the phone number needed to contact you about that booking. Your number is not shown publicly or to other clients.",
+                "ru": "**Барбер, которого вы бронируете** — видит ваше имя и номер телефона, необходимый для связи с вами по поводу этого бронирования. Ваш номер не отображается публично или другим клиентам.",
+                "uz": "**Siz band qilgan sartarosh** — ismingizni va oʻsha band qilish yuzasidan siz bilan bogʻlanish uchun zarur boʻlgan telefon raqamini koʻradi. Raqamingiz omma oldida yoki boshqa mijozlarga koʻrsatilmaydi."
+              }
+            ]
+          },
+          {
+            "type": "p",
+            "text": {
+              "en": "Fade’s use and transfer of information received from Google APIs to any other app will adhere to the Google API Services User Data Policy, including the Limited Use requirements. We use data received from Google only to sign you in and provision your account.",
+              "ru": "Использование и передача Fade информации, полученной от Google API, любому другому приложению будут соответствовать Политике использования пользовательских данных Google API Services, включая требования об ограниченном использовании. Мы используем данные, полученные от Google, только для вашего входа и создания вашей учётной записи.",
+              "uz": "Fade tomonidan Google API’laridan olingan maʼlumotlardan foydalanish va uni boshqa har qanday ilovaga oʻtkazish Google API Services User Data Policy’ga, jumladan Limited Use (Cheklangan foydalanish) talablariga rioya qiladi. Biz Google’dan olingan maʼlumotlardan faqat sizni tizimga kiritish va hisob qaydnomangizni taʼminlash uchun foydalanamiz."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "5. Barbers are independent recipients",
+          "ru": "5. Барберы являются независимыми получателями",
+          "uz": "5. Sartaroshlar mustaqil qabul qiluvchilardir"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "Fade is a platform that connects clients and barbers. When you book, the barber receives the contact details needed to carry out that appointment. Our Terms require barbers to use your details only to carry out your booking, keep them secure, and not use them for marketing or anything else without your consent. From that point the barber decides independently how they use those details and is separately responsible, as an independent controller, for doing so under applicable law. We do not control, and are not responsible for, a barber’s handling of your information, their conduct, or the service they provide. Complaints about a barber should be raised with that barber; you may also report them to us using the contact address below.",
+              "ru": "Fade — это платформа, которая связывает клиентов и барберов. Когда вы бронируете, барбер получает контактные данные, необходимые для выполнения этого приёма. Наши Условия требуют, чтобы барберы использовали ваши данные только для выполнения вашего бронирования, обеспечивали их безопасность и не использовали их для маркетинга или чего-либо ещё без вашего согласия. С этого момента барбер самостоятельно решает, как использовать эти данные, и отдельно отвечает за это как независимый контролёр согласно применимому законодательству. Мы не контролируем и не несём ответственности за обращение барбера с вашей информацией, за его поведение или за оказываемую им услугу. Жалобы на барбера следует направлять этому барберу; вы также можете сообщить о нём нам по указанному ниже контактному адресу.",
+              "uz": "Fade — bu mijozlar va sartaroshlarni bogʻlaydigan platforma. Siz band qilganingizda, sartarosh oʻsha qabulni amalga oshirish uchun zarur boʻlgan aloqa maʼlumotlarini oladi. Bizning Shartlarimiz sartaroshlardan maʼlumotlaringizdan faqat band qilishingizni amalga oshirish uchun foydalanishni, ularni xavfsiz saqlashni va roziligingizsiz marketing yoki boshqa maqsadda ishlatmaslikni talab qiladi. Shu nuqtadan boshlab sartarosh oʻsha maʼlumotlardan qanday foydalanishni mustaqil ravishda hal qiladi va mustaqil nazoratchi sifatida buni amaldagi qonunga muvofiq qilish uchun alohida javobgardir. Biz sartaroshning maʼlumotlaringizni qayta ishlashini, uning xatti-harakatlarini yoki koʻrsatadigan xizmatini nazorat qilmaymiz va ular uchun javobgar emasmiz. Sartarosh haqidagi shikoyatlar oʻsha sartaroshga bildirilishi kerak; siz ularni quyidagi aloqa manzili orqali bizga ham xabar qilishingiz mumkin."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "6. How long we keep it",
+          "ru": "6. Как долго мы их храним",
+          "uz": "6. Biz uni qancha vaqt saqlaymiz"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "We keep your account data for as long as your account exists. Following a deletion request we remove your personal data from our live systems within a reasonable period, ordinarily 30 days. Residual copies may persist in routine encrypted backups for a further limited period until those backups are overwritten in the normal cycle. We retain whatever we are required to retain for legal, tax, accounting, dispute-resolution or fraud-prevention purposes, and we may keep aggregated or anonymised data that no longer identifies you.",
+              "ru": "Мы храним данные вашей учётной записи в течение всего времени существования вашей учётной записи. После запроса на удаление мы удаляем ваши персональные данные из наших действующих систем в разумный срок, обычно в течение 30 дней. Остаточные копии могут сохраняться в штатных зашифрованных резервных копиях в течение ещё одного ограниченного периода, пока эти резервные копии не будут перезаписаны в обычном цикле. Мы сохраняем всё, что обязаны сохранять для целей соблюдения законодательства, налоговых, бухгалтерских целей, разрешения споров или предотвращения мошенничества, и мы можем хранить агрегированные или анонимизированные данные, которые более вас не идентифицируют.",
+              "uz": "Biz hisob qaydnomangiz maʼlumotlarini hisob qaydnomangiz mavjud boʻlgunicha saqlaymiz. Oʻchirish soʻrovidan soʻng biz shaxsiy maʼlumotlaringizni oqilona muddat, odatda 30 kun ichida faoliyatdagi tizimlarimizdan olib tashlaymiz. Qoldiq nusxalar oddiy shifrlangan zaxira nusxalarida oʻsha zaxiralar oddiy sikl davomida qayta yozib chiqilgunicha yana cheklangan muddat davomida saqlanib qolishi mumkin. Biz yuridik, soliq, buxgalteriya, nizolarni hal qilish yoki firibgarlikning oldini olish maqsadlarida saqlashimiz talab qilingan har qanday narsani saqlaymiz va sizni endi aniqlamaydigan jamlangan yoki anonimlashtirilgan maʼlumotlarni saqlab qolishimiz mumkin."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "7. How we keep your data safe",
+          "ru": "7. Как мы обеспечиваем безопасность ваших данных",
+          "uz": "7. Maʼlumotlaringizni qanday xavfsiz saqlaymiz"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "We use technical and organisational measures designed to protect your data, including encryption in transit and access rules that, in normal operation, keep you to your own data and the public parts of the marketplace. As with any online service, no method of transmission or storage can be perfectly secure, and no online service can guarantee absolute security. Keeping your device and your sign-in account (Google or Telegram) secure is your responsibility.",
+              "ru": "Мы применяем технические и организационные меры, предназначенные для защиты ваших данных, включая шифрование при передаче и правила доступа, которые при обычной работе ограничивают вас вашими собственными данными и публичными частями площадки. Как и в случае с любым онлайн-сервисом, ни один метод передачи или хранения не может быть абсолютно безопасным, и ни один онлайн-сервис не может гарантировать абсолютную безопасность. Обеспечение безопасности вашего устройства и вашей учётной записи для входа (Google или Telegram) является вашей ответственностью.",
+              "uz": "Biz maʼlumotlaringizni himoya qilish uchun moʻljallangan texnik va tashkiliy choralardan, jumladan uzatish paytida shifrlashdan va oddiy ishlash sharoitida sizni oʻz maʼlumotlaringiz hamda bozor maydonchasining ommaviy qismlari bilan cheklaydigan kirish qoidalaridan foydalanamiz. Har qanday onlayn xizmatda boʻlgani kabi, uzatish yoki saqlashning hech qanday usuli mukammal xavfsiz boʻla olmaydi va hech qanday onlayn xizmat mutlaq xavfsizlikni kafolatlay olmaydi. Qurilmangiz va kirish hisob qaydnomangizni (Google yoki Telegram) xavfsiz saqlash sizning zimmangizdadir."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "8. Your rights",
+          "ru": "8. Ваши права",
+          "uz": "8. Sizning huquqlaringiz"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "Subject to applicable law you may request access to, correction of, or deletion of your personal data. To delete your account and data, use the in-app option or contact us at the address below. We may ask you to verify your identity before acting, and we may decline or charge a reasonable fee for requests that are manifestly unfounded, repetitive or excessive. We aim to respond within the period required by applicable law. Because a phone number in Uzbekistan is linked to identity documents, we treat your number as sensitive and limit who can see it.",
+              "ru": "С учётом применимого законодательства вы можете запросить доступ к своим персональным данным, их исправление или удаление. Чтобы удалить свою учётную запись и данные, воспользуйтесь опцией в приложении или свяжитесь с нами по указанному ниже адресу. Мы можем попросить вас подтвердить свою личность, прежде чем действовать, и мы можем отклонить или взимать разумную плату за запросы, которые являются явно необоснованными, повторяющимися или чрезмерными. Мы стремимся ответить в срок, установленный применимым законодательством. Поскольку номер телефона в Узбекистане связан с документами, удостоверяющими личность, мы рассматриваем ваш номер как конфиденциальный и ограничиваем круг лиц, которые могут его видеть.",
+              "uz": "Amaldagi qonunga muvofiq siz shaxsiy maʼlumotlaringizga kirishni, ularni tuzatishni yoki oʻchirishni soʻrashingiz mumkin. Hisob qaydnomangiz va maʼlumotlaringizni oʻchirish uchun ilova ichidagi variantdan foydalaning yoki quyidagi manzil orqali biz bilan bogʻlaning. Biz harakat qilishdan oldin sizdan shaxsingizni tasdiqlashingizni soʻrashimiz mumkin va biz aniq asossiz, takroriy yoki haddan tashqari soʻrovlarni rad etishimiz yoki ular uchun oqilona toʻlov olishimiz mumkin. Biz amaldagi qonun talab qiladigan muddat ichida javob berishga intilamiz. Oʻzbekistonda telefon raqami shaxsni tasdiqlovchi hujjatlar bilan bogʻlangani sababli, biz raqamingizni maxfiy deb hisoblaymiz va uni kim koʻra olishini cheklaymiz."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "9. Third-party services",
+          "ru": "9. Сторонние сервисы",
+          "uz": "9. Uchinchi tomon xizmatlari"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "Fade relies on the providers listed in section 4 and may link to third-party sites or services. Their processing is governed by their own terms and privacy policies. We are not responsible for the content, practices or availability of any third party.",
+              "ru": "Fade полагается на поставщиков, перечисленных в разделе 4, и может содержать ссылки на сторонние сайты или сервисы. Их обработка данных регулируется их собственными условиями и политиками конфиденциальности. Мы не несём ответственности за контент, практики или доступность какого-либо третьего лица.",
+              "uz": "Fade 4-boʻlimda sanab oʻtilgan provayderlarga tayanadi va uchinchi tomon saytlari yoki xizmatlariga havola qilishi mumkin. Ularning maʼlumotlarni qayta ishlashi oʻz shartlari va maxfiylik siyosatlari bilan tartibga solinadi. Biz har qanday uchinchi tomonning kontenti, amaliyoti yoki mavjudligi uchun javobgar emasmiz."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "10. Children",
+          "ru": "10. Дети",
+          "uz": "10. Bolalar"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "Fade is not intended for children under 16 and we do not knowingly collect their data. If you believe a child has provided us data, contact us and we will delete it.",
+              "ru": "Fade не предназначен для детей младше 16 лет, и мы сознательно не собираем их данные. Если вы полагаете, что ребёнок предоставил нам данные, свяжитесь с нами, и мы удалим их.",
+              "uz": "Fade 16 yoshgacha boʻlgan bolalar uchun moʻljallanmagan va biz ularning maʼlumotlarini bila turib toʻplamaymiz. Agar bola bizga maʼlumot bergan deb hisoblasangiz, biz bilan bogʻlaning, biz uni oʻchirib tashlaymiz."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "11. Changes",
+          "ru": "11. Изменения",
+          "uz": "11. Oʻzgarishlar"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "We may update this Policy at any time. Changes take effect when the updated Policy is posted in the app and the “Last updated” date is revised. Your continued use of Fade after that constitutes acceptance. Please review this page periodically.",
+              "ru": "Мы можем обновлять настоящую Политику в любое время. Изменения вступают в силу с момента размещения обновлённой Политики в приложении и пересмотра даты «Последнее обновление». Ваше продолжение использования Fade после этого означает согласие. Пожалуйста, периодически просматривайте эту страницу.",
+              "uz": "Biz ushbu Siyosatni istalgan vaqtda yangilashimiz mumkin. Oʻzgarishlar yangilangan Siyosat ilovada joylashtirilganda va “Oxirgi yangilangan” sanasi qayta koʻrsatilganda kuchga kiradi. Bundan keyin Fade’dan foydalanishda davom etishingiz uni qabul qilish hisoblanadi. Iltimos, ushbu sahifani vaqti-vaqti bilan koʻrib turing."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "12. Governing law",
+          "ru": "12. Применимое право",
+          "uz": "12. Amaldagi qonun"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "This Policy and any dispute arising from it are governed by the laws of the Republic of Uzbekistan, and the courts of Uzbekistan have exclusive jurisdiction, without prejudice to any mandatory rights you have under the law of your country of residence.",
+              "ru": "Настоящая Политика и любой вытекающий из неё спор регулируются законодательством Республики Узбекистан, и суды Узбекистана обладают исключительной юрисдикцией, без ущерба для любых императивных прав, которыми вы обладаете согласно законодательству страны вашего проживания.",
+              "uz": "Ushbu Siyosat va undan kelib chiqadigan har qanday nizo Oʻzbekiston Respublikasi qonunlari bilan tartibga solinadi va Oʻzbekiston sudlari eksklyuziv yurisdiksiyaga ega, bu siz yashash mamlakatingiz qonunchiligiga koʻra ega boʻlgan har qanday majburiy huquqlaringizga zarar yetkazmaydi."
+            }
+          }
+        ]
+      },
+      {
+        "title": {
+          "en": "13. Contact",
+          "ru": "13. Контакты",
+          "uz": "13. Aloqa"
+        },
+        "blocks": [
+          {
+            "type": "p",
+            "text": {
+              "en": "Questions or requests: privacy@fade.uz.",
+              "ru": "Вопросы или запросы: privacy@fade.uz.",
+              "uz": "Savollar yoki soʻrovlar: privacy@fade.uz."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

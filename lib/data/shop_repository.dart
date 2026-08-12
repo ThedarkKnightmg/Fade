@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/format/money.dart';
 import '../core/supabase/supabase_service.dart';
 import 'models/barber.dart';
 import 'models/barbershop.dart';
@@ -81,7 +82,8 @@ class ShopRepository {
             {
               'shop_id': shopId,
               'name': s.name,
-              'price': s.price,
+              // Store real so'm (see the units note in _mapService).
+              'price': Money.toSom(s.price),
               'duration_min': s.durationMin,
             },
         ]);
@@ -166,7 +168,12 @@ class ShopRepository {
       id: row['id'] as String,
       name: (row['name'] as String?) ?? 'Service',
       description: '',
-      price: (row['price'] as num?)?.toDouble() ?? 0,
+      // UNITS: the database stores real so'm (90 000), while every model in the
+      // app carries the USD-ish base unit that Money.som() multiplies up for
+      // display. Converting here — the one boundary where the two systems meet
+      // — keeps prices, commission and earnings correct everywhere downstream.
+      // Without it a 55 000 so'm shave rendered as "704 000 000 so'm".
+      price: ((row['price'] as num?)?.toDouble() ?? 0) / Money.usdToUzs,
       durationMinutes: (row['duration_min'] as int?) ?? 30,
       icon: Icons.content_cut_rounded,
     );

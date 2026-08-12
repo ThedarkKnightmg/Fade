@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/i18n/strings.dart';
 import '../../core/theme/app_colors.dart';
 
 /// Telegram brand blues.
@@ -111,11 +112,17 @@ class ChatBubble extends StatelessWidget {
     required this.text,
     required this.mine,
     required this.at,
+    this.showTail = true,
   });
 
   final String text;
   final bool mine;
   final DateTime at;
+
+  /// False for every message except the LAST of a same-sender run. Telegram
+  /// only flicks a tail on the final bubble of a group and tucks the rest in
+  /// tight — that grouping is most of what makes a thread read as Telegram.
+  final bool showTail;
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +141,8 @@ class ChatBubble extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(
-        bottom: 3,
+        // Tight inside a run (2), a real gap after the tailed one (8).
+        bottom: showTail ? 8 : 2,
         left: mine ? 60 : 8,
         right: mine ? 8 : 60,
       ),
@@ -143,7 +151,8 @@ class ChatBubble extends StatelessWidget {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: screenW * 0.78),
           child: CustomPaint(
-            painter: _BubbleBg(color: bubbleColor, mine: mine),
+            painter:
+                _BubbleBg(color: bubbleColor, mine: mine, tail: showTail),
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                   mine ? 13 : 15, 7, mine ? 15 : 13, 7),
@@ -199,10 +208,11 @@ class ChatBubble extends StatelessWidget {
 /// Paints the bubble fill: a rounded rectangle with the tail-side bottom corner
 /// squared off and a small tail flicking out — the Telegram silhouette.
 class _BubbleBg extends CustomPainter {
-  _BubbleBg({required this.color, required this.mine});
+  _BubbleBg({required this.color, required this.mine, this.tail = true});
 
   final Color color;
   final bool mine;
+  final bool tail;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -214,35 +224,84 @@ class _BubbleBg extends CustomPainter {
     const r = Radius.circular(16);
     const rSmall = Radius.circular(5);
 
+    // Mid-run bubbles are fully rounded (no tail corner to square off).
     final body = RRect.fromLTRBAndCorners(
       0, 0, w, h,
       topLeft: r,
       topRight: r,
-      bottomLeft: mine ? r : rSmall,
-      bottomRight: mine ? rSmall : r,
+      bottomLeft: (mine || !tail) ? r : rSmall,
+      bottomRight: (!mine || !tail) ? r : rSmall,
     );
     final path = Path()..addRRect(body);
+    if (!tail) {
+      canvas.drawPath(path, paint);
+      return;
+    }
 
     // The little tail at the sender-side bottom corner.
-    final tail = Path();
+    final tailPath = Path();
     if (mine) {
-      tail
+      tailPath
         ..moveTo(w - 9, h)
         ..quadraticBezierTo(w, h + 1, w + 5, h - 1)
         ..quadraticBezierTo(w - 1, h - 3, w - 2, h - 9)
         ..close();
     } else {
-      tail
+      tailPath
         ..moveTo(9, h)
         ..quadraticBezierTo(0, h + 1, -5, h - 1)
         ..quadraticBezierTo(1, h - 3, 2, h - 9)
         ..close();
     }
-    canvas.drawPath(Path.combine(PathOperation.union, path, tail), paint);
+    canvas.drawPath(Path.combine(PathOperation.union, path, tailPath), paint);
   }
 
   @override
-  bool shouldRepaint(_BubbleBg old) => old.color != color || old.mine != mine;
+  bool shouldRepaint(_BubbleBg old) =>
+      old.color != color || old.mine != mine || old.tail != tail;
+}
+
+/// The centred date pill that separates days in a Telegram thread — a
+/// translucent capsule floating over the wallpaper.
+class ChatDateSeparator extends StatelessWidget {
+  const ChatDateSeparator({super.key, required this.day});
+
+  final DateTime day;
+
+  String _label(BuildContext context) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final d = DateTime(day.year, day.month, day.day);
+    final diff = today.difference(d).inDays;
+    if (diff == 0) return L.today;
+    if (diff == 1) return L.yesterdayWord;
+    // Within the year Telegram drops the year: "July 30".
+    return DateFormat(d.year == now.year ? 'MMMM d' : 'MMMM d, y').format(d);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(
+          color: (p.isDark ? Colors.black : const Color(0xFF5B7A96))
+              .withValues(alpha: p.isDark ? 0.42 : 0.30),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          _label(context),
+          style: GoogleFonts.nunito(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// A tiny "Telegram-style" ribbon for the Chats header — the plane mark plus a

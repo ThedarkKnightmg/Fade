@@ -12,6 +12,7 @@ import '../../../data/models/chat_message.dart';
 import '../../widgets/chat_kit.dart';
 import '../../widgets/message_composer.dart';
 import '../../widgets/paper_kit.dart';
+import '../../widgets/sticker_picker.dart';
 
 /// The barber side of messaging — conversations with the **clients** who have
 /// booked (or requested) a cut. Mirrors the client-side Messages tab, but the
@@ -246,6 +247,16 @@ class _BarberChatScreenState extends State<BarberChatScreen> {
     _toBottom();
   }
 
+  Future<void> _sendSticker() async {
+    final s = await pickSticker(context);
+    if (s == null || !mounted) return;
+    AppState.instance.sendBarberChat(_client, s, isSticker: true);
+    _toBottom();
+  }
+
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
   void _toBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) {
@@ -316,15 +327,36 @@ class _BarberChatScreenState extends State<BarberChatScreen> {
                             style: AppTypography.bodySmall(context)),
                       );
                     }
+                    // Same Telegram grouping as the client side: a date pill per
+                    // new day, and a tail only on the last bubble of a run.
+                    final rows = <Widget>[];
+                    for (var i = 0; i < msgs.length; i++) {
+                      final m = msgs[i];
+                      final prev = i == 0 ? null : msgs[i - 1];
+                      final next = i == msgs.length - 1 ? null : msgs[i + 1];
+                      if (prev == null || !_sameDay(prev.at, m.at)) {
+                        rows.add(ChatDateSeparator(day: m.at));
+                      }
+                      rows.add(m.isSticker
+                          ? StickerMessage(
+                              sticker: m.text,
+                              mine: m.mine,
+                              time: DateFormat('HH:mm').format(m.at),
+                            )
+                          : ChatBubble(
+                              text: m.text,
+                              mine: m.mine,
+                              at: m.at,
+                              showTail: next == null ||
+                                  next.mine != m.mine ||
+                                  !_sameDay(next.at, m.at),
+                            ));
+                    }
                     return ListView.builder(
                       controller: _scroll,
-                      padding: const EdgeInsets.fromLTRB(8, 14, 8, 10),
-                      itemCount: msgs.length,
-                      itemBuilder: (_, i) => ChatBubble(
-                        text: msgs[i].text,
-                        mine: msgs[i].mine,
-                        at: msgs[i].at,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
+                      itemCount: rows.length,
+                      itemBuilder: (_, i) => rows[i],
                     );
                   },
                 ),
@@ -335,6 +367,7 @@ class _BarberChatScreenState extends State<BarberChatScreen> {
               controller: _ctrl,
               onSend: _send,
               hintText: L.messageHint,
+              onSticker: _sendSticker,
             ),
           ],
         ),

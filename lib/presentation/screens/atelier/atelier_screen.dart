@@ -34,18 +34,15 @@ class _AtelierScreenState extends State<AtelierScreen> {
   static const _filters = ['All', 'Fades', 'Classic', 'Modern', 'Kids'];
 
   List<_BarberInShop> get _pairs {
-    // Two barbers per shop, rotated so the directory feels varied.
+    // Up to two barbers per shop. Iterate what the shop ACTUALLY has — the old
+    // `barbers[i % 4]` hard-coded the mock catalogue's "always 4 barbers per
+    // shop" shape and threw RangeError against the live catalogue, where a real
+    // shop can have 1 (or 0) barbers.
     final pairs = <_BarberInShop>[];
-    final shops = MockData.barbershops;
-    for (var i = 0; i < shops.length; i++) {
-      pairs.add(_BarberInShop(
-        barber: shops[i].barbers[i % 4],
-        shop: shops[i],
-      ));
-      pairs.add(_BarberInShop(
-        barber: shops[i].barbers[(i + 2) % 4],
-        shop: shops[i],
-      ));
+    for (final shop in MockData.barbershops) {
+      for (final b in shop.barbers.take(2)) {
+        pairs.add(_BarberInShop(barber: b, shop: shop));
+      }
     }
     if (_filter == 'All') return pairs;
     return pairs

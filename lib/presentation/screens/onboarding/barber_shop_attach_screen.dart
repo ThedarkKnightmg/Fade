@@ -1,3 +1,4 @@
+import '../../../core/map/map_attribution.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -195,6 +196,7 @@ class _BarberShopAttachScreenState extends State<BarberShopAttachScreen> {
                           keepBuffer: 2,
                           panBuffer: 1,
                         ),
+                        const MapAttribution(),
                         MarkerLayer(
                           markers: [
                             for (final s in list)

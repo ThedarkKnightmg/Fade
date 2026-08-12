@@ -402,6 +402,13 @@ class _IncomingRequestSheetState extends State<_IncomingRequestSheet>
                           ),
                         ],
                       ),
+                      // Reliability at a glance — this is the barber's shield:
+                      // Trusted vs. a flag on someone who's no-showed before.
+                      if (b.clientName != null) ...[
+                        const SizedBox(height: 6),
+                        _ReliabilityChip(
+                            tier: AppState.instance.reliabilityOf(b.clientName!)),
+                      ],
                     ],
                   ),
                 ),
@@ -711,6 +718,58 @@ class _BtnState extends State<_Btn> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A compact reliability badge the barber sees on an incoming request — Trusted
+/// (green), New (blue), a caution for a prior no-show (amber), or a warning for
+/// a chronic no-shower (red). Turns the client's track record into a glance.
+class _ReliabilityChip extends StatelessWidget {
+  const _ReliabilityChip({required this.tier});
+
+  final ReliabilityTier tier;
+
+  @override
+  Widget build(BuildContext context) {
+    final (String label, Color color, IconData icon) = switch (tier) {
+      ReliabilityTier.trusted => (
+          L.relTrusted,
+          AppColors.green,
+          Icons.verified_rounded
+        ),
+      ReliabilityTier.newcomer => (
+          L.relNew,
+          AppColors.accent,
+          Icons.person_outline_rounded
+        ),
+      ReliabilityTier.watch => (
+          L.relWatch,
+          AppColors.gold,
+          Icons.info_outline_rounded
+        ),
+      ReliabilityTier.restricted => (
+          L.relRestricted,
+          AppColors.red,
+          Icons.warning_amber_rounded
+        ),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 4),
+          Text(label,
+              style: GoogleFonts.nunito(
+                  fontSize: 12, fontWeight: FontWeight.w800, color: color)),
+        ],
       ),
     );
   }

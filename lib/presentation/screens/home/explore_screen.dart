@@ -180,7 +180,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     child: _barbersMode
                         ? Row(
                             children: [
-                              for (final (f, label, icon) in [
+                              for (final (f, label, _) in [
                                 (_BarberFilter.all, L.filterAll, null),
                                 (_BarberFilter.boosted, L.boostedPill,
                                     Icons.bolt_rounded),
@@ -189,20 +189,19 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                 (_BarberFilter.topRated, L.filterTopRated,
                                     Icons.star_rounded),
                               ]) ...[
-                                FilterPill(
+                                FilterTab(
                                   label: label,
-                                  icon: icon,
                                   selected: _bFilter == f,
                                   onTap: () =>
                                       setState(() => _bFilter = f),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 22),
                               ],
                             ],
                           )
                         : Row(
                             children: [
-                              for (final (f, label, icon) in [
+                              for (final (f, label, _) in [
                                 (_ExploreFilter.all, L.filterAll, null),
                                 (_ExploreFilter.featured, L.filterFeatured,
                                     Icons.star_rounded),
@@ -213,14 +212,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                 (_ExploreFilter.saved, L.filterSaved,
                                     Icons.favorite_rounded),
                               ]) ...[
-                                FilterPill(
+                                FilterTab(
                                   label: label,
-                                  icon: icon,
                                   selected: _filter == f,
                                   onTap: () =>
                                       setState(() => _filter = f),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 22),
                               ],
                             ],
                           ),
@@ -387,7 +385,14 @@ class _SearchFieldState extends State<_SearchField> {
               decoration: InputDecoration(
                 isCollapsed: true,
                 border: InputBorder.none,
+                // The app-wide InputDecorationTheme fills its fields, and
+                // `border: none` only drops the OUTLINE — the fill stayed and
+                // painted a second rounded box inside this one. Kill it here so
+                // the bar reads as a single field.
+                filled: false,
+                contentPadding: EdgeInsets.zero,
                 hintText: widget.hint,
+                hintMaxLines: 1,
                 hintStyle: GoogleFonts.nunito(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -417,19 +422,14 @@ class _SearchFieldState extends State<_SearchField> {
               ),
             ),
           ),
-          // Thin divider, then the map shortcut as a quiet accent action —
-          // present but not competing with the search field.
-          Container(
-            width: 1,
-            height: 26,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            color: p.border,
-          ),
+          // Map shortcut as a quiet accent action. The divider that used to sit
+          // in front of it is gone — it chopped the bar into segments and ate
+          // width the hint needed (it was rendering as "Search sh…").
           GestureDetector(
             onTap: widget.onMapTap,
             behavior: HitTestBehavior.opaque,
             child: const SizedBox(
-              width: 40,
+              width: 38,
               height: 40,
               child: Icon(Icons.map_rounded, size: 20, color: AppColors.accent),
             ),

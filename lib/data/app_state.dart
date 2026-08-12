@@ -11,8 +11,11 @@ import '../core/i18n/app_language.dart';
 import '../core/i18n/strings.dart';
 import '../core/notifications/notify.dart';
 import '../core/supabase/feedback_service.dart';
+import '../core/supabase/supabase_service.dart';
 import '../core/supabase/supabase_config.dart';
+import 'booking_repository.dart';
 import 'shop_repository.dart';
+import 'supabase_loyalty.dart';
 import 'models/barber.dart';
 import 'models/barber_break.dart';
 import 'models/barbershop.dart';
@@ -97,6 +100,15 @@ class IncomingRequest {
 
 /// Where a coworker's roster request stands.
 enum JoinStatus { pending, approved, denied }
+
+/// A client's standing, derived from their recent behaviour. Drives reward-by-
+/// access: a [trusted] client books friction-free; a [restricted] one (chronic
+/// no-shower) meets a hold/approval gate; [watch] is the graduated middle.
+enum ReliabilityTier { newcomer, trusted, watch, restricted }
+
+/// How strict a barber wants the platform to be with unproven/flaky clients.
+/// New barbers pick [lenient] to fill chairs; booked-solid ones pick [strict].
+enum NoShowTolerance { lenient, standard, strict }
 
 /// A barber's request to join a claimed shop's roster (Flow B). The Leader
 /// approves/denies it; if they ghost, the 72-hour [autoApproveAt] fail-safe
@@ -209,25 +221,37 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void sendChat(String barberId, String text) {
+  void sendChat(String barberId, String text, {bool isSticker = false}) {
     final t = text.trim();
     if (t.isEmpty) return;
     final list = _chats.putIfAbsent(barberId, () => <ChatMessage>[]);
-    list.add(ChatMessage(text: t, mine: true, at: DateTime.now()));
+    list.add(ChatMessage(
+        text: t, mine: true, at: DateTime.now(), isSticker: isSticker));
     notifyListeners();
-    // A short, friendly canned reply from the barber.
+    // A short, friendly canned reply from the barber — a sticker gets a sticker
+    // back, which is how these exchanges actually go.
     Future.delayed(const Duration(milliseconds: 900), () {
-      const replies = [
-        'Sure, see you then! ✂️',
-        'Got it 👍 Your slot is saved.',
-        "Yes, I'm free — come through.",
-        'Thanks! Looking forward to it.',
-      ];
-      list.add(ChatMessage(
-        text: replies[_replyIx++ % replies.length],
-        mine: false,
-        at: DateTime.now(),
-      ));
+      if (isSticker) {
+        const back = ['👍', '🔥', '✂️', '💈'];
+        list.add(ChatMessage(
+          text: back[_replyIx++ % back.length],
+          mine: false,
+          at: DateTime.now(),
+          isSticker: true,
+        ));
+      } else {
+        const replies = [
+          'Sure, see you then! ✂️',
+          'Got it 👍 Your slot is saved.',
+          "Yes, I'm free — come through.",
+          'Thanks! Looking forward to it.',
+        ];
+        list.add(ChatMessage(
+          text: replies[_replyIx++ % replies.length],
+          mine: false,
+          at: DateTime.now(),
+        ));
+      }
       notifyListeners();
     });
   }
@@ -269,25 +293,36 @@ class AppState extends ChangeNotifier {
     return out;
   }
 
-  void sendBarberChat(String client, String text) {
+  void sendBarberChat(String client, String text, {bool isSticker = false}) {
     final t = text.trim();
     if (t.isEmpty) return;
     final list = _barberChats.putIfAbsent(client, () => <ChatMessage>[]);
-    list.add(ChatMessage(text: t, mine: true, at: DateTime.now()));
+    list.add(ChatMessage(
+        text: t, mine: true, at: DateTime.now(), isSticker: isSticker));
     notifyListeners();
-    // A short, friendly canned reply from the client.
+    // A short, friendly canned reply from the client (sticker for sticker).
     Future.delayed(const Duration(milliseconds: 900), () {
-      const replies = [
-        'Great, thank you! 🙏',
-        'See you then ✂️',
-        "Perfect, I'll be there.",
-        'Thanks for confirming 👍',
-      ];
-      list.add(ChatMessage(
-        text: replies[_clientReplyIx++ % replies.length],
-        mine: false,
-        at: DateTime.now(),
-      ));
+      if (isSticker) {
+        const back = ['🙏', '👍', '😍', '🔥'];
+        list.add(ChatMessage(
+          text: back[_clientReplyIx++ % back.length],
+          mine: false,
+          at: DateTime.now(),
+          isSticker: true,
+        ));
+      } else {
+        const replies = [
+          'Great, thank you! 🙏',
+          'See you then ✂️',
+          "Perfect, I'll be there.",
+          'Thanks for confirming 👍',
+        ];
+        list.add(ChatMessage(
+          text: replies[_clientReplyIx++ % replies.length],
+          mine: false,
+          at: DateTime.now(),
+        ));
+      }
       notifyListeners();
     });
   }
@@ -645,11 +680,18 @@ class AppState extends ChangeNotifier {
       .where((b) => b.barber.id == _meBarberId && b.clientName != null)
       .toList();
 
-  /// Pending requests awaiting this barber's confirmation, soonest first.
+  /// Pending requests awaiting this barber's confirmation. Trusted clients jump
+  /// to the top of the queue (priority booking — the barber sees and accepts
+  /// them first); within each group, soonest first.
   List<Booking> get incomingRequests => _mine()
       .where((b) => b.status == BookingStatus.requested)
       .toList()
-    ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    ..sort((a, b) {
+      final ap = a.clientName != null && isTrustedClient(a.clientName!) ? 0 : 1;
+      final bp = b.clientName != null && isTrustedClient(b.clientName!) ? 0 : 1;
+      if (ap != bp) return ap - bp;
+      return a.dateTime.compareTo(b.dateTime);
+    });
 
   /// Confirmed upcoming appointments, soonest first.
   List<Booking> get barberAgenda => _mine()
@@ -907,7 +949,10 @@ class AppState extends ChangeNotifier {
     _setBookingStatus(id, BookingStatus.completed,
         completedAt: DateTime.now());
     _chargeCommission(id); // the app delivered this client → small fee
-    if (b.clientName == null) _awardVisitPerk(b); // loyalty pass earned by visit
+    if (b.clientName == null) {
+      _awardVisitPerk(b); // loyalty pass earned by visit
+      _earnFadePoints(b); // cashback: ~2.5% of spend into the points wallet
+    }
   }
   // No-show marking records a fee intent (see the no-show shield below), so the
   // existing barber schedule button becomes shield-aware with no UI change.
@@ -931,10 +976,16 @@ class AppState extends ChangeNotifier {
               b.status == BookingStatus.noShow))
       .length;
 
-  /// Whether a slot should ask for a card-on-file authorization hold.
-  bool slotNeedsAuthorization(double servicePriceUsd, {String? clientName}) =>
-      servicePriceUsd >= _highValueThresholdUsd ||
-      (clientName != null && repeatCancellerCount(clientName) >= 2);
+  /// Whether a slot should ask for a card-on-file authorization hold. Reward-by-
+  /// access: a Trusted client is NEVER asked for a hold; a restricted (chronic
+  /// no-show) client always is; otherwise it's the value/repeat-canceller rule.
+  bool slotNeedsAuthorization(double servicePriceUsd, {String? clientName}) {
+    final tier = clientName == null ? myReliability : reliabilityOf(clientName);
+    if (tier == ReliabilityTier.trusted) return false;
+    if (tier == ReliabilityTier.restricted) return true;
+    return servicePriceUsd >= _highValueThresholdUsd ||
+        (clientName != null && repeatCancellerCount(clientName) >= 2);
+  }
 
   // Card-on-file is a stub — the provider (Payme/Click/Stripe) owns the real
   // authorization; we only record that a hold exists. No card data is touched.
@@ -957,7 +1008,12 @@ class AppState extends ChangeNotifier {
     final i = _bookings.indexWhere((b) => b.id == id);
     if (i == -1) return 0;
     final b = _bookings[i];
-    final inside = cancellationPolicy.isInsideWindow(b.dateTime);
+    // Trusted perk: free cancellation — a proven regular is never charged a
+    // late-cancel fee.
+    final trusted =
+        b.clientName == null ? amITrusted : isTrustedClient(b.clientName!);
+    final inside =
+        !trusted && cancellationPolicy.isInsideWindow(b.dateTime);
     final double feeUsd =
         inside ? cancellationPolicy.feeUsd(b.service.price) : 0.0;
     _bookings[i] = b.copyWith(
@@ -967,25 +1023,41 @@ class AppState extends ChangeNotifier {
               reason: ChargeReason.lateCancel, amountUsd: feeUsd)
           : null,
     );
+    _persistCancel(id);
     notifyListeners();
     return feeUsd;
   }
 
-  /// Barber marks a no-show and attaches the fee intent.
+  /// Barber marks a no-show. The client's FIRST in-window no-show is forgiven
+  /// (a warm nudge, no fee); the 50% fee attaches only from the second onward.
   void markNoShowWithCharge(String id) {
     final i = _bookings.indexWhere((b) => b.id == id);
     if (i == -1) return;
     final b = _bookings[i];
     // A served (verified/completed) booking can't be flipped to a no-show.
     if (b.verifiedAt != null || b.status == BookingStatus.completed) return;
-    _bookings[i] = b.copyWith(
-      status: BookingStatus.noShow,
-      chargeIntent: ChargeIntent.forFee(
-        reason: ChargeReason.noShow,
-        amountUsd: cancellationPolicy.feeUsd(b.service.price),
-      ),
-    );
+    // Record the strike first so it counts, then decide whether the fee applies.
+    _bookings[i] = b.copyWith(status: BookingStatus.noShow);
+    final name = b.clientName;
+    final strikes =
+        name == null ? myNoShowCount : clientNoShowCountWindowed(name);
+    if (_noShowFeeApplies(strikes)) {
+      _bookings[i] = _bookings[i].copyWith(
+        chargeIntent: ChargeIntent.forFee(
+          reason: ChargeReason.noShow,
+          amountUsd: cancellationPolicy.feeUsd(b.service.price),
+        ),
+      );
+    }
     notifyListeners();
+  }
+
+  /// Whether marking [clientName] a no-show right now would be their forgiven
+  /// first (no fee) — lets the barber UI say "first no-show, no charge".
+  bool noShowWouldBeForgiven(String? clientName) {
+    final priorStrikes =
+        clientName == null ? myNoShowCount : clientNoShowCountWindowed(clientName);
+    return !_noShowFeeApplies(priorStrikes + 1);
   }
 
   /// Barber waives a recorded fee (goodwill / zero-cost loyalty gesture).
@@ -1611,9 +1683,129 @@ class AppState extends ChangeNotifier {
   // The current user's own bookings carry clientName==null, so their strikes are
   // tracked separately (real per-user keying arrives with the backend). Held at
   // 0 in the mock — no organic ban path — but the logic is wired.
-  final int _selfNoShowCount = 0;
-  int get myNoShowCount => _selfNoShowCount;
-  bool get iAmBanned => _selfNoShowCount >= banStrikeLimit;
+  // The current user books as themselves (clientName == null), so their strikes
+  // and visits are read straight off their own bookings — no longer a hardcoded
+  // 0, so both the deterrent AND the rewards are live for the person actually
+  // using the app.
+  Iterable<Booking> get _myBookings =>
+      _bookings.where((b) => b.clientName == null);
+  bool _inWindow(DateTime d) =>
+      DateTime.now().difference(d).inDays <= reliabilityWindowDays;
+
+  int get myNoShowCount => _myBookings
+      .where((b) => b.status == BookingStatus.noShow && _inWindow(b.dateTime))
+      .length;
+  int get myCompletedVisits =>
+      _myBookings.where((b) => b.status == BookingStatus.completed).length;
+  bool get iAmBanned => myReliability == ReliabilityTier.restricted;
+
+  // ═══════════════════ Reliability & reward-by-access (#R) ═══════════════════
+  // Never tax the honest majority to deter the ~10% who chronically no-show. A
+  // client's FIRST no-show is forgiven (a warm nudge, no fee); friction escalates
+  // only for repeat offenders. Reliable clients are rewarded with the ABSENCE of
+  // friction — instant confirm, no hold ever, a Trusted badge — which costs the
+  // platform nothing and compounds. No-shows older than the window stop counting,
+  // so a reformed client recovers over time.
+
+  /// Clean completed visits to earn Trusted.
+  static const int trustedVisitGoal = 5;
+  /// In-window no-shows at which a barber sees a caution flag.
+  static const int noShowWarnAt = 2;
+  /// In-window no-shows at which booking meets a hold / approval gate.
+  static const int noShowRestrictAt = 3;
+  /// No-shows older than this stop counting — reliability heals over time.
+  static const int reliabilityWindowDays = 180;
+
+  ReliabilityTier _tierFrom(int completed, int noShows) {
+    if (noShows >= noShowRestrictAt) return ReliabilityTier.restricted;
+    if (noShows >= noShowWarnAt) return ReliabilityTier.watch;
+    if (completed >= trustedVisitGoal) return ReliabilityTier.trusted;
+    return ReliabilityTier.newcomer;
+  }
+
+  /// The current user's standing.
+  ReliabilityTier get myReliability =>
+      _tierFrom(myCompletedVisits, myNoShowCount);
+  bool get amITrusted => myReliability == ReliabilityTier.trusted;
+
+  /// In-window no-shows / completed visits for a NAMED client (barber's view).
+  int clientNoShowCountWindowed(String clientName) => _bookings
+      .where((b) =>
+          b.clientName == clientName &&
+          b.status == BookingStatus.noShow &&
+          _inWindow(b.dateTime))
+      .length;
+  int clientCompletedVisits(String clientName) => _bookings
+      .where((b) =>
+          b.clientName == clientName && b.status == BookingStatus.completed)
+      .length;
+
+  /// A named client's standing (barber-side).
+  ReliabilityTier reliabilityOf(String clientName) => _tierFrom(
+      clientCompletedVisits(clientName), clientNoShowCountWindowed(clientName));
+  bool isTrustedClient(String clientName) =>
+      reliabilityOf(clientName) == ReliabilityTier.trusted;
+
+  /// Whether the no-show fee applies. Called AFTER the strike is recorded, so a
+  /// count of 1 means this was the client's first (forgiven); it bites from 2.
+  bool _noShowFeeApplies(int noShowCountIncludingThis) =>
+      noShowCountIncludingThis >= 2;
+
+  /// Whether a barber with [tolerance] gates a client of [tier] behind manual
+  /// approval / a hold. Strict barbers also gate the [watch] middle tier.
+  bool bookingNeedsApproval(ReliabilityTier tier, {NoShowTolerance? tolerance}) {
+    final t = tolerance ?? _barberTolerance;
+    switch (t) {
+      case NoShowTolerance.lenient:
+      case NoShowTolerance.standard:
+        return tier == ReliabilityTier.restricted;
+      case NoShowTolerance.strict:
+        return tier == ReliabilityTier.restricted ||
+            tier == ReliabilityTier.watch;
+    }
+  }
+
+  // Barber's chosen strictness for their own shop. Persisted.
+  NoShowTolerance _barberTolerance = NoShowTolerance.standard;
+  NoShowTolerance get barberTolerance => _barberTolerance;
+  void setBarberTolerance(NoShowTolerance t) {
+    if (_barberTolerance == t) return;
+    _barberTolerance = t;
+    _save();
+    notifyListeners();
+  }
+
+  // ── Free-cut loyalty (rolling-window streak, APP-WIDE) ─────────────────────
+  // Complete [loyaltyFreeCutGoal] cuts within a rolling [loyaltyWindowDays]
+  // window — with ANY barber on Fade — and the next cut is free. The window
+  // self-expires: slow down and the trailing count drops, so there's no
+  // "banked forever" liability — the urgency IS the mechanic. Rewards the
+  // platform's most active regulars.
+  //
+  // COST CONTROL: a free cut Fade funds costs ~20× the 5% commission on a cut,
+  // so redemptions are gated by [loyaltyMonthlyRedemptionCap] — the first N
+  // funded per month, beyond which the reward falls back to a commission-funded
+  // discount. That cap is a PLATFORM-WIDE budget, so it's enforced at redemption
+  // on the SERVER (a client can't see the global count); the app computes and
+  // shows a user's own ELIGIBILITY only.
+  static const int loyaltyFreeCutGoal = 8;
+  static const int loyaltyWindowDays = 84; // 12 weeks
+  static const int loyaltyMonthlyRedemptionCap = 200; // server-enforced budget
+
+  /// The user's completed cuts within the rolling window (any barber).
+  int get loyaltyVisitsInWindow => _myBookings
+      .where((b) =>
+          b.status == BookingStatus.completed &&
+          DateTime.now().difference(b.dateTime).inDays <= loyaltyWindowDays)
+      .length;
+
+  /// Progress toward the free cut (0..goal).
+  int get loyaltyPunches =>
+      loyaltyVisitsInWindow.clamp(0, loyaltyFreeCutGoal);
+
+  /// True when the user has hit the goal within the window — their next cut is
+  /// free (subject to the server-side monthly budget when redeemed).
+  bool get freeCutReady => loyaltyVisitsInWindow >= loyaltyFreeCutGoal;
 
   /// The verified handshake — the ONLY completion path the scan uses. Idempotent
   /// (guards on verifiedAt/completed) so the commission is charged at most once.
@@ -1682,6 +1874,38 @@ class AppState extends ChangeNotifier {
       return parts[2];
     }
     return null;
+  }
+
+  /// The QR a CLIENT shows on their booking ticket — the barber scans it to
+  /// complete the visit. Encodes the SERVER booking id when it persisted (so
+  /// booking_complete hits the right row), else the local id.
+  String bookingQrPayload(Booking b) =>
+      'fade:booking:${_remoteBookings[b.id] ?? b.id}';
+
+  /// Parse a scanned client ticket QR (`fade:booking:<id>`) → the id, or null.
+  static String? bookingIdFromQr(String raw) {
+    const prefix = 'fade:booking:';
+    if (!raw.startsWith(prefix)) return null;
+    final id = raw.substring(prefix.length).trim();
+    return id.isEmpty ? null : id;
+  }
+
+  /// Barber completes a scanned client ticket. Tries the SERVER RPC first —
+  /// which verifies the caller is the assigned barber and mints the client's
+  /// points server-side — then mirrors the completion into the local list so
+  /// the barber's own UI updates. Returns the points the client earned, or null
+  /// when the server declined (not this barber's booking / offline).
+  Future<int?> completeScannedBooking(String scannedId) async {
+    final earned = await SupabaseLoyalty.completeBooking(scannedId);
+    // Match the scanned id back to a local booking (by its remote uuid, or the
+    // local id itself) so the barber's schedule reflects the completion too.
+    String? localId;
+    _remoteBookings.forEach((k, v) {
+      if (v == scannedId) localId = k;
+    });
+    localId ??= (_bookingById(scannedId) != null) ? scannedId : null;
+    if (localId != null) verifyAndComplete(localId!);
+    return earned;
   }
 
   /// Overdue bookings (15+ min past, not checked in) — the no-show fail-safe.
@@ -1792,17 +2016,28 @@ class AppState extends ChangeNotifier {
   void _seedBookings() {
     // Start with NO upcoming bookings — the "My Bookings" card only appears
     // once the user actually books. Keep one past cut for loyalty/history.
-    final shop5 = MockData.barbershops[4];
-    _bookings.add(
-      Booking(
-        id: 'b_seed_3',
-        barbershop: shop5,
-        barber: shop5.barbers[1],
-        service: shop5.services[3],
-        dateTime: DateTime.now().subtract(const Duration(days: 21)),
-        status: BookingStatus.completed,
-      ),
-    );
+    //
+    // Indices here are mock-catalogue shaped (5+ shops, 4 barbers, 4 services).
+    // Against the LIVE catalogue (which can be 3 shops × 1 barber × 3 services)
+    // the old `barbershops[4]` / `barbers[1]` / `services[3]` threw RangeError
+    // on every sign-out, so pick defensively and skip the seed if the shape
+    // can't satisfy it.
+    final shops = MockData.barbershops;
+    if (shops.isNotEmpty) {
+      final shop5 = shops.length > 4 ? shops[4] : shops.last;
+      if (shop5.barbers.isNotEmpty && shop5.services.isNotEmpty) {
+        _bookings.add(
+          Booking(
+            id: 'b_seed_3',
+            barbershop: shop5,
+            barber: shop5.barbers[shop5.barbers.length > 1 ? 1 : 0],
+            service: shop5.services[shop5.services.length > 3 ? 3 : 0],
+            dateTime: DateTime.now().subtract(const Duration(days: 21)),
+            status: BookingStatus.completed,
+          ),
+        );
+      }
+    }
 
     // Barber-side demo content for the signed-in barber, at THEIR shop.
     final me = meBarber;
@@ -1813,6 +2048,9 @@ class AppState extends ChangeNotifier {
   /// attached to [shop]. Parametrised so a registered barber's demo content
   /// follows them to whatever shop they joined (not always shop1).
   void _seedBarberDemo(Barbershop shop, Barber barber) {
+    // A real shop can have an empty menu; `% shop.services.length` below would
+    // then be modulo-by-zero. Nothing to demo without services.
+    if (shop.services.isEmpty) return;
     final now = DateTime.now();
     DateTime at(int addDays, int hour) {
       final d = now.add(Duration(days: addDays));
@@ -1890,6 +2128,31 @@ class AppState extends ChangeNotifier {
   // One source of truth. The old pair of bools is now DERIVED from it, so they
   // can never drift apart — and nothing can flip "authenticated" on without an
   // identity, because only signInWithIdentity() moves this off `anonymous`.
+  // ═══════════════════ Legal consent ═══════════════════════════════════════
+  // Explicit, recorded agreement to the Terms + Privacy Policy — a ticked box
+  // and a timestamp, not just "by continuing you agree". Stored with the
+  // document version so that if the documents materially change we can ask
+  // again (bump [legalVersion]) instead of silently relying on stale consent.
+  static const String legalVersion = '2026-07-16'; // matches legal.json 'updated'
+
+  DateTime? _consentAt;
+  String? _consentVersion;
+
+  /// When the user accepted the current legal documents (null = never).
+  DateTime? get consentAcceptedAt => _consentAt;
+
+  /// True until the user has explicitly accepted the CURRENT document version.
+  bool get needsLegalConsent =>
+      _consentAt == null || _consentVersion != legalVersion;
+
+  /// Record the tick. Persisted immediately so it survives a relaunch.
+  void acceptLegal() {
+    _consentAt = DateTime.now();
+    _consentVersion = legalVersion;
+    _save();
+    notifyListeners();
+  }
+
   AuthStage _stage = AuthStage.anonymous;
   AuthStage get authStage => _stage;
 
@@ -2114,6 +2377,11 @@ class AppState extends ChangeNotifier {
   final List<Booking> _bookings = [];
   List<Booking> get bookings => List.unmodifiable(_bookings);
 
+  /// Maps a local booking id → its real Supabase UUID, for the ones that
+  /// actually persisted (live catalogue + real session). Lets a later cancel
+  /// reach the server row. Persisted alongside bookings so it survives relaunch.
+  final Map<String, String> _remoteBookings = {};
+
   List<Booking> bookingsByStatus(BookingStatus status) =>
       _bookings
           .where((b) => b.status == status && b.clientName == null)
@@ -2207,6 +2475,117 @@ class AppState extends ChangeNotifier {
   /// blow past a smaller goal). Purely a DISPLAY goal — real VIP still unlocks
   /// on the verified-scan streak ([vipStreakGoal]).
   static const int fadePointsGoal = 16;
+
+  // ═══════════════════ Fade Points — cashback wallet ══════════════════════════
+  // 1 point = 1 UZS. On each completed booking the client earns [pointsEarnRatePct]%
+  // of the price as points (2,500 on a 100,000 cut) — a cashback funded from
+  // Fade's own commission (half of the standard 5%). Points spend as a discount
+  // at checkout (min [pointsMinRedemptionSom]); the BARBER IS ALWAYS PAID FULL
+  // PRICE — the discount comes from the points reserve, never the barber. Points
+  // expire [pointsExpiryDays] after they're earned, and expired points become
+  // platform profit (breakage).
+  //
+  // SECURITY: this is a client-side ledger today, like the rest of the app's
+  // economy. Points redeemable as money are STORED VALUE and MUST move to a
+  // server-authoritative ledger before real payments (kPaymentsLive) — otherwise
+  // a rooted user edits their own balance. Redemption-at-checkout is Phase 3.
+  static const double pointsEarnRatePct = 2.5; // = half the standard 5% commission
+  static const int pointsMinRedemptionSom = 10000;
+  static const int pointsExpiryDays = 180; // 6 months
+
+  // Point lots: (amount so'm, earnedAt). Spent oldest-first; oldest expire first.
+  final List<({int amount, DateTime earnedAt})> _pointLots = [];
+  int _lastPointsEarned = 0;
+  int get lastPointsEarned => _lastPointsEarned;
+
+  // Server-authoritative balance (Phase 3B). Null until fetched / when offline;
+  // then the local lots below are the mirror. The SERVER is the source of truth.
+  int? _serverPointsBalance;
+  String? _serverReferralCode;
+
+  /// Pull the real balance + referral code from the server (best-effort).
+  Future<void> refreshServerLoyalty() async {
+    final bal = await SupabaseLoyalty.balance();
+    if (bal != null) {
+      _serverPointsBalance = bal;
+      notifyListeners();
+    }
+  }
+
+  /// This user's shareable referral code (server-minted, cached). Falls back to
+  /// a local placeholder only when there's no session.
+  Future<String> referralCode() async {
+    _serverReferralCode ??= await SupabaseLoyalty.myReferralCode();
+    return _serverReferralCode ?? 'FADE';
+  }
+
+  /// Live spendable balance (so'm) — the server figure when we have it, else the
+  /// local mirror (the point lots below).
+  int get pointsBalanceSom {
+    if (_serverPointsBalance != null) return _serverPointsBalance!;
+    final now = DateTime.now();
+    return _pointLots
+        .where((l) => now.difference(l.earnedAt).inDays <= pointsExpiryDays)
+        .fold(0, (s, l) => s + l.amount);
+  }
+
+  /// Points a completed booking earns — [pointsEarnRatePct]% of its so'm price.
+  int pointsEarnedFor(Booking b) =>
+      (Money.toSom(b.service.price) * pointsEarnRatePct / 100).round();
+
+  void _earnFadePoints(Booking b) {
+    final pts = pointsEarnedFor(b);
+    if (pts <= 0) return;
+    _pointLots.add((amount: pts, earnedAt: DateTime.now()));
+    _lastPointsEarned = pts;
+  }
+
+  /// The most a client may apply to a booking of [priceSom]: their balance,
+  /// capped at the price, and only once past the minimum threshold.
+  int redeemablePointsFor(int priceSom) {
+    final bal = pointsBalanceSom;
+    if (bal < pointsMinRedemptionSom) return 0;
+    return bal < priceSom ? bal : priceSom;
+  }
+
+  /// Spend up to [som] points (oldest lots first). Returns the amount applied.
+  /// The barber is still paid full price — the discount is funded from the
+  /// reserve (Fade's set-aside commission), never the barber.
+  int redeemPoints(int som) {
+    _expirePoints();
+    var want = som.clamp(0, pointsBalanceSom);
+    if (want < pointsMinRedemptionSom) return 0;
+    final applied = want;
+    _pointLots.sort((a, b) => a.earnedAt.compareTo(b.earnedAt)); // oldest first
+    while (want > 0 && _pointLots.isNotEmpty) {
+      final lot = _pointLots.first;
+      if (lot.amount <= want) {
+        want -= lot.amount;
+        _pointLots.removeAt(0);
+      } else {
+        _pointLots[0] = (amount: lot.amount - want, earnedAt: lot.earnedAt);
+        want = 0;
+      }
+    }
+    _save();
+    notifyListeners();
+    return applied;
+  }
+
+  void _expirePoints() {
+    final now = DateTime.now();
+    _pointLots.removeWhere(
+        (l) => now.difference(l.earnedAt).inDays > pointsExpiryDays);
+  }
+
+  /// When the soonest-expiring points lapse (for a "use by" nudge); null if none.
+  DateTime? get pointsNextExpiry {
+    _expirePoints();
+    if (_pointLots.isEmpty) return null;
+    final earliest =
+        _pointLots.map((l) => l.earnedAt).reduce((a, b) => a.isBefore(b) ? a : b);
+    return earliest.add(const Duration(days: pointsExpiryDays));
+  }
 
   /// "Member since" date — user joined when account was created.
   /// In mock data, treat 2024-03-12 as the member-since date.
@@ -2346,7 +2725,14 @@ class AppState extends ChangeNotifier {
     if (!SupabaseConfig.useRealCatalogue) return;
     try {
       final shops =
-          await ShopRepository.fetchShops().timeout(const Duration(seconds: 8));
+          await ShopRepository.fetchShops().timeout(const Duration(seconds: 6));
+      // An EMPTY response is treated like a failure, not a success. Wiping the
+      // catalogue to zero shops used to arm every `.first` and `% length` in the
+      // app (map, atelier, seeding) with a crash, so keep the previous list.
+      if (shops.isEmpty) {
+        debugPrint('loadCatalogue: server returned 0 shops, keeping current');
+        return;
+      }
       MockData.barbershops
         ..clear()
         ..addAll(shops);
@@ -2485,6 +2871,15 @@ class AppState extends ChangeNotifier {
     _reviewedBookings
       ..clear()
       ..addAll(sp.getStringList('reviewedBookings') ?? const []);
+    final remoteRaw = sp.getString('remoteBookings');
+    if (remoteRaw != null && remoteRaw.isNotEmpty) {
+      try {
+        _remoteBookings
+          ..clear()
+          ..addAll((jsonDecode(remoteRaw) as Map)
+              .map((k, v) => MapEntry(k as String, v as String)));
+      } catch (_) {}
+    }
     // Reopening after a visit's time has passed: settle it so it leaves the
     // "upcoming" hero and starts asking for a review.
     _settlePastBookings();
@@ -2505,6 +2900,28 @@ class AppState extends ChangeNotifier {
           ..clear()
           ..addAll((jsonDecode(vscan) as Map)
               .map((k, v) => MapEntry(k as String, (v as num).toInt())));
+      } catch (_) {}
+    }
+    _consentAt = _readEpoch(sp, 'consentAt');
+    final cv = sp.getString('consentVersion');
+    _consentVersion = (cv == null || cv.isEmpty) ? null : cv;
+    final tol = sp.getString('barberTolerance');
+    if (tol != null) {
+      _barberTolerance = NoShowTolerance.values.firstWhere(
+          (e) => e.name == tol,
+          orElse: () => NoShowTolerance.standard);
+    }
+    final lots = sp.getString('pointLots');
+    if (lots != null && lots.isNotEmpty) {
+      try {
+        _pointLots
+          ..clear()
+          ..addAll((jsonDecode(lots) as List).map((e) => (
+                amount: (e['a'] as num).toInt(),
+                earnedAt:
+                    DateTime.fromMillisecondsSinceEpoch((e['t'] as num).toInt()),
+              )));
+        _expirePoints(); // drop anything already past 6 months
       } catch (_) {}
     }
     _ledgerSeeded = sp.getBool('ledgerSeeded') ?? _ledgerSeeded;
@@ -2644,6 +3061,11 @@ class AppState extends ChangeNotifier {
     final mine =
         _bookings.where((b) => b.clientName == null).map(_bookingToMap).toList();
     await sp.setString('bookings', jsonEncode(mine));
+    // Keep only mappings whose booking is still around, then persist so a cancel
+    // after relaunch can still reach the real server row.
+    final liveIds = mine.map((m) => m['id']).whereType<String>().toSet();
+    _remoteBookings.removeWhere((k, _) => !liveIds.contains(k));
+    await sp.setString('remoteBookings', jsonEncode(_remoteBookings));
     await sp.setStringList('reviewedBookings', _reviewedBookings.toList());
     // ── Wallet / boosts / VIP / loyalty — durable, like bookings. ──
     await sp.setInt('walletSom', _walletSom);
@@ -2654,6 +3076,16 @@ class AppState extends ChangeNotifier {
     await sp.setString('myBarberShop', _myBarberShopId ?? '');
     await sp.setString('myBarberId', _myBarberId ?? '');
     await sp.setString('vscan', jsonEncode(_verifiedScanStreak));
+    await sp.setString('barberTolerance', _barberTolerance.name);
+    // Legal consent proof — the timestamp AND which version was agreed to.
+    await _putEpoch(sp, 'consentAt', _consentAt);
+    await sp.setString('consentVersion', _consentVersion ?? '');
+    await sp.setString(
+        'pointLots',
+        jsonEncode([
+          for (final l in _pointLots)
+            {'a': l.amount, 't': l.earnedAt.millisecondsSinceEpoch}
+        ]));
     await sp.setBool('ledgerSeeded', _ledgerSeeded);
     await sp.setString('ledger', jsonEncode(_ledger.map(_txToMap).toList()));
     await sp.setString(
@@ -2943,6 +3375,10 @@ class AppState extends ChangeNotifier {
         daily: true,
       ));
     _perks.clear();
+    // Consent belongs to a PERSON, not a device — otherwise the next person to
+    // register on this phone silently inherits the previous user's agreement.
+    _consentAt = null;
+    _consentVersion = null;
     _awardedPerkBookings.clear();
     _verifiedScanStreak.clear();
     _shopReviews.clear();
@@ -3055,10 +3491,142 @@ class AppState extends ChangeNotifier {
     // barber accepts/declines from their own device). Only the user's own
     // bookings auto-confirm.
     if (booking.status == BookingStatus.requested && booking.clientName == null) {
-      _scheduleClientBookingAutoConfirm(booking.id);
+      // Trusted reward: instant confirm, no "waiting for reply". Everyone else
+      // gets the normal request → barber-accepts flow.
+      if (amITrusted) {
+        confirmBooking(booking.id);
+      } else {
+        _scheduleClientBookingAutoConfirm(booking.id);
+      }
+      _persistNewBooking(booking); // best-effort → real Supabase row
     }
     notifyListeners();
     return true;
+  }
+
+  /// Pull every booking the server says is mine — as a client AND as a barber —
+  /// and merge it into the local list. This is the READ half of the two-sided
+  /// loop: it's what lets a request made on the client's phone appear on the
+  /// barber's phone.
+  ///
+  /// Merge rules: a server row already mapped to a local booking updates that
+  /// booking's status; an unseen row is added. Local-only bookings (mock/demo,
+  /// or ones that never persisted) are left alone, so the demo keeps working
+  /// offline and nothing the user can see disappears.
+  Future<void> syncBookings() async {
+    final rows = await BookingRepository.fetchMyBookings();
+    if (rows.isEmpty) return;
+    final myUid = SupabaseService.currentUser?.id;
+    // server uuid → local id, inverted from the map we already keep.
+    final localByRemote = <String, String>{};
+    _remoteBookings.forEach((local, remote) => localByRemote[remote] = local);
+
+    var changed = false;
+    for (final r in rows) {
+      final serverId = r['id'] as String?;
+      if (serverId == null) continue;
+      final status = _statusFromDb(r['status'] as String?);
+      if (status == null) continue;
+
+      final localId = localByRemote[serverId];
+      if (localId != null) {
+        // Known booking — take the server's status as the truth.
+        final i = _bookings.indexWhere((b) => b.id == localId);
+        if (i != -1 && _bookings[i].status != status) {
+          _bookings[i] = _bookings[i].copyWith(status: status);
+          changed = true;
+        }
+        continue;
+      }
+      // Unseen row → build one from the loaded catalogue.
+      final booking = _bookingFromServer(r, status, myUid);
+      if (booking != null && !_bookings.any((b) => b.id == booking.id)) {
+        _bookings.add(booking);
+        _remoteBookings[booking.id] = serverId;
+        changed = true;
+      }
+    }
+    if (changed) {
+      _save();
+      notifyListeners();
+    }
+  }
+
+  /// First element or null, without pulling in package:collection.
+  static T? _first<T>(Iterable<T> it) {
+    final i = it.iterator;
+    return i.moveNext() ? i.current : null;
+  }
+
+  /// DB enum → Dart enum. NOTE the DB says `confirmed` where Dart says
+  /// `upcoming`, and `no_show` where Dart says `noShow`.
+  static BookingStatus? _statusFromDb(String? s) => switch (s) {
+        'requested' => BookingStatus.requested,
+        'confirmed' => BookingStatus.upcoming,
+        'completed' => BookingStatus.completed,
+        'cancelled' => BookingStatus.cancelled,
+        'declined' => BookingStatus.declined,
+        'no_show' => BookingStatus.noShow,
+        _ => null,
+      };
+
+  /// Rebuild a Booking from a server row, resolving shop/barber/service against
+  /// the loaded catalogue. Returns null when the catalogue can't satisfy it
+  /// (e.g. the shop was deleted) rather than inventing placeholders.
+  Booking? _bookingFromServer(
+      Map<String, dynamic> r, BookingStatus status, String? myUid) {
+    final shopId = r['shop_id'] as String?;
+    final barberId = r['barber_id'] as String?;
+    final serviceId = r['service_id'] as String?;
+    final startRaw = r['start_at'] as String?;
+    if (startRaw == null) return null;
+
+    final shop = _first(MockData.barbershops.where((s) => s.id == shopId)) ??
+        _first(MockData.barbershops
+            .where((s) => s.barbers.any((b) => b.id == barberId)));
+    if (shop == null) return null;
+    final barber = _first(shop.barbers.where((b) => b.id == barberId)) ??
+        _first(shop.barbers);
+    if (barber == null) return null;
+    final service = _first(shop.services.where((s) => s.id == serviceId)) ??
+        _first(shop.services);
+    if (service == null) return null;
+
+    // clientName == null marks "this is MY booking" everywhere in the app; a
+    // row where I'm the barber belongs to someone else, so it needs a name. The
+    // real name comes from client_contact_for_booking (profiles are read-own),
+    // fetched lazily by the barber UI — a neutral label until then.
+    final iAmTheClient = myUid != null && r['client_id'] == myUid;
+
+    return Booking(
+      id: 'srv_${r['id']}',
+      barbershop: shop,
+      barber: barber,
+      service: service,
+      dateTime: DateTime.parse(startRaw).toLocal(),
+      status: status,
+      clientName: iAmTheClient ? null : L.clientWord,
+      note: r['note'] as String?,
+    );
+  }
+
+  /// Fire the client's request at Supabase without blocking the UI. On success
+  /// we remember local id → server UUID so a later cancel reaches the row. A
+  /// failure (offline, mock ids, no session) just leaves it local-only.
+  void _persistNewBooking(Booking booking) {
+    BookingRepository.createBooking(
+      barberId: booking.barber.id,
+      shopId: booking.barbershop.id,
+      serviceId: booking.service.id,
+      startAt: booking.dateTime,
+      price: booking.service.price,
+      note: booking.note,
+    ).then((serverId) {
+      if (serverId != null) {
+        _remoteBookings[booking.id] = serverId;
+        _save();
+      }
+    });
   }
 
   /// Simulate the booked barber accepting a client's request after a short
@@ -3076,6 +3644,20 @@ class AppState extends ChangeNotifier {
     final i = _bookings.indexWhere((b) => b.id == id);
     if (i == -1) return;
     _bookings[i] = _bookings[i].copyWith(status: BookingStatus.cancelled);
+    _persistCancel(id);
     notifyListeners();
+  }
+
+  /// Mirror a client cancel to Supabase for bookings that actually persisted.
+  /// Best-effort: drops the mapping once the server row is cancelled.
+  void _persistCancel(String localId) {
+    final serverId = _remoteBookings[localId];
+    if (serverId == null) return;
+    BookingRepository.cancelBooking(serverId).then((ok) {
+      if (ok) {
+        _remoteBookings.remove(localId);
+        _save();
+      }
+    });
   }
 }

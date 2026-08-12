@@ -108,7 +108,7 @@ class _BarberProfileSheet extends StatelessWidget {
                         Row(
                           children: [
                             _StatBubble(
-                              value: barber.rating.toStringAsFixed(1),
+                              value: AppState.instance.barberTalentRating(barber).toStringAsFixed(1),
                               label: L.ratingWord,
                               accent: true,
                             ),
@@ -181,7 +181,7 @@ class _BarberProfileSheet extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              MiniPill('★ ${shop.rating.toStringAsFixed(1)}'),
+                              MiniPill('★ ${AppState.instance.shopRating(shop).toStringAsFixed(1)}'),
                             ],
                           ),
                         ),

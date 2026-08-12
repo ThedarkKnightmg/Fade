@@ -154,8 +154,14 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: AppColors.ink.withValues(alpha: 0.5),
+      // Scroll-controlled + scrollable grid: a full day of 30-minute slots is
+      // taller than the default sheet, which overflowed the last row.
+      isScrollControlled: true,
       builder: (sheetCtx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 30),
+        constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetCtx).size.height * 0.85),
+        padding: EdgeInsets.fromLTRB(
+            20, 14, 20, 20 + MediaQuery.of(sheetCtx).padding.bottom),
         decoration: BoxDecoration(
           color: p.bg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -179,14 +185,18 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
               '${L.bkFreeChairs} · ${DateFormat('EEE d MMM').format(_days[_dateIndex])}',
             ),
             const SizedBox(height: 4),
-            TimeGrid(
-              slots: _slots,
-              booked: _bookedSlots,
-              selected: _time,
-              onSelect: (t) {
-                setState(() => _time = t);
-                Navigator.pop(sheetCtx);
-              },
+            Flexible(
+              child: SingleChildScrollView(
+                child: TimeGrid(
+                  slots: _slots,
+                  booked: _bookedSlots,
+                  selected: _time,
+                  onSelect: (t) {
+                    setState(() => _time = t);
+                    Navigator.pop(sheetCtx);
+                  },
+                ),
+              ),
             ),
           ],
         ),
@@ -526,13 +536,14 @@ class _ShopHero extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
+              // Blended average + total count, so a fresh review shows up here.
               _HeroChip(
                 icon: Icons.star_rounded,
-                label: shop.rating.toStringAsFixed(1),
+                label: AppState.instance.shopRating(shop).toStringAsFixed(1),
               ),
               _HeroChip(
                 icon: Icons.reviews_outlined,
-                label: L.reviewsCount(shop.reviewCount),
+                label: L.reviewsCount(AppState.instance.shopReviewCount(shop)),
               ),
               _HeroChip(
                 icon: Icons.near_me_outlined,

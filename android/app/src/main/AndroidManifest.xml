@@ -1,11 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <!-- Coarse location only — enough for "shops near you", and it keeps us out
+         of Play's precise-location review scrutiny (matches the Data Safety
+         form, which declares approximate location). -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- Real notifications (booking confirmed/declined, new requests). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Real QR scanner (client check-in handshake). -->
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Declaring CAMERA implicitly requires a camera WITH autofocus, which
+         makes Play hide the app from fixed-focus devices. QR scanning is a
+         secondary flow, so neither is required. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
     <!-- Hardening: no ADB/cloud backup of app data (SharedPreferences holds
          the user's AI key), and never allow cleartext HTTP. -->
     <application

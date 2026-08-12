@@ -582,15 +582,9 @@ String _homeFilterLabel(_HomeFilter f) => switch (f) {
       _HomeFilter.budget => L.mapFilterBudget,
     };
 
-IconData? _homeFilterIcon(_HomeFilter f) => switch (f) {
-      _HomeFilter.all => null,
-      _HomeFilter.premium => Icons.workspace_premium_rounded,
-      _HomeFilter.top => Icons.star_rounded,
-      _HomeFilter.budget => Icons.savings_rounded,
-    };
-
-/// Filterable shops list: chips (All / Premium / Top rated / Budget) above the
-/// cards so you narrow the list to what you want. Premium shops lead on "All".
+/// Filterable shops list: text tabs (All / Premium / Top rated / Budget) above
+/// the cards so you narrow the list to what you want. Premium shops lead on
+/// "All".
 class _ShopsSection extends StatefulWidget {
   const _ShopsSection({
     required this.shops,
@@ -675,21 +669,29 @@ class _ShopsSectionState extends State<_ShopsSection> {
           child: Row(
             children: [
               if (!_barbersMode)
+                // The filters own the whole row now. The old "See all" chip sat
+                // here and duplicated the Explore tab that's already in the
+                // bottom nav — dropping it removes a control AND the collision
+                // it caused (the pill list painted over it).
                 Expanded(
+                  // A 50px band gives the selected pill's accent glow room to
+                  // render instead of being clipped flat by the viewport.
                   child: SizedBox(
-                    height: 38,
+                    height: 34,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       padding: EdgeInsets.zero,
                       children: [
                         for (final f in _HomeFilter.values) ...[
-                          FilterPill(
+                          // No Center wrapper — it expands to max width, which
+                          // is unbounded inside a horizontal list. The tab
+                          // centres itself vertically instead.
+                          FilterTab(
                             label: _homeFilterLabel(f),
-                            icon: _homeFilterIcon(f),
                             selected: f == _f,
                             onTap: () => setState(() => _f = f),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 22),
                         ],
                       ],
                     ),
@@ -699,19 +701,6 @@ class _ShopsSectionState extends State<_ShopsSection> {
                 Expanded(
                   child: Text(L.feedBarbers, style: AppTypography.h3(context)),
                 ),
-              const SizedBox(width: 10),
-              GestureDetector(
-                onTap: widget.onSeeAll,
-                behavior: HitTestBehavior.opaque,
-                child: Text(
-                  L.seeAll,
-                  style: GoogleFonts.nunito(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.accent,
-                  ),
-                ),
-              ),
             ],
           ),
         ),
@@ -1219,7 +1208,8 @@ class _PointsPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cuts = AppState.instance.fadePoints;
+    // Fade Points = the spendable cashback balance (so'm).
+    final bal = AppState.instance.pointsBalanceSom;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -1244,11 +1234,11 @@ class _PointsPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: cuts.toDouble()),
+              tween: Tween(begin: 0, end: bal.toDouble()),
               duration: const Duration(milliseconds: 900),
               curve: Curves.easeOutCubic,
               builder: (_, v, __) => Text(
-                '${v.round()}',
+                Money.group(v.round()),
                 style: GoogleFonts.nunito(
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
@@ -1264,8 +1254,8 @@ class _PointsPill extends StatelessWidget {
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.content_cut_rounded,
-                  size: 16, color: Color(0xFF7A3CF0)),
+              child: const Icon(Icons.stars_rounded,
+                  size: 17, color: Color(0xFF7A3CF0)),
             ),
           ],
         ),
@@ -1355,6 +1345,8 @@ class _BonusSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 18),
+              const _FadePointsWallet(),
+              const SizedBox(height: 18),
               Row(
                 children: [
                   Container(
@@ -1389,9 +1381,28 @@ class _BonusSheet extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(L.fadePoints, style: AppTypography.h3(context)),
-                        Text(L.rewardsVipProgress,
-                            style: AppTypography.bodySmall(context)),
+                        Text(L.vipStatusTitle, style: AppTypography.h3(context)),
+                        if (AppState.instance.amITrusted)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.verified_rounded,
+                                  size: 14, color: AppColors.green),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text('${L.trustedTag} · ${L.trustedPerk}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.nunito(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.green)),
+                              ),
+                            ],
+                          )
+                        else
+                          Text(L.rewardsVipProgress,
+                              style: AppTypography.bodySmall(context)),
                       ],
                     ),
                   ),
@@ -1430,6 +1441,8 @@ class _BonusSheet extends StatelessWidget {
                 remaining <= 0 ? L.vipUnlocked : L.cutsToVip(remaining),
                 style: AppTypography.bodySmall(context),
               ),
+              const SizedBox(height: 18),
+              const _TrustedPerksPanel(),
               // Earned passes — the confirmation-screen rewards, now real and
               // waiting here instead of vanishing.
               if (passCounts.isNotEmpty) ...[
@@ -1871,63 +1884,299 @@ class _BookAgainCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
+        // Stacked, not side-by-side: the long localized CTA ("Qayta yozilish")
+        // used to take its full intrinsic width and squeeze the title into
+        // "Odatdagid / ek yozilish". Mirrors _ReviewNudgeCard's layout.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 26),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    L.bookYourUsual,
-                    style: GoogleFonts.nunito(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
+            Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${ref.barber.name} · ${ref.shop.name}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.nunito(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white.withValues(alpha: 0.85),
-                    ),
+                  child: const Icon(Icons.bolt_rounded,
+                      color: Colors.white, size: 26),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        L.bookYourUsual,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.nunito(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${ref.barber.name} · ${ref.shop.name}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.nunito(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: 10),
+            const _TrustedLine(),
+            const SizedBox(height: 14),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              height: 44,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: Text(
-                L.rebook,
-                style: GoogleFonts.nunito(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.accentDeep,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Text(
+                  L.rebook,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.accentDeep,
+                  ),
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The Fade Points cashback wallet, headlining the loyalty sheet — the
+/// spendable so'm balance, big, on the brand gradient, with the earn/spend rule.
+class _FadePointsWallet extends StatelessWidget {
+  const _FadePointsWallet();
+
+  @override
+  Widget build(BuildContext context) {
+    final bal = AppState.instance.pointsBalanceSom;
+    final canSpend = bal >= AppState.pointsMinRedemptionSom;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFF2D7E), Color(0xFF7A3CF0), Color(0xFF2E8BFF)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7A3CF0).withValues(alpha: 0.30),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.stars_rounded, color: Colors.white, size: 18),
+              const SizedBox(width: 6),
+              Text(
+                L.fadePoints.toUpperCase(),
+                style: GoogleFonts.nunito(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.4,
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: bal.toDouble()),
+            duration: const Duration(milliseconds: 850),
+            curve: Curves.easeOutCubic,
+            builder: (_, v, __) => Text(
+              Money.somValue(v.round()),
+              style: GoogleFonts.nunito(
+                fontSize: 30,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                height: 1.0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            canSpend ? L.fadePointsSpend : L.fadePointsRule,
+            style: GoogleFonts.nunito(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: Colors.white.withValues(alpha: 0.85),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The Trusted perk list, shown in the loyalty sheet. Locked (grey, with a
+/// progress hint) until earned; unlocked (green, ticked) once you're Trusted.
+class _TrustedPerksPanel extends StatelessWidget {
+  const _TrustedPerksPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final s = AppState.instance;
+    final trusted = s.amITrusted;
+    const goal = AppState.trustedVisitGoal;
+    final done = s.myCompletedVisits.clamp(0, goal);
+    final perks = <(IconData, String)>[
+      (Icons.bolt_rounded, L.tPerkInstant),
+      (Icons.low_priority_rounded, L.tPerkPriority),
+      (Icons.credit_card_off_rounded, L.tPerkNoDeposit),
+      (Icons.event_busy_rounded, L.tPerkFreeCancel),
+      (Icons.verified_rounded, L.tPerkBadge),
+    ];
+    final accent = trusted ? AppColors.green : p.textTertiary;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: trusted ? AppColors.green.withValues(alpha: 0.08) : p.cardAlt,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color:
+              trusted ? AppColors.green.withValues(alpha: 0.35) : p.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                  trusted
+                      ? Icons.verified_rounded
+                      : Icons.lock_outline_rounded,
+                  size: 18,
+                  color: accent),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: Text(L.trustedPerksTitle,
+                      style: AppTypography.h3(context))),
+              if (!trusted)
+                Text('$done/$goal',
+                    style: GoogleFonts.nunito(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: p.textSecondary)),
+            ],
+          ),
+          if (!trusted) ...[
+            const SizedBox(height: 4),
+            Text(L.trustedIn(goal - done),
+                style: AppTypography.bodySmall(context)),
+          ],
+          const SizedBox(height: 14),
+          for (final (icon, label) in perks)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Icon(icon,
+                      size: 17,
+                      color: trusted ? AppColors.green : p.textTertiary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(label,
+                        style: GoogleFonts.nunito(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: trusted ? p.text : p.textSecondary)),
+                  ),
+                  if (trusted)
+                    const Icon(Icons.check_rounded,
+                        size: 16, color: AppColors.green),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// On the "Book your usual" card: either the earned Trusted perk line, or a
+/// nudge toward it (progress in clean visits). Zero-cost reward-by-access.
+class _TrustedLine extends StatelessWidget {
+  const _TrustedLine();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppState.instance;
+    const goal = AppState.trustedVisitGoal;
+    final trusted = s.amITrusted;
+    final done = s.myCompletedVisits;
+    // Nothing to show for a brand-new user with no visits yet.
+    if (!trusted && done == 0) return const SizedBox.shrink();
+    final label = trusted
+        ? '${L.trustedTag} · ${L.trustedPerk}'
+        : L.trustedIn(goal - done);
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Row(
+        children: [
+          Icon(
+            trusted
+                ? Icons.verified_rounded
+                : Icons.workspace_premium_outlined,
+            size: 15,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.nunito(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          if (!trusted)
+            Text(
+              '$done/$goal',
+              style: GoogleFonts.nunito(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w900,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -1961,54 +2210,80 @@ class _ReviewNudgeCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
+        // Copy on top, CTA on its own full-width row below. A side-by-side Row
+        // let the long localized label ("Tashrifingizni baholang") claim its
+        // full intrinsic width and starve the text column down to one character
+        // per line — stacking makes the card immune to label length.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: AppColors.gold.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: const Icon(Icons.star_rounded,
-                  color: AppColors.gold, size: 28),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    L.howWasVisit,
-                    style: GoogleFonts.nunito(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: p.text,
-                    ),
+            Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${booking.barber.name} · ${booking.barbershop.name}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.bodySmall(context),
+                  child: const Icon(Icons.star_rounded,
+                      color: AppColors.gold, size: 28),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        L.howWasVisit,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.nunito(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: p.text,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${booking.barber.name} · ${booking.barbershop.name}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.bodySmall(context),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: 10),
+            const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              height: 44,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: AppColors.gold,
                 borderRadius: BorderRadius.circular(999),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.gold.withValues(alpha: 0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-              child: Text(
-                L.rateYourVisit,
-                style: GoogleFonts.nunito(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Text(
+                  L.rateYourVisit,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
@@ -2064,7 +2339,11 @@ class _BookingsCardState extends State<_BookingsCard> {
     final total = upcoming.fold<double>(0, (sum, b) => sum + b.service.price);
     final nextCost = next?.service.price ?? 0;
     final canToggle = count > 1;
-    final shownCost = ((_showTotal && canToggle) ? total : nextCost).round();
+    // Convert to so'm FIRST, then round. Rounding in the base unit truncated
+    // real-catalogue prices (90 000 so'm = 7.03125 base → 7 → "89 600 so'm",
+    // while the booking ticket showed the true 90 000).
+    final shownCostSom =
+        Money.toSom((_showTotal && canToggle) ? total : nextCost);
 
     return PressableScale(
       onTap: widget.onTap,
@@ -2149,7 +2428,7 @@ class _BookingsCardState extends State<_BookingsCard> {
                 if (next != null)
                   _NextVisitPanel(
                     booking: next,
-                    cost: shownCost,
+                    costSom: shownCostSom,
                     showTotal: _showTotal && canToggle,
                     canToggle: canToggle,
                     dayLabel: _dayLabel(next.dateTime),
@@ -2199,7 +2478,7 @@ class _BookingsCardState extends State<_BookingsCard> {
 class _NextVisitPanel extends StatelessWidget {
   const _NextVisitPanel({
     required this.booking,
-    required this.cost,
+    required this.costSom,
     required this.showTotal,
     required this.canToggle,
     required this.dayLabel,
@@ -2208,7 +2487,7 @@ class _NextVisitPanel extends StatelessWidget {
   });
 
   final Booking booking;
-  final int cost;
+  final int costSom;
   final bool showTotal;
   final bool canToggle;
   final String dayLabel;
@@ -2300,7 +2579,7 @@ class _NextVisitPanel extends StatelessWidget {
           const SizedBox(width: 12),
           // Right — the green money chip.
           _MoneyChip(
-            cost: cost,
+            costSom: costSom,
             showTotal: showTotal,
             canToggle: canToggle,
             onTap: onToggle,
@@ -2316,13 +2595,13 @@ class _NextVisitPanel extends StatelessWidget {
 /// upcoming total on tap (a small swap hint nudges the user).
 class _MoneyChip extends StatelessWidget {
   const _MoneyChip({
-    required this.cost,
+    required this.costSom,
     required this.showTotal,
     required this.canToggle,
     required this.onTap,
   });
 
-  final int cost;
+  final int costSom;
   final bool showTotal;
   final bool canToggle;
   final VoidCallback onTap;
@@ -2375,7 +2654,7 @@ class _MoneyChip extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             CountUp(
-              Money.toSom(cost),
+              costSom,
               formatter: Money.group,
               duration: const Duration(milliseconds: 650),
               style: GoogleFonts.nunito(
