@@ -29,6 +29,12 @@ import 'models/user.dart';
 import 'models/wallet_tx.dart';
 import 'mock_data.dart';
 
+// AppState is one ChangeNotifier split across `part` files by domain. Parts
+// share the library's privacy scope, so each domain can keep its private state
+// private while still reaching shared plumbing like _save() — and every
+// `AppState.instance` call site stays untouched.
+part 'app_state/legal_consent.dart';
+
 /// Which side of the marketplace the user is currently using.
 enum AppRole { client, barber }
 
@@ -169,7 +175,7 @@ class BoostPack {
 /// the current user, their bookings, and the barber they've chosen
 /// as their personal "master". Uses ChangeNotifier so any widget
 /// can listen and rebuild when state changes.
-class AppState extends ChangeNotifier {
+class AppState extends ChangeNotifier with LegalConsentState {
   AppState._() {
     _seedBookings();
     _seedChats();
@@ -2124,35 +2130,16 @@ class AppState extends ChangeNotifier {
   bool _isDarkMode = false; // app opens in the light theme; toggle → navy
   bool get isDarkMode => _isDarkMode;
 
+  // ═══════════════════ Legal consent ═══════════════════════════════════════
+  // The version stays here because statics are NOT inherited from a mixin —
+  // `AppState.legalVersion` has to resolve on the class itself. The state and
+  // behaviour it guards live in app_state/legal_consent.dart.
+  static const String legalVersion = '2026-07-16'; // matches legal.json 'updated'
+
   // === Auth ===
   // One source of truth. The old pair of bools is now DERIVED from it, so they
   // can never drift apart — and nothing can flip "authenticated" on without an
   // identity, because only signInWithIdentity() moves this off `anonymous`.
-  // ═══════════════════ Legal consent ═══════════════════════════════════════
-  // Explicit, recorded agreement to the Terms + Privacy Policy — a ticked box
-  // and a timestamp, not just "by continuing you agree". Stored with the
-  // document version so that if the documents materially change we can ask
-  // again (bump [legalVersion]) instead of silently relying on stale consent.
-  static const String legalVersion = '2026-07-16'; // matches legal.json 'updated'
-
-  DateTime? _consentAt;
-  String? _consentVersion;
-
-  /// When the user accepted the current legal documents (null = never).
-  DateTime? get consentAcceptedAt => _consentAt;
-
-  /// True until the user has explicitly accepted the CURRENT document version.
-  bool get needsLegalConsent =>
-      _consentAt == null || _consentVersion != legalVersion;
-
-  /// Record the tick. Persisted immediately so it survives a relaunch.
-  void acceptLegal() {
-    _consentAt = DateTime.now();
-    _consentVersion = legalVersion;
-    _save();
-    notifyListeners();
-  }
-
   AuthStage _stage = AuthStage.anonymous;
   AuthStage get authStage => _stage;
 
@@ -2984,6 +2971,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   Future<void> _save() async {
     final sp = await SharedPreferences.getInstance();
     await sp.setString('auth_stage', _stage.name);
