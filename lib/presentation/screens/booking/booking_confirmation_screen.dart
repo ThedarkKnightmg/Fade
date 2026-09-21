@@ -14,6 +14,7 @@ import '../../../data/models/booking.dart';
 import '../../../data/models/hairstyle.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
+import '../game/games_sheet.dart';
 
 /// The peak-end moment: a stamp + confetti, a *variable* surprise reward
 /// (the slot-machine dopamine hit), and the loyalty punch-card advancing —
@@ -193,6 +194,15 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                   FadeSlideIn(
                     delay: const Duration(milliseconds: 520),
                     child: const _LoyaltyMini(),
+                  ),
+                  const SizedBox(height: 16),
+                  // The chair is booked — the next question is "so what now?".
+                  // Answering it here, at the peak, is what turns a one-shot
+                  // booking into time spent in the app. A full card (not a
+                  // third stacked ghost button) so it actually gets seen.
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 580),
+                    child: const GameInviteCard(),
                   ),
                   const SizedBox(height: 26),
                   FadeSlideIn(

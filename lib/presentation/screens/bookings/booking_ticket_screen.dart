@@ -235,17 +235,13 @@ class BookingTicketScreen extends StatelessWidget {
                   style: PrimaryButtonStyle.ghost,
                   onPressed: () => addBookingToCalendar(context, booking),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 // This screen is what's open while you sit in the shop waiting
                 // to be called, so it's where the wait actually happens — and
-                // where a 40-second game belongs.
-                PrimaryButton(
-                  label: '${L.gamesTitle} · ${L.gameKillTime}',
-                  icon: Icons.sports_esports_rounded,
-                  height: 54,
-                  style: PrimaryButtonStyle.ghost,
-                  onPressed: () => showGamesSheet(context),
-                ),
+                // where a 40-second game belongs. It was a ghost button
+                // directly under another ghost button, which made it read as
+                // more fine print; a card of its own is what gets it seen.
+                const GameInviteCard(),
               ],
             ),
           );
