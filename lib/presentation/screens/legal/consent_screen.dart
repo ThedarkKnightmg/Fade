@@ -180,22 +180,43 @@ class _AgreeTick extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: AppCurves.easeOutQuart,
-            width: 26,
-            height: 26,
-            decoration: BoxDecoration(
-              color: value ? AppColors.accent : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: value ? AppColors.accent : p.border,
-                width: 2,
-              ),
-            ),
-            child: value
-                ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
-                : null,
+          // While UNCHECKED the box breathes — an accent halo swells and the
+          // border pulses, so the eye is drawn to the one action left to take.
+          // The moment it's ticked the animation stops and it settles solid.
+          Breathe(
+            period: const Duration(milliseconds: 1500),
+            builder: (context, t) {
+              // Only pulse while empty; a ticked box is calm.
+              final glow = value ? 0.0 : t;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: AppCurves.easeOutQuart,
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: value ? AppColors.accent : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    // Border brightens toward the accent as it breathes.
+                    color: value
+                        ? AppColors.accent
+                        : Color.lerp(p.border, AppColors.accent, glow)!,
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.accent.withValues(alpha: 0.55 * glow),
+                      blurRadius: 6 + 10 * glow,
+                      spreadRadius: 1 + 2 * glow,
+                    ),
+                  ],
+                ),
+                child: value
+                    ? const Icon(Icons.check_rounded,
+                        size: 18, color: Colors.white)
+                    : null,
+              );
+            },
           ),
           const SizedBox(width: 12),
           Expanded(
