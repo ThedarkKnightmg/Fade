@@ -13,12 +13,14 @@ import '../../../core/format/thousands_formatter.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/location/geo_position.dart';
 import '../../../core/map/fast_tiles.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../../data/map_listings.dart';
 import '../../../data/mock_data.dart';
 import '../../../data/models/barbershop.dart';
+import '../../widgets/directions_sheet.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../barbershop_detail/barbershop_detail_screen.dart';
@@ -142,6 +144,13 @@ class _ShopsMapScreenState extends State<ShopsMapScreen>
           shopIndex: i,
         ),
     ];
+    // The ~140 procedurally scattered Tashkent listings exist to make the DEMO
+    // map look busy. They are not shops: each pin sits at an invented address
+    // and routes to whichever real shop lands on `shopIndex % length`. Shipping
+    // them means a user walks to a pin near their home and finds no barbershop
+    // — and the header cheerfully claims "143 shops nearby" when there are 3.
+    // On the live catalogue the map shows real shops only.
+    if (SupabaseConfig.useRealCatalogue) return real;
     return [...real, ...MapListings.tashkent];
   }
 
@@ -287,59 +296,51 @@ class _ShopsMapScreenState extends State<ShopsMapScreen>
   Widget build(BuildContext context) {
     final p = Paper.of(context);
 
-    // Embedded (bottom-nav tab) → full-bleed map, chrome floats on top.
+    // The map is ALWAYS full-bleed — pushed or as a nav tab. It used to be
+    // framed in a rounded card under a big "Shops on the map" headline, which
+    // spent roughly a third of the screen restating the title bar and left the
+    // actual map feeling like a thumbnail of itself. A map is the content, not
+    // an illustration of it, so it gets the whole viewport and the chrome
+    // (back, price pill) floats on top.
+    final topPad = MediaQuery.of(context).padding.top + 10;
     if (widget.embedded) {
-      final topPad = MediaQuery.of(context).padding.top + 10;
       return Scaffold(
         backgroundColor: p.bg,
         body: _mapLayers(context, p, topPad: topPad, bottomPad: 96),
       );
     }
 
-    // Pushed (from the menu) → framed card with a header.
     return Scaffold(
       backgroundColor: p.bg,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleBtn(
-                    icon: Icons.arrow_back_rounded,
-                    size: 42,
-                    onTap: () => Navigator.of(context).maybePop(),
-                  ),
-                  const Spacer(),
-                  MiniPill(L.pricesInSom),
-                ],
-              ),
-              const SizedBox(height: 14),
-              FadeSlideIn(
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: '${L.shopsWord} ',
-                        style: AppTypography.h1(context),
-                      ),
-                      markerBoxSpan(L.onTheMap, AppTypography.h1(context)),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: _mapLayers(context, p, topPad: 12, bottomPad: 10),
-                ),
-              ),
-            ],
+      body: Stack(
+        children: [
+          // Pushed from Home/Explore: the floating back row occupies the first
+          // ~52px, so the count chip and filter bar start below it.
+          Positioned.fill(
+            child: _mapLayers(
+              context,
+              p,
+              topPad: topPad + 52,
+              bottomPad: 10,
+            ),
           ),
-        ),
+          Positioned(
+            top: topPad,
+            left: 20,
+            right: 20,
+            child: Row(
+              children: [
+                CircleBtn(
+                  icon: Icons.arrow_back_rounded,
+                  size: 42,
+                  onTap: () => Navigator.of(context).maybePop(),
+                ),
+                const Spacer(),
+                MiniPill(L.pricesInSom),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1489,6 +1490,33 @@ class _YouMarkerState extends State<_YouMarker>
 }
 
 /// The chooser card that slides up over the map.
+/// A square icon button sized to match the 46px action buttons beside it.
+class _RoundAction extends StatelessWidget {
+  const _RoundAction({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          color: AppColors.accent.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: p.border),
+        ),
+        child: Icon(icon, size: 21, color: AppColors.accent),
+      ),
+    );
+  }
+}
+
 class _ShopCard extends StatelessWidget {
   const _ShopCard({
     required this.shop,
@@ -1559,6 +1587,19 @@ class _ShopCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
+              // Directions live on the MAP card because this is where someone
+              // asks "where is that?" — previously the only route to navigation
+              // was a confirmed booking's ticket, which is far too late.
+              _RoundAction(
+                icon: Icons.turn_slight_right_rounded,
+                onTap: () => showDirectionsSheet(
+                  context,
+                  lat: shop.lat,
+                  lng: shop.lng,
+                  name: shop.name,
+                ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: PrimaryButton(
                   label: L.openShop,

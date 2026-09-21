@@ -665,6 +665,11 @@ class _LeaderLoopScreenState extends State<LeaderLoopScreen> {
           delay: const Duration(milliseconds: 60),
           child: Text(L.bringTeamSub, style: AppTypography.bodySmall(context)),
         ),
+        const SizedBox(height: 14),
+        // Did the shop actually reach the server? A shop that only saved
+        // locally is invisible to every client, and a barber who isn't told
+        // sits waiting for bookings that can never arrive.
+        const _PublishStatusCard(),
         const SizedBox(height: 18),
         // The pre-written message the leader fires off to coworkers.
         FadeSlideIn(
@@ -1440,4 +1445,82 @@ class _ConfettiPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ConfettiPainter old) => old.t != t;
+}
+
+/// Tells the barber, plainly, whether their shop actually reached the server.
+///
+/// The write is best-effort and fails silently when there is no Supabase
+/// session — which includes the demo phone-OTP path. Without this card the
+/// barber finishes onboarding, sees the shop on their own map, and assumes they
+/// are open for business while no client can see them at all.
+class _PublishStatusCard extends StatelessWidget {
+  const _PublishStatusCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: AppState.instance,
+      builder: (context, _) {
+        final p = Paper.of(context);
+        final published = AppState.instance.shopPublished;
+        if (published == null) {
+          return const SizedBox.shrink(); // still in flight — say nothing yet
+        }
+        final ok = published;
+        final accent = ok ? const Color(0xFF1FA463) : const Color(0xFFE2554E);
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: accent.withValues(alpha: 0.45)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    ok ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                    size: 20,
+                    color: accent,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      ok ? L.shopLiveTitle : L.shopNotPublishedTitle,
+                      style: AppTypography.h4(context),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                ok ? L.shopLiveBody : L.shopNotPublishedBody,
+                style: AppTypography.bodySmall(context)
+                    .copyWith(color: p.textSecondary, height: 1.4),
+              ),
+              if (!ok) ...[
+                const SizedBox(height: 12),
+                PrimaryButton(
+                  label: L.shopPublishRetry,
+                  height: 46,
+                  icon: Icons.cloud_upload_rounded,
+                  onPressed: () async {
+                    final live = await AppState.instance.retryPublishShop();
+                    if (!context.mounted) return;
+                    if (!live) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(L.shopPublishFailed)),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
 }

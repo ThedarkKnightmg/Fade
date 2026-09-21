@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import '../../data/models/hairstyle.dart';
@@ -88,6 +89,9 @@ Future<Uint8List?> buildHairMask(Uint8List photo,
       HairSilhouette.pompadour => (0.62, 0.14),
       HairSilhouette.quiff => (0.58, 0.14),
       HairSilhouette.curtains => (0.46, 0.22),
+      // Curls occupy more space than their length implies — the mask has to
+      // reach higher and wider or the render clips the top of the hair off.
+      HairSilhouette.curly => (0.58, 0.20),
       null => (0.42, 0.14),
     };
 
@@ -102,38 +106,80 @@ Future<Uint8List?> buildHairMask(Uint8List photo,
 
     if (face != null) {
       // ── Face-anchored mask ────────────────────────────────────────────
-      final faceH = face.height * hd;
-      final faceW = face.width * wd;
-      final hairlineY = face.top * hd; // top of skin ≈ forehead
-      final topY = hairlineY - faceH * up; // build height above the head
-      final bottomY = hairlineY + faceH * down; // temples/sides
-      final cx = face.centerX * wd;
-      // A touch wider than the face so sides and temples are included.
-      final halfW = faceW * 0.78;
+      //
+      // THE MASK MUST COVER THE HAIR BEING REMOVED, not just the space the new
+      // hair will occupy. The previous version was an oval from above the head
+      // down to `hairlineY + faceH * down`, only 0.78 face-widths wide. An oval
+      // is widest at its vertical MIDPOINT — which sat above the hairline — so
+      // it tapered to a point exactly at the temples and left the ears and nape
+      // black (= copied through untouched). A live test asking for a platinum
+      // mohawk came back as a blonde top over brown sides, which is what every
+      // user with more than a buzz was getting: new hair pasted onto old hair.
+      //
+      // The shape is now a dome whose widest point IS the hairline, welded to
+      // straight sides running past the ears to the jaw.
 
-      // Soft-edged dome over the hair: an oval spanning top→bottom, feathered
-      // so the new hairline blends instead of showing a hard seam.
-      canvas.drawOval(
-        ui.Rect.fromLTRB(cx - halfW, topY, cx + halfW, bottomY),
+      // detectFaceBox counts SKIN, so a bare neck and shoulders inflate the
+      // box. Clamp to proportions a real face can actually have before
+      // deriving anything from it.
+      final faceW = (face.width * wd).clamp(wd * 0.12, wd * 0.58);
+      final faceH = (face.height * hd).clamp(faceW * 0.95, faceW * 1.45);
+
+      final cx = face.centerX * wd;
+      final hairlineY = face.top * hd; // top of the skin blob
+      final eyeY = hairlineY + faceH * 0.30; // eyes ≈ 30% down the face
+      final chinY = hairlineY + faceH;
+
+      // Hair is WIDER than the skin box: temples, ears and sideburns all live
+      // outside it.
+      final halfW = faceW * 1.02;
+      final topY = (hairlineY - faceH * up).clamp(-faceH * 0.30, hairlineY);
+
+      // Sides run down past the ears so existing side hair is inside the
+      // repaint zone and can actually be cut off. The 0.85 floor is the point:
+      // `down` tunes how far past that a style reaches, but no style may mask
+      // less than the head itself.
+      final sideBottomY = hairlineY + faceH * (0.85 + down);
+
+      // Dome centred ON the hairline, so its widest point is over the temples
+      // rather than over the background.
+      final dome = ui.Path()
+        ..addOval(ui.Rect.fromLTRB(
+            cx - halfW, topY, cx + halfW, hairlineY + (hairlineY - topY)));
+      final sides = ui.Path()
+        ..addRRect(ui.RRect.fromLTRBAndCorners(
+          cx - halfW,
+          hairlineY,
+          cx + halfW,
+          sideBottomY,
+          bottomLeft: ui.Radius.circular(faceW * 0.38),
+          bottomRight: ui.Radius.circular(faceW * 0.38),
+        ));
+
+      canvas.drawPath(
+        ui.Path.combine(ui.PathOperation.union, dome, sides),
         ui.Paint()
           ..color = const ui.Color(0xFFFFFFFF)
           ..maskFilter =
-              ui.MaskFilter.blur(ui.BlurStyle.normal, faceW * 0.06),
+              ui.MaskFilter.blur(ui.BlurStyle.normal, faceW * 0.045),
       );
 
-      // Carve the FACE back out so eyes/nose/mouth are never repainted. Sits
-      // just below the hairline and covers the real detected face.
+      // Carve the FACE back out. The old top edge (hairlineY + faceH * 0.14)
+      // lands BELOW the eyebrows whenever the detected skin-top is a fringe or
+      // a low hairline — which is the "the AI changed my face" failure. Clamp
+      // it so the eyes are ALWAYS preserved.
+      final carveTop = math.min(hairlineY + faceH * 0.16, eyeY - faceH * 0.06);
       canvas.drawOval(
         ui.Rect.fromLTRB(
-          cx - faceW * 0.52,
-          hairlineY + faceH * 0.14,
-          cx + faceW * 0.52,
-          face.bottom * hd + faceH * 0.10,
+          cx - faceW * 0.50,
+          carveTop,
+          cx + faceW * 0.50,
+          chinY + faceH * 0.06,
         ),
         ui.Paint()
           ..color = const ui.Color(0xFF000000)
           ..maskFilter =
-              ui.MaskFilter.blur(ui.BlurStyle.normal, faceW * 0.07),
+              ui.MaskFilter.blur(ui.BlurStyle.normal, faceW * 0.055),
       );
     } else {
       // ── Fallback: no confident face found, use the old fixed layout ────
@@ -148,6 +194,7 @@ Future<Uint8List?> buildHairMask(Uint8List photo,
         HairSilhouette.pompadour => (0.00, 0.48),
         HairSilhouette.quiff => (0.00, 0.47),
         HairSilhouette.curtains => (0.05, 0.50),
+        HairSilhouette.curly => (0.01, 0.47),
         null => (0.05, 0.46),
       };
       final crownSoft = (crown + 0.04).clamp(0.0, 1.0);

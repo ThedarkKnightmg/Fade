@@ -11,6 +11,7 @@ import '../../../core/photo/photo_source.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
+import '../../../data/demo_faces.dart';
 import '../../../data/hair_data.dart';
 import '../../../data/mock_data.dart';
 import '../../../data/models/hairstyle.dart';
@@ -129,7 +130,17 @@ class _StyleStudioScreenState extends State<StyleStudioScreen> {
     if (id == null) return;
     AppState.instance.setDesiredStyle(id);
     final my = AppState.instance.myBarber;
-    final shop = my?.shop ?? MockData.barbershops.first;
+    // Never fall back to a demo shop here. Its ids aren't database UUIDs, so
+    // BookingRepository drops the write and the client ends up holding a
+    // booking no barber can see. With nothing real to book, say so instead.
+    final shop = my?.shop ??
+        (MockData.barbershops.isEmpty ? null : MockData.barbershops.first);
+    if (shop == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(L.nothingToBookYet)),
+      );
+      return;
+    }
     Navigator.of(context).push(
       FadeThroughPageRoute(
         child: BookingFlowScreen(
@@ -270,6 +281,7 @@ class _StyleStudioScreenState extends State<StyleStudioScreen> {
           scale: _hairScale,
           faceLabel: L.stFaceLabel(analysis.shape.label),
           onPan: _onHairPan,
+          demoStyleId: selected.id,
         ),
         const SizedBox(height: 12),
         // Fit controls: size + hair colour.
@@ -311,7 +323,7 @@ class _StyleStudioScreenState extends State<StyleStudioScreen> {
                     .copyWith(color: p.textSecondary),
               ),
               TextSpan(
-                text: analysis.recommended.name,
+                text: L.tr(analysis.recommended.name),
                 style: AppTypography.body(context)
                     .copyWith(fontWeight: FontWeight.w800),
               ),
@@ -442,11 +454,18 @@ class _AnalysingCard extends StatelessWidget {
             child: SizedBox(
               width: 76,
               height: 92,
+              // The demo face is the real photo here too — analysing a cartoon
+              // head undercuts the claim that something is being measured.
               child: photo == null
-                  ? const CustomPaint(
-                      painter: FacePlaceholderPainter(
-                        skin: Color(0xFFE7C9A9),
-                        bg: Color(0xFFDDE7F5),
+                  ? Image.asset(
+                      DemoFaces.base,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, __, ___) => const CustomPaint(
+                        painter: FacePlaceholderPainter(
+                          skin: Color(0xFFE7C9A9),
+                          bg: Color(0xFFDDE7F5),
+                        ),
                       ),
                     )
                   : Image.memory(photo!,
@@ -506,6 +525,7 @@ class _TryOnHero extends StatelessWidget {
     required this.scale,
     required this.faceLabel,
     required this.onPan,
+    this.demoStyleId,
   });
 
   final Uint8List? photo;
@@ -515,6 +535,19 @@ class _TryOnHero extends StatelessWidget {
   final double scale;
   final String faceLabel;
   final ValueChanged<Offset> onPan;
+
+  /// Which style is selected, used only on the demo face: if that style has a
+  /// real rendered photo we show it and skip the drawn overlay entirely.
+  final String? demoStyleId;
+
+  /// The drawn silhouette is for REAL selfies only.
+  ///
+  /// The demo face is a photograph of someone who already has hair, and the
+  /// overlay's geometry was tuned for the old drawn placeholder head — on a
+  /// real photo it lands across the eyes. So the demo face shows photographs
+  /// and nothing else: a style with a render shows that render, and one
+  /// without simply shows the base face unchanged.
+  bool get _showsRenderedDemo => photo == null;
 
   @override
   Widget build(BuildContext context) {
@@ -539,12 +572,20 @@ class _TryOnHero extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Photo or placeholder face.
+                  // Photo or placeholder face. The demo face is a real
+                  // photograph now, with a per-style render behind each cut
+                  // that has one — a drawn placeholder head could never sell
+                  // what the haircut actually looks like.
                   if (photo == null)
-                    const CustomPaint(
-                      painter: FacePlaceholderPainter(
-                        skin: Color(0xFFE7C9A9),
-                        bg: Color(0xFFDDE7F5),
+                    Image.asset(
+                      DemoFaces.assetFor(demoStyleId),
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, __, ___) => const CustomPaint(
+                        painter: FacePlaceholderPainter(
+                          skin: Color(0xFFE7C9A9),
+                          bg: Color(0xFFDDE7F5),
+                        ),
                       ),
                     )
                   else
@@ -555,21 +596,23 @@ class _TryOnHero extends StatelessWidget {
                       errorBuilder: (_, __, ___) => const ColoredBox(
                           color: Color(0xFFDDE7F5)),
                     ),
-                  // The hair overlay.
-                  Positioned(
-                    left: left,
-                    top: top,
-                    width: boxW,
-                    height: boxH,
-                    child: IgnorePointer(
-                      child: CustomPaint(
-                        painter: HairOverlayPainter(
-                          silhouette: silhouette,
-                          color: color,
+                  // The drawn hair overlay — real selfies only. See
+                  // [_showsRenderedDemo].
+                  if (!_showsRenderedDemo)
+                    Positioned(
+                      left: left,
+                      top: top,
+                      width: boxW,
+                      height: boxH,
+                      child: IgnorePointer(
+                        child: CustomPaint(
+                          painter: HairOverlayPainter(
+                            silhouette: silhouette,
+                            color: color,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   // Face-shape chip.
                   Positioned(
                     left: 12,
@@ -759,22 +802,39 @@ class _CutThumb extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Mini face + this cut.
-                    const CustomPaint(
-                      painter: FacePlaceholderPainter(
-                        skin: Color(0xFFE7C9A9),
-                        bg: Color(0xFFEAF0FA),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
-                      child: CustomPaint(
-                        painter: HairOverlayPainter(
-                          silhouette: style.silhouette,
-                          color: color,
+                    // Mini face + this cut. A style with a real render shows
+                    // the photograph, so the picker reads as a row of actual
+                    // haircuts rather than a row of diagrams.
+                    if (DemoFaces.hasRender(style.id))
+                      Image.asset(
+                        DemoFaces.assetFor(style.id),
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                        gaplessPlayback: true,
+                        errorBuilder: (_, __, ___) => const CustomPaint(
+                          painter: FacePlaceholderPainter(
+                            skin: Color(0xFFE7C9A9),
+                            bg: Color(0xFFEAF0FA),
+                          ),
+                        ),
+                      )
+                    else ...[
+                      const CustomPaint(
+                        painter: FacePlaceholderPainter(
+                          skin: Color(0xFFE7C9A9),
+                          bg: Color(0xFFEAF0FA),
                         ),
                       ),
-                    ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+                        child: CustomPaint(
+                          painter: HairOverlayPainter(
+                            silhouette: style.silhouette,
+                            color: color,
+                          ),
+                        ),
+                      ),
+                    ],
                     if (recommended)
                       Positioned(
                         right: 6,
@@ -795,7 +855,7 @@ class _CutThumb extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              style.name,
+              L.tr(style.name),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.nunito(
@@ -832,7 +892,9 @@ class _CutDetails extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(style.name, style: AppTypography.h3(context))),
+              Expanded(
+                  child: Text(L.tr(style.name),
+                      style: AppTypography.h3(context))),
               MiniPill(
                 fits ? L.stGreatFit : L.stWorthATry,
                 style: fits ? MiniPillStyle.accent : MiniPillStyle.ghost,
@@ -840,14 +902,15 @@ class _CutDetails extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          Text(style.description, style: AppTypography.bodySmall(context)),
+          Text(L.tr(style.description),
+              style: AppTypography.bodySmall(context)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 6,
             runSpacing: 6,
             children: [
-              MiniPill(style.lengthLabel, style: MiniPillStyle.ghost),
-              MiniPill(style.upkeep, style: MiniPillStyle.ghost),
+              MiniPill(L.tr(style.lengthLabel), style: MiniPillStyle.ghost),
+              MiniPill(L.tr(style.upkeep), style: MiniPillStyle.ghost),
             ],
           ),
         ],
@@ -887,7 +950,7 @@ class _BookBar extends StatelessWidget {
                   Text(L.yourLook, style: AppTypography.caption(context)),
                   const SizedBox(height: 1),
                   Text(
-                    style.name,
+                    L.tr(style.name),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.h4(context),
@@ -896,11 +959,17 @@ class _BookBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            PrimaryButton(
-              label: L.bookThisLook,
-              expanded: false,
-              height: 54,
-              onPressed: onBook,
+            // Flexible, not a bare button: the label is translated, and a
+            // CTA sized to its natural width overflowed this row by 30px in
+            // Uzbek (and more in Russian). Flexible lets it shrink and
+            // ellipsize instead of painting an overflow stripe.
+            Flexible(
+              child: PrimaryButton(
+                label: L.bookThisLook,
+                expanded: false,
+                height: 54,
+                onPressed: onBook,
+              ),
             ),
           ],
         ),

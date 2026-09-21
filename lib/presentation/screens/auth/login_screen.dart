@@ -7,12 +7,14 @@ import '../../../core/supabase/supabase_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
+import '../../widgets/apple_login_button.dart';
 import '../../widgets/google_login_button.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/telegram_login_button.dart';
 import '../legal/legal_doc_screen.dart';
 import '../onboarding/barber_registration_screen.dart';
 import '../root_shell.dart';
+import 'confirm_name_screen.dart';
 import 'register_screen.dart';
 
 /// The front door. Every route into Fade passes through here — first run and
@@ -40,13 +42,30 @@ class LoginScreen extends StatelessWidget {
 
   bool get _isBarber => role == AppRole.barber;
 
-  /// Where a fresh identity goes next. A client is done — Telegram already gave
-  /// us their name and verified phone, so there is nothing left to ask. A
-  /// barber still needs a chair.
+  /// Where a fresh identity goes next.
+  ///
+  /// A barber types their own name (and age) on the registration screen, so
+  /// they go straight there. A client's name arrives from Google or Telegram
+  /// and used to be adopted silently — but that string is what the barber reads
+  /// off the booking, and providers hand back nicknames, initials or nothing.
+  /// So a client confirms it once, pre-filled, then lands in the app.
   void _onSignedIn(BuildContext context) {
-    Navigator.of(context).pushAndRemoveUntil(
+    final nav = Navigator.of(context);
+    if (_isBarber) {
+      nav.pushAndRemoveUntil(
+        FadeThroughPageRoute(child: const BarberRegistrationScreen()),
+        (route) => false,
+      );
+      return;
+    }
+    nav.pushAndRemoveUntil(
       FadeThroughPageRoute(
-        child: _isBarber ? const BarberRegistrationScreen() : const RootShell(),
+        child: ConfirmNameScreen(
+          onDone: () => nav.pushAndRemoveUntil(
+            FadeThroughPageRoute(child: const RootShell()),
+            (route) => false,
+          ),
+        ),
       ),
       (route) => false,
     );
@@ -59,6 +78,9 @@ class LoginScreen extends StatelessWidget {
     // provider is actually configured (release) or we're in debug.
     final tg = TelegramLoginButton.visible;
     final google = GoogleLoginButton.visible;
+    // Apple renders only on Apple platforms — and MUST render there, because
+    // Guideline 4.8 requires it wherever Google is offered.
+    final apple = AppleLoginButton.visible;
 
     return Scaffold(
       backgroundColor: p.bg,
@@ -125,6 +147,19 @@ class LoginScreen extends StatelessWidget {
                     onSignedIn: () => _onSignedIn(context),
                   ),
                 ),
+              // Apple sits directly under Google on iOS, which is both what
+              // Guideline 4.8 expects (equally prominent) and what an iPhone
+              // user reaches for first.
+              if (apple) ...[
+                if (tg || google) const SizedBox(height: 12),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 240),
+                  child: AppleLoginButton(
+                    role: role,
+                    onSignedIn: () => _onSignedIn(context),
+                  ),
+                ),
+              ],
               // Third door, for whoever has neither Telegram nor Google.
               // Deliberately a quiet text link, not a button: SMS costs money
               // per login, so it should be the road less travelled.

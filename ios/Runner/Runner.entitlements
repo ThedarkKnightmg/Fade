@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Sign in with Apple.
+	     Required by App Store Review Guideline 4.8 because the app also offers
+	     Google sign-in; a build without it is rejected.
+
+	     This file only DECLARES the capability. It must also be switched on for
+	     the App ID in the Apple Developer portal (Certificates, Identifiers &
+	     Profiles -> Identifiers -> uz.fade.app -> Sign In with Apple), and the
+	     provisioning profile regenerated afterwards, or the entitlement is
+	     stripped at signing and the sheet fails at runtime with no token. -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+</dict>
+</plist>

@@ -3,7 +3,14 @@
 // with the electric-blue content_cut_rounded scissors — into:
 //   • assets/icon/icon_full.png        (legacy launcher, navy + scissors)
 //   • assets/icon/icon_foreground.png  (adaptive foreground, scissors only)
-//   • android/.../res/drawable/ic_stat_fade.png (white notif silhouette)
+//
+// It does NOT render the notification small icon. That icon is a vector
+// (res/drawable/ic_stat_fade.xml) because aapt refused to compile the PNG and
+// the app threw resource-not-found at show-time (see 2959e85). Emitting the
+// PNG here as well put ic_stat_fade.png and ic_stat_fade.xml in the same
+// drawable/ folder, which fails `mergeReleaseResources` with "Duplicate
+// resources" — so every `flutter test` run silently re-broke the release
+// build. Leave the notification icon to the vector.
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -91,15 +98,8 @@ void main() {
         glyphFrac: 0.40,
         glyphColor: _blue,
       );
-      // Notification small icon: white silhouette on transparent (Android
-      // masks by alpha), tinted with the accent color at show-time.
-      await _writeBadge(
-        path: 'android/app/src/main/res/drawable/ic_stat_fade.png',
-        size: 96,
-        background: false,
-        glyphFrac: 0.86,
-        glyphColor: Colors.white,
-      );
+      // The notification small icon is deliberately NOT written here — see the
+      // note at the top of this file. It ships as ic_stat_fade.xml.
     });
 
     expect(File('assets/icon/icon_full.png').lengthSync(), greaterThan(0));

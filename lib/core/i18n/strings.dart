@@ -21,6 +21,259 @@ class L {
     }
   }
 
+  // ── "Pick your barber" nudge (new accounts) ───────────
+  static String get pickBarberTitle => _t('Choose your barber',
+      'Выберите барбера', 'Sartaroshingizni tanlang');
+  static String get pickBarberBody => _t(
+      'Pick the person you want in your corner. Rebooking them is then one tap.',
+      'Выберите своего мастера — потом запись к нему в одно касание.',
+      'Oʻz ustangizni tanlang — keyin unga yozilish bir bosishda.');
+  static String get pickBarberCta =>
+      _t('Find a barber', 'Найти барбера', 'Sartarosh topish');
+
+  // ── Waiting-chair mini game ("Scissor Master") ────────
+  static String get gameTitle =>
+      _t('Scissor Master', 'Мастер ножниц', 'Qaychi ustasi');
+  static String get gameKillTime => _t('Kill time while you wait',
+      'Скоротать время в ожидании', 'Kutish vaqtini oʻtkazing');
+  static String get gameHowTo => _t(
+      'Swipe to cut the hair. Never cut a comb — and never let hair hit the floor.',
+      'Проводите пальцем, чтобы срезать волосы. Не режьте расчёски и не роняйте волосы на пол.',
+      'Sochni kesish uchun barmoqni suring. Taroqni kesmang va sochni yerga tushirmang.');
+  static String get gamePlay => _t('Play', 'Играть', 'Oʻynash');
+  static String get gameCombo => _t('combo', 'комбо', 'kombo');
+  static String get gameBestCombo =>
+      _t('Best combo', 'Лучшее комбо', 'Eng yaxshi kombo');
+  static String get gameCutComb =>
+      _t('Blade jammed!', 'Лезвие застряло!', 'Tigʻ tiqilib qoldi!');
+  static String get gameMissedHair =>
+      _t('Hair on the floor', 'Волосы на полу', 'Soch yerga tushdi');
+  static String get gameOver => _t('Game over', 'Игра окончена', 'Oʻyin tugadi');
+  static String gameEarnedPoints(int som) => _t(
+      '+$som Fade Points earned',
+      '+$som Fade Points начислено',
+      '+$som Fade Points ishlab topildi');
+
+  // The explainer. The whole reason someone plays a second time is believing
+  // the tokens are worth something, so this says plainly what they are: money
+  // off a real haircut, not a score.
+  static String get gameTokensTitle => _t('Cut the blue tokens',
+      'Режьте синие жетоны', 'Koʻk tokenlarni kesing');
+  static String get gameTokensBody => _t(
+      'Every blue token is real money off your next haircut — 1 Fade Point = 1 so‘m. Cut one and it goes straight to your balance.',
+      'Каждый синий жетон — это реальная скидка на следующую стрижку: 1 Fade Point = 1 сум. Срезали — сразу на баланс.',
+      'Har bir koʻk token — keyingi soch olishingizga haqiqiy chegirma: 1 Fade Point = 1 soʻm. Kesdingiz — darrov balansingizga tushadi.');
+  // NOTE: there is deliberately no "N tokens left / up to X so'm" string. The
+  // daily cap is enforced but never advertised — leading with the ceiling told
+  // a new player how little they could win before they had played at all.
+  static String get gameTokensSpent => _t(
+      'Today’s tokens are all collected — come back tomorrow.',
+      'Все жетоны на сегодня собраны — возвращайтесь завтра.',
+      'Bugungi tokenlar yigʻib boʻlindi — ertaga qaytib keling.');
+  static String gameBankedThisRun(int som) => _t(
+      'Banked this run: $som so‘m',
+      'Заработано за игру: $som сум',
+      'Bu oʻyinda: $som soʻm');
+  // Reactions. A game that never says anything back is a spreadsheet — these
+  // are the difference between "score increased" and a barber shouting across
+  // the shop. Escalating so a 5-cut stroke is louder than a 2.
+  static String get gameNice => _t('Nice!', 'Неплохо!', 'Zoʻr!');
+  static String get gameSharp => _t('Sharp!', 'Чётко!', 'Aniq!');
+  static String get gameMaster => _t('MASTER!', 'МАСТЕР!', 'USTA!');
+  static String get gameLegend => _t('LEGEND!', 'ЛЕГЕНДА!', 'AFSONA!');
+  static String get gameOops => _t('Oops!', 'Ой!', 'Voy!');
+  static String get gameOnFire => _t('ON FIRE', 'В УДАРЕ', 'ALANGADA');
+
+  // ── Second game: "Toza chiziq" (Clean Line) ───────────
+  static String get gamesTitle => _t('Games', 'Игры', 'Oʻyinlar');
+  static String get lineGameTitle =>
+      _t('Clean Line', 'Чистая линия', 'Toza chiziq');
+  static String get lineGameTagline => _t('Trace the perfect fade line',
+      'Проведите идеальную линию', 'Mukammal fade chizigʻini chizing');
+  static String get lineGameHowTo => _t(
+      'Drag along the dotted line without leaving it. The steadier your hand, the higher the score.',
+      'Ведите пальцем по пунктиру, не сходя с него. Чем ровнее рука, тем выше счёт.',
+      'Nuqtali chiziq boʻylab barmoqni yuriting, undan chiqmang. Qoʻlingiz qanchalik tinch boʻlsa, ball shuncha yuqori.');
+  static String get lineGameSlipped =>
+      _t('Hand slipped!', 'Рука дрогнула!', 'Qoʻl sirgʻalib ketdi!');
+  static String lineGameAccuracy(int pct) => _t(
+      'Accuracy $pct%', 'Точность $pct%', 'Aniqlik $pct%');
+  static String get lineGameLevel => _t('Line', 'Линия', 'Chiziq');
+  static String get lineGamePerfectLine =>
+      _t('PERFECT LINE', 'ИДЕАЛЬНАЯ ЛИНИЯ', 'MUKAMMAL CHIZIQ');
+
+  static String get gamePaused => _t('Paused', 'Пауза', 'Pauza');
+  static String get gameResume => _t('Resume', 'Продолжить', 'Davom etish');
+  static String gameSoClose(int n) => _t(
+      'Just $n off your record!',
+      'До рекорда всего $n!',
+      'Rekordgacha atigi $n!');
+
+  static String get gameFadePoints =>
+      _t('FADE POINTS', 'FADE POINTS', 'FADE POINTS');
+  static String get gameSomOffNextCut => _t(
+      'so‘m off your next haircut',
+      'сум скидки на следующую стрижку',
+      'keyingi soch olishingizga chegirma');
+  static String gameTotalBalance(int som) => _t(
+      'Your Fade Points: $som so‘m',
+      'Ваши Fade Points: $som сум',
+      'Sizning Fade Points: $som soʻm');
+  static String get gameScore => _t('Score', 'Счёт', 'Hisob');
+  static String get gameBest => _t('Best', 'Рекорд', 'Rekord');
+  static String get gameNewBest =>
+      _t('New record!', 'Новый рекорд!', 'Yangi rekord!');
+  static String get gameAgain => _t('Play again', 'Ещё раз', 'Yana oʻynash');
+
+  // ── Form validation ───────────────────────────────────
+  // These are the most-seen strings in the whole app — every mistyped field
+  // shows one — and they were the last block still hardcoded in English.
+  static String get vEmailEmpty =>
+      _t('Enter your email.', 'Введите email.', 'Email kiriting.');
+  static String get vEmailLong => _t('That email is too long.',
+      'Слишком длинный email.', 'Email juda uzun.');
+  static String get vEmailBad => _t('Enter a valid email address.',
+      'Введите корректный email.', 'Toʻgʻri email kiriting.');
+  static String get vPassEmpty =>
+      _t('Enter a password.', 'Введите пароль.', 'Parol kiriting.');
+  static String vPassShort(int min) => _t(
+      'Use at least $min characters.',
+      'Минимум $min символов.',
+      'Kamida $min ta belgi kiriting.');
+  static String get vPassLong => _t('That password is too long.',
+      'Слишком длинный пароль.', 'Parol juda uzun.');
+  static String vFieldRequired(String field) =>
+      _t('$field is required.', 'Поле «$field» обязательно.', '$field majburiy.');
+  static String vFieldLong(String field) => _t(
+      '$field is too long.', 'Поле «$field» слишком длинное.', '$field juda uzun.');
+  static String get vNameEmpty =>
+      _t('Enter your name.', 'Введите имя.', 'Ismingizni kiriting.');
+  static String get vNameShort => _t('That name looks too short.',
+      'Имя слишком короткое.', 'Ism juda qisqa.');
+  static String get vNameLong =>
+      _t('That name is too long.', 'Имя слишком длинное.', 'Ism juda uzun.');
+  static String get vPhoneEmpty => _t('Enter your phone number.',
+      'Введите номер телефона.', 'Telefon raqamingizni kiriting.');
+  static String get vPhoneChars => _t('Use digits and + ( ) - only.',
+      'Только цифры и + ( ) -.', 'Faqat raqamlar va + ( ) - belgilari.');
+  static String get vPhoneBad => _t('Enter a valid phone number.',
+      'Введите корректный номер.', 'Toʻgʻri raqam kiriting.');
+
+  // ── Face shapes + why a cut suits you ─────────────────
+  static String faceBlurb(String shape) => switch (shape) {
+        'Oval' => _t('Balanced proportions — almost any cut works on you.',
+            'Сбалансированные пропорции — вам идёт почти любая стрижка.',
+            'Muvozanatli nisbatlar — deyarli har qanday soch turi yarashadi.'),
+        'Round' => _t(
+            'Soft, even width and height — height on top adds definition.',
+            'Мягкая, ровная форма — объём сверху добавит выразительности.',
+            'Yumshoq, bir tekis shakl — tepadagi balandlik aniqlik qoʻshadi.'),
+        'Square' => _t('Strong jaw and forehead — sharp, structured cuts suit you.',
+            'Сильная челюсть и лоб — вам идут чёткие структурные стрижки.',
+            'Kuchli jagʻ va peshona — aniq, tuzilgan soch turlari yarashadi.'),
+        'Heart' => _t(
+            'Wider forehead, narrower chin — softer, fuller sides balance it.',
+            'Широкий лоб, узкий подбородок — мягкие объёмные бока уравновесят.',
+            'Keng peshona, tor iyak — yumshoq, toʻliq yon tomonlar muvozanatlaydi.'),
+        'Oblong' => _t(
+            'Longer than wide — shorter sides and low volume keep it even.',
+            'Вытянутая форма — короткие бока и низкий объём выровняют.',
+            'Choʻziq shakl — kalta yonlar va past hajm tenglashtiradi.'),
+        _ => _t('Wide cheekbones — fuller tops and fringes flatter the angles.',
+            'Широкие скулы — объём сверху и чёлка смягчат углы.',
+            'Keng yonoqlar — tepadagi hajm va chelka burchaklarni yumshatadi.'),
+      };
+
+  static String suitsYouBecause(String styleName, String why) => _t(
+      '$styleName suits you because $why.',
+      '$styleName вам подходит, потому что $why.',
+      '$styleName sizga mos, chunki $why.');
+
+  static String whyForShape(String shape) => switch (shape) {
+        'Oval' => _t(
+            'your balanced proportions let it sit cleanly without fighting your features',
+            'ваши сбалансированные пропорции позволяют ей лечь аккуратно',
+            'muvozanatli nisbatlaringiz unga toza yotishga imkon beradi'),
+        'Round' => _t('its height on top lengthens a softer, rounder face',
+            'объём сверху визуально вытягивает более округлое лицо',
+            'tepadagi balandlik yumaloqroq yuzni choʻzib koʻrsatadi'),
+        'Square' => _t(
+            'it works with a strong jaw instead of squaring it off further',
+            'она работает с сильной челюстью, а не утяжеляет её',
+            'u kuchli jagʻ bilan ishlaydi, uni yanada burchakli qilmaydi'),
+        'Heart' => _t('fuller sides balance a wider forehead and narrower chin',
+            'объёмные бока уравновешивают широкий лоб и узкий подбородок',
+            'toʻliq yon tomonlar keng peshona va tor iyakni muvozanatlaydi'),
+        'Oblong' => _t(
+            'shorter sides and low volume stop a longer face reading even longer',
+            'короткие бока и низкий объём не вытягивают лицо ещё больше',
+            'kalta yonlar va past hajm choʻziq yuzni yanada uzaytirmaydi'),
+        _ => _t('volume and a fringe up top soften prominent cheekbones',
+            'объём и чёлка сверху смягчают выразительные скулы',
+            'tepadagi hajm va chelka yonoqlarni yumshatadi'),
+      };
+
+  // ── Notification channel (shown in Android system settings) ──
+  static String get notifChannelDesc => _t('Booking updates and requests',
+      'Обновления записей и заявки', 'Yozuv yangiliklari va soʻrovlar');
+
+  // ── Sign in with Apple ────────────────────────────────
+  static String get continueWithApple => _t('Continue with Apple',
+      'Продолжить с Apple', 'Apple bilan davom etish');
+  static String get appleFailed => _t(
+      "Apple sign-in didn't complete — try again",
+      'Не удалось войти через Apple — попробуйте снова',
+      'Apple orqali kirish yakunlanmadi — qayta urining');
+
+  // ── Shop publish state (barber onboarding) ────────────
+  // A shop that only saved locally is invisible to every client, so the barber
+  // must be told plainly rather than left waiting for bookings that cannot come.
+  static String get shopLiveTitle =>
+      _t('Your shop is live', 'Ваш салон опубликован', 'Saloningiz efirda');
+  static String get shopLiveBody => _t(
+      'Clients can find you on the map and book you right now.',
+      'Клиенты уже видят вас на карте и могут записаться.',
+      'Mijozlar sizni xaritada koʻradi va hoziroq yozila oladi.');
+  static String get shopNotPublishedTitle => _t(
+      'Saved on this device only',
+      'Сохранено только на этом устройстве',
+      'Faqat shu qurilmada saqlandi');
+  static String get shopNotPublishedBody => _t(
+      'Your shop has NOT been published yet, so clients cannot see or book it. Sign in and publish to go live.',
+      'Ваш салон ещё НЕ опубликован — клиенты его не видят. Войдите и опубликуйте, чтобы начать работу.',
+      'Saloningiz hali EʼLON QILINMAGAN — mijozlar uni koʻrmaydi. Ishni boshlash uchun tizimga kiring va eʼlon qiling.');
+  static String get shopPublishRetry =>
+      _t('Publish now', 'Опубликовать', 'Hozir eʼlon qilish');
+  static String get shopPublishFailed => _t(
+      'Still not published — check your connection and sign-in.',
+      'Опубликовать не удалось — проверьте связь и вход.',
+      'Eʼlon qilinmadi — aloqa va tizimga kirishni tekshiring.');
+
+  // ── Catalogue states ──────────────────────────────────
+  // What the browse surfaces say when there is no real supply to show. The app
+  // used to fall back to the demo shops here, which meant a client could book a
+  // barbershop that does not exist and never hear back.
+  static String get catalogueLoading => _t('Finding barbershops…',
+      'Ищем барбершопы…', 'Barbershoplar qidirilmoqda…');
+  static String get catalogueEmptyTitle => _t('No barbershops here yet',
+      'Здесь пока нет барбершопов', "Bu yerda hali barbershop yo'q");
+  static String get catalogueEmptyBody => _t(
+      'Fade is just opening in your city. We’ll show shops the moment the first one joins.',
+      'Fade только открывается в вашем городе. Мы покажем салоны, как только появится первый.',
+      'Fade shahringizda endi ochilmoqda. Birinchi salon qoʻshilishi bilan koʻrsatamiz.');
+  static String get catalogueFailedTitle =>
+      _t('Couldn’t load barbershops', 'Не удалось загрузить', 'Yuklab boʻlmadi');
+  static String get catalogueFailedBody => _t(
+      'Check your connection and try again.',
+      'Проверьте соединение и повторите попытку.',
+      'Aloqani tekshiring va qayta urining.');
+  static String get tryAgain =>
+      _t('Try again', 'Повторить', 'Qayta urinish');
+  static String get nothingToBookYet => _t(
+      'No barbershops available to book yet.',
+      'Пока нет салонов для записи.',
+      "Hozircha yozuv uchun salon yo'q.");
+
   // ── Home ──────────────────────────────────────────────
   static String get findShopsNearYou =>
       _t('Find shops near you', 'Барбершопы рядом', 'Yaqin barbershoplar');
@@ -577,8 +830,12 @@ class L {
   static String get uploadPhoto =>
       _t('Upload a photo', 'Загрузить фото', 'Surat yuklash');
   static String get newPhoto => _t('New photo', 'Новое фото', 'Yangi surat');
-  static String get bookThisLook => _t(
-      'Book this look', 'Записаться на этот образ', 'Shu uslubga yozilish');
+  // Kept short on purpose: this is a CTA in a row that also carries the look's
+  // name, so a long translation is what pushed the bar into overflow. The look
+  // is named directly beside the button, so "Book"/"Записаться"/"Yozilish"
+  // reads unambiguously.
+  static String get bookThisLook =>
+      _t('Book this look', 'Записаться', 'Yozilish');
   static String get pickACut =>
       _t('Pick a cut', 'Выберите стрижку', 'Soch turini tanlang');
   static String get hairColour => _t('Hair colour', 'Цвет волос', 'Soch rangi');
@@ -739,7 +996,7 @@ class L {
   static String get closeWord => _t('Close', 'Закрыть', 'Yopish');
 
   // ── Barber: Profile ───────────────────────────────────
-  static String get barberTag => _t('BARBER', 'БАРБЕР', 'BARBER');
+  static String get barberTag => _t('BARBER', 'БАРБЕР', 'SARTAROSH');
   static String get profileTab => _t('Profile', 'Профиль', 'Profil');
 
   // ── Bottom nav labels (short — they live inside the active chip) ──
@@ -859,6 +1116,57 @@ class L {
   }
 
   static const Map<String, (String, String)> _dataTr = {
+    // ── Hairstyles ────────────────────────────────────────────────────────
+    // These live in HairData as English literals because the same strings are
+    // sent to the image model as a prompt. Only the DISPLAY sites go through
+    // L.tr; the prompt sites deliberately keep the English.
+    'Classic Taper': ('Классический тейпер', 'Klassik teyper'),
+    'Textured Crop': ('Текстурный кроп', 'Teksturali krop'),
+    'Pompadour': ('Помпадур', 'Pompadur'),
+    'Buzz Cut': ('Под машинку', 'Mashinka bilan'),
+    'Slick Back': ('Зачёс назад', 'Orqaga taralgan'),
+    'Curly Top': ('Кудри сверху', 'Jingalak soch'),
+    'Clean, gradual fade on the sides with length kept on top. Timeless and office-friendly.':
+        (
+      'Аккуратное растушёванное сведение по бокам, длина сверху. Классика на все времена.',
+      'Yon tomonlarda toza fade, tepada uzunlik saqlanadi. Har doim mos keladigan klassika.'
+    ),
+    'Choppy, textured top with a faded back and sides. Adds movement and hides thinning.':
+        (
+      'Рваный текстурный верх с выбритыми боками. Добавляет объём и скрывает поредение.',
+      'Tepasi teksturali, yon va orqa tomoni fade. Harakat qoʻshadi va siyraklikni yashiradi.'
+    ),
+    'Volume swept up and back from the forehead. Bold, retro, and full of height.':
+        (
+      'Объём зачёсан вверх и назад ото лба. Смело, ретро и с высотой.',
+      'Peshonadan yuqoriga va orqaga taralgan hajm. Dadil, retro va balandlik beradi.'
+    ),
+    'Uniform short clipper cut. Fuss-free, sharp, and lets a strong jaw do the talking.':
+        (
+      'Ровная короткая стрижка машинкой. Просто, чётко и подчёркивает челюсть.',
+      'Bir xil kalta mashinka olish. Sodda, aniq va jagʻni namoyon qiladi.'
+    ),
+    'Everything combed straight back with a glossy finish. Confident and grown-up.':
+        (
+      'Всё зачёсано назад с глянцевым финишем. Уверенно и по-взрослому.',
+      'Hammasi orqaga taralgan, yaltiroq tugatish bilan. Ishonchli va yetuk.'
+    ),
+    'Natural curl left long on top with tidy sides. Adds height and softens a strong jaw.':
+        (
+      'Естественные кудри сверху, аккуратные бока. Добавляет высоту и смягчает челюсть.',
+      'Tepada tabiiy jingalak, yonlari ozoda. Balandlik qoʻshadi va jagʻni yumshatadi.'
+    ),
+    // Length + upkeep chips
+    'Short sides': ('Короткие бока', 'Kalta yonlar'),
+    'Short': ('Короткая', 'Kalta'),
+    'Medium': ('Средняя', 'Oʻrtacha'),
+    'Very short': ('Очень короткая', 'Juda kalta'),
+    'Medium / long': ('Средняя / длинная', 'Oʻrtacha / uzun'),
+    'No upkeep': ('Без ухода', 'Parvarishsiz'),
+    'Low upkeep': ('Простой уход', 'Oson parvarish'),
+    'Medium upkeep': ('Средний уход', 'Oʻrtacha parvarish'),
+    'High upkeep': ('Требует ухода', 'Parvarish talab qiladi'),
+
     // Services
     'Classic Haircut': ('Классическая стрижка', 'Klassik soch olish'),
     'Beard Trim': ('Оформление бороды', 'Soqolga shakl berish'),
@@ -1339,7 +1647,7 @@ class L {
       'Как сама стрижка?', 'Soch olish qanday edi?');
   static String get shopReviewHint => _t('Clean chairs, good vibe?',
       'Чисто, приятная атмосфера?', 'Toza, yoqimli muhitmi?');
-  static String get barberTag2 => _t('BARBER', 'БАРБЕР', 'BARBER');
+  static String get barberTag2 => _t('BARBER', 'БАРБЕР', 'SARTAROSH');
   static String get shopTag => _t('SHOP', 'БАРБЕРШОП', 'BARBERSHOP');
   static String get reviewNeedsOne => _t('Rate the barber or the shop first ✍️',
       'Оцените барбера или барбершоп ✍️', 'Barber yoki barbershopni baholang ✍️');
@@ -1660,7 +1968,7 @@ class L {
       _t('Review booking', 'Проверьте запись', 'Yozuvni tekshiring');
   static String get locationLabel =>
       _t('Location', 'Локация', 'Joylashuv');
-  static String get barberLabel => _t('Barber', 'Барбер', 'Barber');
+  static String get barberLabel => _t('Barber', 'Барбер', 'Sartarosh');
   static String get serviceLabel => _t('Service', 'Услуга', 'Xizmat');
   static String get whenLabel => _t('When', 'Когда', 'Qachon');
   static String get totalLabel => _t('Total', 'Итого', 'Jami');

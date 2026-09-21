@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<!-- The app ships in three languages; without this iOS advertises it as
+	     English-only in the App Store listing. -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>uz</string>
+		<string>ru</string>
+		<string>en</string>
+	</array>
+	<!-- PERMISSION STRINGS. Apple rejects a build that touches these APIs
+	     without them, and iOS hard-crashes the app at the first request.
+	     Written to say WHY, in the user's terms, because the text is shown
+	     verbatim in the system prompt. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Fade uses the camera so you can take a selfie for the AI hairstyle try-on and scan the barber's QR code to check in.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Fade needs your photo library so you can pick a photo for the AI hairstyle try-on or your profile picture.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Fade saves your AI hairstyle preview to your photo library when you ask it to.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Fade uses your location to show barbershops near you and give directions to your booking.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Fade does not record audio; the camera component requests this permission.</string>
+	<!-- url_launcher can only OPEN these apps if their schemes are declared.
+	     Undeclared, canLaunchUrl returns false and the maps/taxi buttons in the
+	     directions sheet silently do nothing. -->
+	<!-- GOOGLE SIGN-IN — needs an iOS OAuth client that does not exist yet.
+	     Create one in Google Cloud (Credentials -> OAuth client ID -> iOS,
+	     bundle ID uz.fade.app), then:
+	       1. paste its client ID into GIDClientID below, and
+	       2. paste its REVERSED client ID (the same value with the dot-parts
+	          reversed, shown in the console) as the URL scheme below.
+	     Until both are filled in, the Google button will fail on iOS the same
+	     way it does on Android with an unregistered SHA-1. The Android and Web
+	     client IDs do NOT work here — iOS needs its own. -->
+	<key>GIDClientID</key>
+	<string>REPLACE_WITH_IOS_CLIENT_ID.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.REPLACE_WITH_REVERSED_IOS_CLIENT_ID</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>uz.fade.app</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>googlemaps</string>
+		<string>yandexmaps</string>
+		<string>yandexnavi</string>
+		<string>yandextaxi</string>
+		<string>uklon</string>
+		<string>tg</string>
+		<string>https</string>
+		<string>http</string>
+		<string>tel</string>
+		<string>mailto</string>
+	</array>
+	<key>CFBundleDisplayName</key>
+	<string>Fade</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>barber_app</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>

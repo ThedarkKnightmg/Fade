@@ -17,6 +17,13 @@ class HairColor {
     HairColor('Chestnut', Color(0xFF5A3B23), Color(0xFF8A5C34)),
     HairColor('Blonde', Color(0xFFB07D3F), Color(0xFFD9A85E)),
     HairColor('Ash', Color(0xFF6E6A63), Color(0xFF9A958B)),
+    // Fashion colours. Kept LAST so the natural five still read as the default
+    // run and these are an obvious step outside it. Both are dyed-hair tones
+    // rather than pure hues: real violet and emerald dye sit far darker and
+    // greyer than the screen colours people expect, and a neon swatch would
+    // promise a render the model cannot produce on dark hair.
+    HairColor('Purple', Color(0xFF4A2A6B), Color(0xFF8A5CC0)),
+    HairColor('Green', Color(0xFF23503A), Color(0xFF4E9B6E)),
   ];
 }
 
@@ -30,6 +37,7 @@ class _HairSpec {
     required this.fringeY,
     required this.front,
     this.sideburn = 0.0,
+    this.curl = 0.0,
   });
 
   final double volume; // crown height above the head (0..~0.6)
@@ -38,6 +46,12 @@ class _HairSpec {
   final double fringeY; // forehead hairline height, fraction of height
   final _Front front;
   final double sideburn; // extra side length below temple
+
+  /// How pronounced the curl is, as a fraction of hair width (0 = smooth).
+  /// Non-zero replaces the smooth crown arc with a scalloped one — curls read
+  /// by their bumpy OUTLINE, so a bigger smooth blob would just look like more
+  /// straight hair.
+  final double curl;
 
   static _HairSpec of(HairSilhouette s) => switch (s) {
         HairSilhouette.buzz => const _HairSpec(
@@ -102,6 +116,16 @@ class _HairSpec {
             fringeY: 0.42,
             front: _Front.partCenter,
             sideburn: 0.05),
+        // Curls sit wider and taller than the length alone would suggest —
+        // the hair springs OUT, not down — so this gets more halfW and volume
+        // than a straight cut of the same length, plus the scalloped edge.
+        HairSilhouette.curly => const _HairSpec(
+            volume: 0.46,
+            halfW: 0.46,
+            templeY: 0.44,
+            fringeY: 0.47,
+            front: _Front.down,
+            curl: 0.13),
       };
 }
 
@@ -135,16 +159,20 @@ class HairOverlayPainter extends CustomPainter {
     path.moveTo(cx - halfW * 0.82, burstY);
     path.lineTo(cx - halfW, templeY);
     // Crown: left temple → over the top → right temple.
-    path.cubicTo(
-      cx - halfW, crownY + (templeY - crownY) * 0.25,
-      cx - halfW * 0.5, crownY,
-      cx, crownY,
-    );
-    path.cubicTo(
-      cx + halfW * 0.5, crownY,
-      cx + halfW, crownY + (templeY - crownY) * 0.25,
-      cx + halfW, templeY,
-    );
+    if (spec.curl > 0) {
+      _scallopedCrown(path, cx, halfW, templeY, crownY, spec.curl * halfW);
+    } else {
+      path.cubicTo(
+        cx - halfW, crownY + (templeY - crownY) * 0.25,
+        cx - halfW * 0.5, crownY,
+        cx, crownY,
+      );
+      path.cubicTo(
+        cx + halfW * 0.5, crownY,
+        cx + halfW, crownY + (templeY - crownY) * 0.25,
+        cx + halfW, templeY,
+      );
+    }
     // Right side down to sideburn.
     path.lineTo(cx + halfW * 0.82, burstY);
 
@@ -331,6 +359,44 @@ class HairOverlayPainter extends CustomPainter {
           ..strokeWidth = 0.7 + 0.7 * rnd.nextDouble()
           ..strokeCap = StrokeCap.round,
       );
+    }
+  }
+
+  /// Walks the crown from the left temple, over the top, to the right temple —
+  /// but as a run of outward bumps instead of one smooth arc.
+  ///
+  /// Curly hair is recognised by its EDGE, not its size: the reason a curly
+  /// silhouette reads as curly is that the outline is lumpy. Simply enlarging
+  /// the smooth crown would read as "more straight hair", which is why this
+  /// takes the same elliptical envelope every other style uses and rides a
+  /// series of arcs along it, each bulging outward along the surface normal.
+  void _scallopedCrown(
+    Path path,
+    double cx,
+    double halfW,
+    double templeY,
+    double crownY,
+    double bump,
+  ) {
+    const bumps = 9; // enough to read as curl, few enough to stay tidy
+    final rx = halfW;
+    final ry = templeY - crownY;
+
+    // Point on the crown envelope. a = pi at the left temple, 0 at the right.
+    Offset at(double a) =>
+        Offset(cx + rx * math.cos(a), templeY - ry * math.sin(a));
+
+    for (var i = 0; i < bumps; i++) {
+      final a0 = math.pi * (1 - i / bumps);
+      final a1 = math.pi * (1 - (i + 1) / bumps);
+      final mid = (a0 + a1) / 2;
+      final end = at(a1);
+      // Control point pushed out along the outward normal of the ellipse, so
+      // each bump swells away from the head rather than sideways.
+      final nx = math.cos(mid);
+      final ny = -math.sin(mid);
+      final ctrl = at(mid).translate(nx * bump, ny * bump);
+      path.quadraticBezierTo(ctrl.dx, ctrl.dy, end.dx, end.dy);
     }
   }
 

@@ -79,6 +79,11 @@ class _BarberAppState extends State<BarberApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       AppState.instance.syncBookings();
       AppState.instance.refreshServerLoyalty();
+      // Time passes while the app is backgrounded, and that is exactly when a
+      // slot lapses. Without this, a visit stays "upcoming" and an unanswered
+      // request stays "waiting for reply" until something else happens to
+      // trigger a sweep.
+      AppState.instance.settlePastBookings();
     }
   }
 

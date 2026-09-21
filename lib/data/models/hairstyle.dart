@@ -41,6 +41,7 @@ enum HairSilhouette {
   quiff, // lifted front, medium volume
   slick, // smooth, swept straight back
   curtains, // grown out, parted down the middle
+  curly, // natural curl left long on top, scalloped outline
 }
 
 /// A hairstyle the user can browse, get recommended, try on, and book.

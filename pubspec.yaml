@@ -33,6 +33,11 @@ dependencies:
   # SHA-256 for the Telegram login device-binding secret (already resolved
   # transitively via supabase_flutter; promoted to a direct dep to import it).
   crypto: ^3.0.3
+  # Sign in with Apple. NOT optional: App Store Review Guideline 4.8 requires it
+  # wherever a third-party sign-in (Google here) is offered, so an iOS build
+  # without it is rejected. Android and web are unaffected — the button hides
+  # itself off-Apple (see AppleAuth.available).
+  sign_in_with_apple: ^6.1.3
   qr_flutter: ^4.1.0
   flutter_local_notifications: ^18.0.1
   mobile_scanner: ^5.2.3
@@ -50,6 +55,9 @@ flutter:
   assets:
     - assets/tiles/
     - assets/legal/
+    # Demo try-on faces. Only files directly in this folder are bundled, so the
+    # full-size originals kept in assets/faces/src/ stay out of the APK.
+    - assets/faces/
 
 flutter_launcher_icons:
   android: "ic_launcher"

@@ -15,6 +15,7 @@ import '../../../data/models/booking.dart';
 import '../../../data/models/review.dart';
 import '../../../data/models/service.dart';
 import '../../widgets/booking_kit.dart';
+import '../../widgets/directions_sheet.dart';
 import '../../widgets/dual_rating_row.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
@@ -438,11 +439,15 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        PanelField(
-                          value: _picked.length == 1
-                              ? _picked.first.name
-                              : L.bkServicesCount(_picked.length),
-                          expanded: false,
+                        // Flexible so a long translated service name shrinks
+                        // instead of overflowing the row.
+                        Flexible(
+                          child: PanelField(
+                            value: _picked.length == 1
+                                ? _picked.first.name
+                                : L.bkServicesCount(_picked.length),
+                            expanded: false,
+                          ),
                         ),
                       ],
                     ),
@@ -658,7 +663,20 @@ class _AboutCard extends StatelessWidget {
           const SizedBox(height: 6),
           _InfoRow(icon: Icons.schedule_rounded, text: shop.openingHours),
           Divider(color: p.divider, height: 1),
-          _InfoRow(icon: Icons.place_outlined, text: shop.address),
+          // The address row is now the way OUT of the app and into navigation.
+          // Previously "get there" only existed on a booking ticket, so anyone
+          // still deciding whether to book had no way to find out where the
+          // shop actually is — which is part of deciding.
+          _InfoRow(
+            icon: Icons.place_outlined,
+            text: shop.address,
+            onTap: () => showDirectionsSheet(
+              context,
+              lat: shop.lat,
+              lng: shop.lng,
+              name: shop.name,
+            ),
+          ),
         ],
       ),
     );
@@ -667,14 +685,17 @@ class _AboutCard extends StatelessWidget {
 
 /// One practical line inside the about card: tinted icon chip + value.
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.text});
+  const _InfoRow({required this.icon, required this.text, this.onTap});
 
   final IconData icon;
   final String text;
 
+  /// When set the row becomes tappable and shows a trailing affordance.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 11),
       child: Row(
         children: [
@@ -696,8 +717,19 @@ class _InfoRow extends StatelessWidget {
               style: AppTypography.h4(context),
             ),
           ),
+          // A navigation glyph, not a generic chevron: this row leaves the app
+          // for a maps application, and the icon should say so.
+          if (onTap != null)
+            const Icon(Icons.turn_slight_right_rounded,
+                size: 20, color: AppColors.accent),
         ],
       ),
+    );
+    if (onTap == null) return row;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: row,
     );
   }
 }
@@ -1050,7 +1082,7 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
   void _post() {
     final shop = MockData.barbershops.firstWhere(
       (s) => s.id == widget.shopId,
-      orElse: () => MockData.barbershops.first,
+      orElse: () => MockData.fallbackShop,
     );
     final barber = shop.barbers.first;
     // Dual-key: talent (barber) travels with the barber, vibe (shop) stays put.
@@ -1095,7 +1127,7 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
     final p = Paper.of(context);
     final barber = MockData.barbershops
         .firstWhere((s) => s.id == widget.shopId,
-            orElse: () => MockData.barbershops.first)
+            orElse: () => MockData.fallbackShop)
         .barbers
         .first;
     return Padding(

@@ -37,6 +37,8 @@ part 'app_state/plumbing.dart';
 part 'app_state/legal_consent.dart';
 part 'app_state/fade_points.dart';
 part 'app_state/wallet.dart';
+part 'app_state/catalogue.dart';
+part 'app_state/mini_game.dart';
 
 /// Which side of the marketplace the user is currently using.
 enum AppRole { client, barber }
@@ -179,7 +181,13 @@ class BoostPack {
 /// as their personal "master". Uses ChangeNotifier so any widget
 /// can listen and rebuild when state changes.
 class AppState extends ChangeNotifier
-    with AppStatePlumbing, LegalConsentState, FadePointsState, WalletState {
+    with
+        AppStatePlumbing,
+        LegalConsentState,
+        FadePointsState,
+        WalletState,
+        CatalogueState,
+        MiniGameState {
   AppState._() {
     _seedBookings();
     _seedChats();
@@ -408,9 +416,10 @@ class AppState extends ChangeNotifier
     final leaderName = '$firstName $surname'.trim();
     // A brand-new shop borrows the standard service menu so clients can book
     // from day one; the leader can tune prices later.
-    final menu = MockData.barbershops.isNotEmpty
-        ? MockData.barbershops.first.services
-        : const <BarberService>[];
+    // Taken from the demo menu, not the live catalogue: a brand-new shop needs
+    // a real starter menu even when it is the FIRST shop in the city, i.e. when
+    // the live catalogue is legitimately empty.
+    final menu = MockData.demoShops.first.services;
     final shop = Barbershop(
       id: id,
       name: shopName.trim().isEmpty ? 'My Barbershop' : shopName.trim(),
@@ -465,8 +474,29 @@ class AppState extends ChangeNotifier
     return shop;
   }
 
-  /// Write a just-created shop to Supabase (when real catalogue is on and a
-  /// session exists), then refresh so the map/list carry the real row.
+  /// Whether the barber's newly created shop actually reached the server.
+  ///
+  /// null  = no attempt yet / still in flight
+  /// true  = live in Supabase, every client can see and book it
+  /// false = saved on THIS DEVICE ONLY
+  ///
+  /// This is surfaced rather than swallowed because the failure is invisible
+  /// and total: [ShopRepository.createShop] returns null when there is no
+  /// Supabase session (which includes the demo phone-OTP path) or the insert is
+  /// rejected. The barber then finishes onboarding, sees their shop on their own
+  /// map, and believes they are open for business — while no client anywhere
+  /// can see them. A barber waiting for bookings that can never arrive is the
+  /// worst failure this app has.
+  bool? _shopPublished;
+  bool? get shopPublished => _shopPublished;
+
+  /// The shop to retry publishing, kept so the barber can try again after
+  /// signing in rather than having to re-do onboarding.
+  Barbershop? _pendingPublish;
+  bool get hasUnpublishedShop => _shopPublished == false;
+
+  /// Write a just-created shop to Supabase, then refresh so the map/list carry
+  /// the real row. Records whether it landed.
   Future<void> _persistNewShop(Barbershop shop) async {
     if (!SupabaseConfig.useRealCatalogue) return;
     final barber = shop.barbers.isNotEmpty ? shop.barbers.first : null;
@@ -483,7 +513,19 @@ class AppState extends ChangeNotifier
               (name: s.name, price: s.price, durationMin: s.durationMinutes))
           .toList(),
     );
+    _shopPublished = newId != null;
+    _pendingPublish = newId != null ? null : shop;
     if (newId != null) await loadCatalogue();
+    notifyListeners();
+  }
+
+  /// Retry publishing a shop that only made it to this device — e.g. after the
+  /// barber signs in. Returns true once it is live.
+  Future<bool> retryPublishShop() async {
+    final shop = _pendingPublish;
+    if (shop == null) return _shopPublished ?? false;
+    await _persistNewShop(shop);
+    return _shopPublished ?? false;
   }
 
   // ═══════════════════ Flow B — coworker onboarding ═══════════════════
@@ -650,7 +692,7 @@ class AppState extends ChangeNotifier
       // The barber works AT an existing shop they attached to on the map.
       final shop = MockData.barbershops.firstWhere(
         (s) => s.id == r.shopId,
-        orElse: () => MockData.barbershops.first,
+        orElse: () => MockData.fallbackShop,
       );
       final barber = Barber(
         id: _meBarberId,
@@ -666,7 +708,7 @@ class AppState extends ChangeNotifier
     }
     final shop = MockData.barbershops.firstWhere(
       (s) => s.barbers.any((b) => b.id == _meBarberId),
-      orElse: () => MockData.barbershops.first,
+      orElse: () => MockData.fallbackShop,
     );
     final barber = shop.barbers.firstWhere(
       (b) => b.id == _meBarberId,
@@ -1086,8 +1128,11 @@ class AppState extends ChangeNotifier
   // === Barber's service menu (editable by the barber) ===
   // Seeded from the demo shop so the menu isn't empty, then fully owned by the
   // barber: they can re-price, switch services off, add new ones, or remove.
+  // Seeded from the DEMO menu, which always exists — the live catalogue may be
+  // empty (offline, or this barber is the first shop in town) and a barber must
+  // still get a menu to edit.
   late final List<BarberService> _myServices =
-      MockData.barbershops.first.services.toList();
+      MockData.demoShops.first.services.toList();
 
   /// The barber's full menu (including switched-off services).
   List<BarberService> get barberServices => List.unmodifiable(_myServices);
@@ -2071,8 +2116,14 @@ class AppState extends ChangeNotifier
   // === My Barber ===
   // We persist (shopId, barberId) so we can re-fetch the full Barber
   // and Barbershop objects on demand.
-  String? _myBarberShopId = 'shop1';
-  String? _myBarberId = 'shop1_b1';
+  //
+  // Both start NULL. They used to default to 'shop1' / 'shop1_b1', which meant
+  // every brand-new account opened with a personal barber it had never chosen —
+  // and, on the live catalogue, one that doesn't exist, because those are demo
+  // ids. "My barber" is a relationship the user earns by picking someone; the
+  // app must not invent it for them.
+  String? _myBarberShopId;
+  String? _myBarberId;
 
   /// True if the user has chosen a personal barber.
   bool get hasMyBarber => _myBarberId != null && _myBarberShopId != null;
@@ -2082,7 +2133,7 @@ class AppState extends ChangeNotifier
     if (_myBarberId == null || _myBarberShopId == null) return null;
     final shop = MockData.barbershops.firstWhere(
       (s) => s.id == _myBarberShopId,
-      orElse: () => MockData.barbershops.first,
+      orElse: () => MockData.fallbackShop,
     );
     final barber = shop.barbers.firstWhere(
       (b) => b.id == _myBarberId,
@@ -2217,7 +2268,10 @@ class AppState extends ChangeNotifier
       .where((b) => b.clientName == null && b.status == BookingStatus.completed)
       .length;
 
-  AppLanguage _language = AppLanguage.en;
+  // Uzbek is the default because Fade launches in Uzbekistan: the first screen
+  // a new user sees should already be in their language, not ask them to go
+  // find a setting. EN/RU stay one tap away in Profile → Language.
+  AppLanguage _language = AppLanguage.uz;
   AppLanguage get language => _language;
   void setLanguage(AppLanguage value) {
     _language = value;
@@ -2320,10 +2374,42 @@ class AppState extends ChangeNotifier
     return changed;
   }
 
-  /// Public entry: settle passed visits and notify if anything moved. Safe to
-  /// call from a screen's initState (not during build).
+  /// Close out requests the barber never answered.
+  ///
+  /// A `requested` booking had no expiry at all, so once its slot passed it sat
+  /// on the home screen saying "waiting for reply" forever — days or months
+  /// later. Worse, it is exclusive with the other home cards: a dead request
+  /// suppressed "Book your usual" permanently, so the app quietly stopped
+  /// asking for the next booking.
+  ///
+  /// Silence past the slot is an answer: the appointment cannot happen, so the
+  /// request is cancelled. Uses the END of the slot plus the same grace as
+  /// [_settlePastBookings], because a barber confirming a walk-up minutes late
+  /// is normal and shouldn't lose the booking.
+  bool _expireStaleRequests() {
+    final now = DateTime.now();
+    var changed = false;
+    for (var i = 0; i < _bookings.length; i++) {
+      final b = _bookings[i];
+      if (b.clientName != null) continue; // only the user's own bookings
+      if (b.status != BookingStatus.requested) continue;
+      final end = b.dateTime
+          .add(Duration(minutes: b.service.durationMinutes))
+          .add(const Duration(minutes: 10)); // grace
+      if (end.isBefore(now)) {
+        _bookings[i] = b.copyWith(status: BookingStatus.cancelled);
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  /// Public entry: settle passed visits, drop dead requests, and notify if
+  /// anything moved. Safe to call from a screen's initState (not during build).
   void settlePastBookings() {
-    if (_settlePastBookings()) notifyListeners();
+    final settled = _settlePastBookings();
+    final expired = _expireStaleRequests();
+    if (settled || expired) notifyListeners();
   }
 
   bool hasReviewed(String bookingId) => _reviewedBookings.contains(bookingId);
@@ -2515,32 +2601,6 @@ class AppState extends ChangeNotifier
     }
   }
 
-  /// When the real-catalogue flag is on, pull the live shops from Supabase and
-  /// swap them in for the mock list — every screen reads MockData.barbershops,
-  /// so replacing its contents flips the whole app to real data in one place.
-  /// On any failure the mock list is left untouched, so the app never launches
-  /// blank because the network hiccuped.
-  Future<void> loadCatalogue() async {
-    if (!SupabaseConfig.useRealCatalogue) return;
-    try {
-      final shops =
-          await ShopRepository.fetchShops().timeout(const Duration(seconds: 6));
-      // An EMPTY response is treated like a failure, not a success. Wiping the
-      // catalogue to zero shops used to arm every `.first` and `% length` in the
-      // app (map, atelier, seeding) with a crash, so keep the previous list.
-      if (shops.isEmpty) {
-        debugPrint('loadCatalogue: server returned 0 shops, keeping current');
-        return;
-      }
-      MockData.barbershops
-        ..clear()
-        ..addAll(shops);
-      notifyListeners();
-    } catch (e) {
-      debugPrint('loadCatalogue failed, keeping mock: $e');
-    }
-  }
-
   Future<void> load() async {
     final sp = await SharedPreferences.getInstance();
     // Auth stage + the provider that vouched. Read together: a stage with no
@@ -2680,8 +2740,23 @@ class AppState extends ChangeNotifier
       } catch (_) {}
     }
     // Reopening after a visit's time has passed: settle it so it leaves the
-    // "upcoming" hero and starts asking for a review.
+    // "upcoming" hero and starts asking for a review, and drop any request the
+    // barber never answered before its slot came and went.
     _settlePastBookings();
+    _expireStaleRequests();
+    // ── Waiting-chair mini game (see MiniGameState). ──
+    _fadeGameBest = sp.getInt('fadeGameBest') ?? _fadeGameBest;
+    _fadeGamePlays = sp.getInt('fadeGamePlays') ?? _fadeGamePlays;
+    // The daily-award cap MUST survive a relaunch — otherwise closing and
+    // reopening the app resets it and the game becomes an unbounded source of
+    // spendable money.
+    _lastGameAwardDay = sp.getInt('fadeGameAwardDay') ?? _lastGameAwardDay;
+    _tokensToday = sp.getInt('fadeGameTokens') ?? _tokensToday;
+    // Game-minted points live outside the point lots (see FadePointsState), so
+    // they need their own key or every relaunch would wipe them.
+    _gameMintedSom = sp.getInt('gameMintedSom') ?? _gameMintedSom;
+    _lineGameBest = sp.getInt('lineGameBest') ?? _lineGameBest;
+
     // ── Wallet / boosts / VIP / loyalty — durable, like bookings. ──
     _walletSom = sp.getInt('walletSom') ?? _walletSom;
     _boosts = sp.getInt('boosts') ?? _boosts;
@@ -2867,6 +2942,14 @@ class AppState extends ChangeNotifier
     _remoteBookings.removeWhere((k, _) => !liveIds.contains(k));
     await sp.setString('remoteBookings', jsonEncode(_remoteBookings));
     await sp.setStringList('reviewedBookings', _reviewedBookings.toList());
+    // ── Waiting-chair mini game (see MiniGameState). ──
+    await sp.setInt('fadeGameBest', _fadeGameBest);
+    await sp.setInt('fadeGamePlays', _fadeGamePlays);
+    await sp.setInt('fadeGameAwardDay', _lastGameAwardDay);
+    await sp.setInt('fadeGameTokens', _tokensToday);
+    await sp.setInt('gameMintedSom', _gameMintedSom);
+    await sp.setInt('lineGameBest', _lineGameBest);
+
     // ── Wallet / boosts / VIP / loyalty — durable, like bookings. ──
     await sp.setInt('walletSom', _walletSom);
     await sp.setInt('boosts', _boosts);
@@ -3033,7 +3116,7 @@ class AppState extends ChangeNotifier
     try {
       final shop = MockData.barbershops.firstWhere(
         (s) => s.id == m['shopId'],
-        orElse: () => MockData.barbershops.first,
+        orElse: () => MockData.fallbackShop,
       );
       final barber = shop.barbers.firstWhere(
         (b) => b.id == m['barberId'],
@@ -3164,7 +3247,7 @@ class AppState extends ChangeNotifier
     _ledgerSeeded = false;
     _myServices
       ..clear()
-      ..addAll(MockData.barbershops.first.services);
+      ..addAll(MockData.demoShops.first.services);
     _breaks
       ..clear()
       ..add(const BarberBreak(
@@ -3346,6 +3429,21 @@ class AppState extends ChangeNotifier
         changed = true;
       }
     }
+
+    // Re-apply the local sweeps AFTER taking the server's word, not before.
+    //
+    // The server has no expiry job: a request nobody answered stays 'requested'
+    // in the database for ever. Since the loop above treats the server status
+    // as truth, a locally-expired request was being resurrected on the very
+    // next sync — so a months-old booking kept showing "waiting for reply", and
+    // on resume the sweep and the sync raced with the server always winning.
+    //
+    // Running the sweeps here makes the rule hold regardless of what the server
+    // says. It stays a client-side presentation rule until the backend grows a
+    // real expiry job.
+    if (_settlePastBookings()) changed = true;
+    if (_expireStaleRequests()) changed = true;
+
     if (changed) {
       _save();
       notifyListeners();

@@ -94,6 +94,19 @@ class HairData {
       lengthLabel: 'Medium / long',
       upkeep: 'Medium upkeep',
     ),
+    Hairstyle(
+      id: 'h_curly',
+      name: 'Curly Top',
+      description:
+          'Natural curl left long on top with tidy sides. Adds height and softens a strong jaw.',
+      icon: Icons.cyclone_rounded,
+      silhouette: HairSilhouette.curly,
+      // Curl adds height and width, so it flatters shapes that want either:
+      // it lengthens a round or square face and fills out a narrow one.
+      suits: [FaceShape.round, FaceShape.square, FaceShape.oblong],
+      lengthLabel: 'Medium',
+      upkeep: 'Medium upkeep',
+    ),
   ];
 
   static Hairstyle byId(String id) =>

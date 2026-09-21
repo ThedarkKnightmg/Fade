@@ -11,6 +11,7 @@ import '../../../data/models/barber.dart';
 import '../../../data/models/barbershop.dart';
 import '../../widgets/barber_feed_kit.dart';
 import '../../widgets/barbershop_card.dart';
+import '../../widgets/catalogue_state_view.dart';
 import '../../widgets/category_chip.dart';
 import '../../widgets/paper_kit.dart';
 import '../barbershop_detail/barbershop_detail_screen.dart';
@@ -225,7 +226,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                if (empty)
+                // Catalogue state beats search state: "nothing matches your
+                // search" is misleading when the truth is that no shops have
+                // loaded at all. Demo shops must never stand in for real ones —
+                // their ids aren't DB UUIDs, so bookings against them vanish.
+                if (!AppState.instance.catalogueReady)
+                  const CatalogueStateView()
+                else if (empty)
                   Padding(
                     padding: const EdgeInsets.only(top: 48),
                     child: Center(

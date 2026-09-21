@@ -12,6 +12,7 @@ import '../../../core/utils/calendar_link.dart';
 import '../../../data/app_state.dart';
 import '../../../data/models/booking.dart';
 import '../barber/qr_scanner_screen.dart';
+import '../game/games_sheet.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 
@@ -233,6 +234,17 @@ class BookingTicketScreen extends StatelessWidget {
                   height: 54,
                   style: PrimaryButtonStyle.ghost,
                   onPressed: () => addBookingToCalendar(context, booking),
+                ),
+                const SizedBox(height: 10),
+                // This screen is what's open while you sit in the shop waiting
+                // to be called, so it's where the wait actually happens — and
+                // where a 40-second game belongs.
+                PrimaryButton(
+                  label: '${L.gamesTitle} · ${L.gameKillTime}',
+                  icon: Icons.sports_esports_rounded,
+                  height: 54,
+                  style: PrimaryButtonStyle.ghost,
+                  onPressed: () => showGamesSheet(context),
                 ),
               ],
             ),

@@ -31,6 +31,11 @@ class ShopRepository {
         );
     final shops = (rows as List)
         .map((r) => _mapShop(r as Map<String, dynamic>))
+        // A shop with no barbers cannot be booked — there is nobody to assign
+        // the appointment to — so listing it only sells a dead end, and every
+        // `shop.barbers.first` in the detail/booking screens would throw on it.
+        // Dropping it here keeps that whole class of crash out of the app.
+        .where((s) => s.barbers.isNotEmpty)
         .toList()
       // Premium/sponsored shops lead, like the mock catalogue.
       ..sort((a, b) => (b.isPremium ? 1 : 0) - (a.isPremium ? 1 : 0));

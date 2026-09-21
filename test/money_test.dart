@@ -18,7 +18,9 @@ import 'package:barber_app/data/models/service.dart';
 /// A booking whose service costs exactly [usd], so the so'm figure is
 /// predictable (Money.toSom multiplies by the fixed usdToUzs rate).
 Booking _bookingFor(double usd, {bool isWalkIn = false}) {
-  final shop = MockData.barbershops.first;
+  // demoShops, not barbershops: on the live path the visible catalogue starts
+  // empty and is filled from Supabase, so it is not a fixture source.
+  final shop = MockData.demoShops.first;
   return Booking(
     id: 'test-${usd.toStringAsFixed(2)}-$isWalkIn',
     barbershop: shop,

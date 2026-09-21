@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../data/demo_faces.dart';
 import '../style/hair_overlay.dart';
 
 /// Full-screen "AI reading your face" animation: the photo with a sweeping
@@ -78,11 +79,19 @@ class _FaceScanViewState extends State<FaceScanView>
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
+                      // Scanning a real face, not a cartoon one: this screen
+                      // claims to be measuring facial proportions, and a drawn
+                      // oval makes that claim obviously theatre.
                       if (widget.photo == null)
-                        const CustomPaint(
-                          painter: FacePlaceholderPainter(
-                            skin: Color(0xFFE7C9A9),
-                            bg: Color(0xFF16243B),
+                        Image.asset(
+                          DemoFaces.base,
+                          fit: BoxFit.cover,
+                          gaplessPlayback: true,
+                          errorBuilder: (_, __, ___) => const CustomPaint(
+                            painter: FacePlaceholderPainter(
+                              skin: Color(0xFFE7C9A9),
+                              bg: Color(0xFF16243B),
+                            ),
                           ),
                         )
                       else

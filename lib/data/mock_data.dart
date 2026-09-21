@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../core/supabase/supabase_config.dart';
 import 'models/barber.dart';
 import 'models/barbershop.dart';
 import 'models/category.dart';
@@ -191,7 +192,14 @@ class MockData {
     );
   }
 
-  static final List<Barbershop> barbershops = [
+  /// The five hand-written demo shops.
+  ///
+  /// In demo mode (`useRealCatalogue == false`) these ARE the catalogue. On the
+  /// live path they are never shown to anyone: they only supply sane defaults
+  /// where the app needs *a* shop that is guaranteed to exist — a starter
+  /// service menu for a new barber, a non-null shop for a barber-side screen
+  /// whose own shop hasn't loaded yet. See [fallbackShop].
+  static final List<Barbershop> demoShops = [
     Barbershop(
       id: 'shop1',
       name: 'The Sharp Edge',
@@ -305,6 +313,29 @@ class MockData {
       tags: ['Traditional', 'Hot towel', 'Premium'],
     ),
   ];
+
+  /// The catalogue every client-facing screen renders.
+  ///
+  /// On the live path this starts EMPTY and is filled by
+  /// `AppState.loadCatalogue()` from Supabase. It must never fall back to
+  /// [demoShops]: a demo shop's ids are demo strings, not database UUIDs, so
+  /// `BookingRepository.createBooking` drops the write and the request stays on
+  /// the client's phone. The client sees a confirmation and a booking in "My
+  /// bookings"; no barber ever receives it. A ghost booking is far worse than
+  /// an honest "no shops here yet", which is what `AppState.catalogueStatus`
+  /// now drives the browse surfaces to show instead.
+  static final List<Barbershop> barbershops = SupabaseConfig.useRealCatalogue
+      ? <Barbershop>[]
+      : List.of(demoShops);
+
+  /// A shop that is always safe to read when a lookup misses.
+  ///
+  /// Prefers the live catalogue and drops to a demo shop only so that
+  /// barber-side screens (whose own shop may not have loaded) can't throw on
+  /// `.first`. Client booking surfaces never reach this — they are gated on
+  /// `AppState.catalogueStatus` — so it cannot resurrect a bookable fake shop.
+  static Barbershop get fallbackShop =>
+      barbershops.isNotEmpty ? barbershops.first : demoShops.first;
 
   /// Generate available time slots for a given date, every 30 min between
   /// [startHour] and [endHour] (the barber's working hours).

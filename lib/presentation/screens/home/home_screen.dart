@@ -20,6 +20,9 @@ import '../../../data/models/barbershop.dart';
 import '../../../data/models/booking.dart';
 import '../../widgets/barber_feed_kit.dart';
 import '../../widgets/barbershop_card.dart';
+import '../../widgets/catalogue_state_view.dart';
+import '../../widgets/fade_points_pill.dart';
+import '../game/games_sheet.dart';
 import '../../widgets/category_chip.dart';
 import '../../widgets/review_visit_sheet.dart';
 import '../../widgets/paper_kit.dart';
@@ -230,6 +233,15 @@ class HomeScreen extends StatelessWidget {
                     () => onOpenBookings?.call()),
                 item(Icons.person_rounded, L.myProfile,
                     () => onOpenProfile?.call()),
+                // The game was only reachable from a booking ticket, so you
+                // needed an appointment to play it. It costs nothing to run and
+                // touches no network, so it may as well be open to anyone —
+                // and the Fade Point tokens are a reason to open the app on a
+                // day you weren't going to book.
+                item(Icons.videogame_asset_rounded, L.gamesTitle, () {
+                  Navigator.of(context).pop();
+                  showGamesSheet(context);
+                }),
                 const SizedBox(height: 12),
               ],
             ),
@@ -519,6 +531,28 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                ]
+                // Nobody chosen yet. A new account no longer arrives with a
+                // barber pre-attached (that used to be a hardcoded demo id), so
+                // this is the nudge that starts the relationship — shown only
+                // when there are real shops to choose from and nothing else is
+                // already competing for the slot.
+                else if (!state.hasMyBarber &&
+                    state.catalogueReady &&
+                    pendingBookings.isEmpty &&
+                    confirmedBookings.isEmpty) ...[
+                  const SizedBox(height: 16),
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 120),
+                    child: _PickBarberCard(
+                      // The map, not the Explore tab: Explore is a tab child
+                      // with no back affordance, so pushing it as a route
+                      // strands the user.
+                      onTap: () => Navigator.of(context).push(
+                        FadeThroughPageRoute(child: const ShopsMapScreen()),
+                      ),
+                    ),
+                  ),
                 ],
                 // Waiting for reply — the moment after booking, before the
                 // barber accepts. Deliberately NOT the "My bookings" hero yet.
@@ -705,7 +739,12 @@ class _ShopsSectionState extends State<_ShopsSection> {
           ),
         ),
         const SizedBox(height: 16),
-        if (_barbersMode)
+        // No real supply (still loading, none in this city, or the fetch
+        // failed) → say which. Rendering the demo shops here instead is what
+        // let a client book a barbershop that doesn't exist.
+        if (!AppState.instance.catalogueReady)
+          const CatalogueStateView(compact: true)
+        else if (_barbersMode)
           for (final (i, e) in _barberList().indexed) ...[
             ScrollReveal(
               child: SpotlightBarberCard(shop: e.$1, barber: e.$2, index: i),
@@ -1206,62 +1245,12 @@ class _PointsPill extends StatelessWidget {
 
   final VoidCallback? onTap;
 
+  // Thin wrapper over the shared widget so the header, the game HUD and the
+  // end-of-run reward card cannot drift apart. Points are money, and money that
+  // looks different on every screen stops reading as a currency.
   @override
-  Widget build(BuildContext context) {
-    // Fade Points = the spendable cashback balance (so'm).
-    final bal = AppState.instance.pointsBalanceSom;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(13, 5, 5, 5),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [Color(0xFFFF2D7E), Color(0xFF7A3CF0), Color(0xFF2E8BFF)],
-          ),
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF7A3CF0).withValues(alpha: 0.35),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: bal.toDouble()),
-              duration: const Duration(milliseconds: 900),
-              curve: Curves.easeOutCubic,
-              builder: (_, v, __) => Text(
-                Money.group(v.round()),
-                style: GoogleFonts.nunito(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 30,
-              height: 30,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.stars_rounded,
-                  size: 17, color: Color(0xFF7A3CF0)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      FadePointsPill(som: AppState.instance.pointsBalanceSom, onTap: onTap);
 }
 
 /// The bonus / loyalty sheet that slides up when the points pill is tapped —
@@ -1280,12 +1269,6 @@ class _BonusSheet extends StatelessWidget {
     final cuts = AppState.instance.fadePoints;
     final pct = (cuts / goal).clamp(0.0, 1.0);
     final remaining = goal - cuts;
-    final streak = 2 + (cuts % 7);
-    // Earned passes (from the booking-confirmation reward), aggregated.
-    final passCounts = <String, int>{};
-    for (final id in AppState.instance.perks) {
-      passCounts[id] = (passCounts[id] ?? 0) + 1;
-    }
 
     Widget perk(IconData icon, String title, String sub) => Padding(
           padding: const EdgeInsets.only(top: 14),
@@ -1346,82 +1329,19 @@ class _BonusSheet extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               const _FadePointsWallet(),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFFF2D7E),
-                          Color(0xFF7A3CF0),
-                          Color(0xFF2E8BFF),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('$cuts',
-                            style: GoogleFonts.nunito(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white)),
-                        const SizedBox(width: 6),
-                        const Icon(Icons.content_cut_rounded,
-                            size: 16, color: Colors.white),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(L.vipStatusTitle, style: AppTypography.h3(context)),
-                        if (AppState.instance.amITrusted)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.verified_rounded,
-                                  size: 14, color: AppColors.green),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text('${L.trustedTag} · ${L.trustedPerk}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.nunito(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.green)),
-                              ),
-                            ],
-                          )
-                        else
-                          Text(L.rewardsVipProgress,
-                              style: AppTypography.bodySmall(context)),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0683C).withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(L.streakWeeks(streak),
-                        style: GoogleFonts.nunito(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFFD0682F))),
-                  ),
-                ],
-              ),
               const SizedBox(height: 20),
+              // ONE progress line, not three. This sheet used to stack the
+              // points wallet, a VIP journey row with a streak badge, a
+              // "Trusted privileges 1/5" panel listing five more perks, an
+              // earned-passes list, and then three perk rows — four separate
+              // progress systems competing on one screen. Nobody reads that;
+              // they close it. What matters is: what you have, how far to the
+              // next thing, and what it gets you.
+              Text(
+                remaining <= 0 ? L.vipUnlocked : L.cutsToVip(remaining),
+                style: AppTypography.h4(context),
+              ),
+              const SizedBox(height: 10),
               ClipRRect(
                 borderRadius: BorderRadius.circular(99),
                 child: TweenAnimationBuilder<double>(
@@ -1436,72 +1356,9 @@ class _BonusSheet extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                remaining <= 0 ? L.vipUnlocked : L.cutsToVip(remaining),
-                style: AppTypography.bodySmall(context),
-              ),
               const SizedBox(height: 18),
-              const _TrustedPerksPanel(),
-              // Earned passes — the confirmation-screen rewards, now real and
-              // waiting here instead of vanishing.
-              if (passCounts.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                Text(L.yourPasses, style: AppTypography.h3(context)),
-                for (final e in passCounts.entries)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: AppColors.gold.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(13),
-                          ),
-                          child: Icon(
-                            switch (e.key) {
-                              'priority' => Icons.bolt_rounded,
-                              'skip' => Icons.fast_forward_rounded,
-                              _ => Icons.star_rounded,
-                            },
-                            size: 20,
-                            color: AppColors.gold,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            switch (e.key) {
-                              'priority' => L.perkPriority,
-                              'skip' => L.perkSkipQueue,
-                              _ => L.perkDoublePoints,
-                            },
-                            style: GoogleFonts.nunito(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w800,
-                                color: p.text),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 9, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.gold.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text('×${e.value}',
-                              style: GoogleFonts.nunito(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
-                                  color: const Color(0xFF8A6100))),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-              const SizedBox(height: 8),
+              // The three things VIP actually gets you. Short lines, no
+              // sub-panels, no counters.
               perk(Icons.bolt_rounded, L.perkPriority, L.perkPrioritySub),
               perk(Icons.fast_forward_rounded, L.perkSkipQueue,
                   L.perkSkipQueueSub),
@@ -1857,6 +1714,74 @@ class _PendingDots extends StatelessWidget {
 
 /// Book-first re-engagement trigger — one tap back to the user's usual barber.
 /// Rebooking is the highest-converting action, so it leads the home screen.
+/// Shown to an account that hasn't chosen a barber yet.
+///
+/// It exists because that state used to be unreachable: every new account was
+/// born with `_myBarberId = 'shop1_b1'` hardcoded, so "my barber" was always
+/// occupied by a demo record the user never picked. With that removed, a new
+/// user genuinely has nobody — and needs to be pointed at the choice rather
+/// than left to find it.
+class _PickBarberCard extends StatelessWidget {
+  const _PickBarberCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return PressableScale(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: p.card,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: p.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.person_search_rounded,
+                      size: 20, color: AppColors.accent),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(L.pickBarberTitle,
+                      style: AppTypography.h4(context)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              L.pickBarberBody,
+              style: AppTypography.bodySmall(context)
+                  .copyWith(color: p.textSecondary, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            // Full-width so the localized label can never be squeezed — the
+            // same trap _BookAgainCard hit with "Qayta yozilish".
+            PrimaryButton(
+              label: L.pickBarberCta,
+              icon: Icons.travel_explore_rounded,
+              height: 50,
+              onPressed: onTap,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _BookAgainCard extends StatelessWidget {
   const _BookAgainCard({required this.ref, required this.onTap});
 
@@ -2039,95 +1964,6 @@ class _FadePointsWallet extends StatelessWidget {
     );
   }
 }
-
-/// The Trusted perk list, shown in the loyalty sheet. Locked (grey, with a
-/// progress hint) until earned; unlocked (green, ticked) once you're Trusted.
-class _TrustedPerksPanel extends StatelessWidget {
-  const _TrustedPerksPanel();
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    final s = AppState.instance;
-    final trusted = s.amITrusted;
-    const goal = AppState.trustedVisitGoal;
-    final done = s.myCompletedVisits.clamp(0, goal);
-    final perks = <(IconData, String)>[
-      (Icons.bolt_rounded, L.tPerkInstant),
-      (Icons.low_priority_rounded, L.tPerkPriority),
-      (Icons.credit_card_off_rounded, L.tPerkNoDeposit),
-      (Icons.event_busy_rounded, L.tPerkFreeCancel),
-      (Icons.verified_rounded, L.tPerkBadge),
-    ];
-    final accent = trusted ? AppColors.green : p.textTertiary;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: trusted ? AppColors.green.withValues(alpha: 0.08) : p.cardAlt,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color:
-              trusted ? AppColors.green.withValues(alpha: 0.35) : p.border,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                  trusted
-                      ? Icons.verified_rounded
-                      : Icons.lock_outline_rounded,
-                  size: 18,
-                  color: accent),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: Text(L.trustedPerksTitle,
-                      style: AppTypography.h3(context))),
-              if (!trusted)
-                Text('$done/$goal',
-                    style: GoogleFonts.nunito(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        color: p.textSecondary)),
-            ],
-          ),
-          if (!trusted) ...[
-            const SizedBox(height: 4),
-            Text(L.trustedIn(goal - done),
-                style: AppTypography.bodySmall(context)),
-          ],
-          const SizedBox(height: 14),
-          for (final (icon, label) in perks)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                children: [
-                  Icon(icon,
-                      size: 17,
-                      color: trusted ? AppColors.green : p.textTertiary),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(label,
-                        style: GoogleFonts.nunito(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: trusted ? p.text : p.textSecondary)),
-                  ),
-                  if (trusted)
-                    const Icon(Icons.check_rounded,
-                        size: 16, color: AppColors.green),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// On the "Book your usual" card: either the earned Trusted perk line, or a
 /// nudge toward it (progress in clean visits). Zero-cost reward-by-access.
 class _TrustedLine extends StatelessWidget {
   const _TrustedLine();

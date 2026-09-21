@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image/image.dart' as img;
 
@@ -17,6 +18,7 @@ import '../../../core/photo/photo_source.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
+import '../../../data/demo_faces.dart';
 import '../../../data/hair_data.dart';
 import '../../../data/models/hairstyle.dart';
 import '../../../data/mock_data.dart';
@@ -55,6 +57,12 @@ String _aiHairDescription(Hairstyle style, String color) {
       'a slicked-back hairstyle combed straight back with a glossy finish',
     HairSilhouette.curtains =>
       'a middle-parted curtains cut with a soft fringe split to both sides',
+    // Named curl pattern and the tight sides both matter: without "short
+    // sides" the model tends to render an all-over afro, and without the
+    // explicit curl words it returns wavy rather than curly hair.
+    HairSilhouette.curly =>
+      'a curly top haircut, defined springy natural curls left long on top, '
+          'short tapered sides and back, voluminous curl pattern',
   };
   // Reads as: "<style>, <colour> hair, photoreal…" — and we nudge the model to
   // keep the same person (the mask is what truly protects the face).
@@ -214,12 +222,57 @@ class _AiHairScreenState extends State<AiHairScreen> {
     );
   }
 
+  /// The bundled demo photo's bytes, loaded once and cached.
+  ///
+  /// Kept separate from [_photo] on purpose: `_photo == null` is what marks
+  /// "this is the demo face" throughout this screen (it drives which image is
+  /// shown and suppresses the drawn hair overlay). Stuffing the demo bytes in
+  /// there would silently turn the demo into a "real selfie" everywhere.
+  Uint8List? _demoBytesCache;
+
+  /// The pre-rendered photo of the demo face wearing [styleId].
+  Future<Uint8List?> _renderedStyleBytes(String styleId) async {
+    try {
+      final data = await rootBundle.load(DemoFaces.assetFor(styleId));
+      return data.buffer.asUint8List();
+    } catch (_) {
+      return null; // asset missing → fall through to the AI path
+    }
+  }
+
+  Future<Uint8List?> _demoFaceBytes() async {
+    if (_demoBytesCache != null) return _demoBytesCache;
+    try {
+      final data = await rootBundle.load(DemoFaces.base);
+      return _demoBytesCache = data.buffer.asUint8List();
+    } catch (_) {
+      return null; // asset missing → fall back to the preview UI
+    }
+  }
+
   Future<void> _generate() async {
-    final photo = _photo;
     final style = HairData.byId(_styleId);
     final color = HairColorName.from(_colorIndex);
+    // THE DEMO FACE DOES NOT USE THE AI.
+    //
+    // Every style on this face has a hand-made render of that exact person —
+    // same pose, same light, only the hair changed. Those beat SD-1.5
+    // inpainting comfortably, and they are instant, free, and work with no
+    // signal. Sending the demo face to a model would spend seconds and a
+    // network round trip to produce something worse.
+    //
+    // Styles without a render yet fall through to the AI, so the path still
+    // works while the remaining images are produced.
+    if (_photo == null && DemoFaces.hasRender(_styleId)) {
+      final bytes = await _renderedStyleBytes(_styleId);
+      if (bytes != null) {
+        setState(() => _result = HairAiResult(HairAiStatus.success, image: bytes));
+        return;
+      }
+    }
+
+    final photo = _photo ?? await _demoFaceBytes();
     if (photo == null) {
-      // Demo face — no real image to send; show the not-configured/preview UI.
       setState(() => _result = const HairAiResult(HairAiStatus.notConfigured));
       return;
     }
@@ -430,6 +483,7 @@ class _AiHairScreenState extends State<AiHairScreen> {
               ),
             _Phase.result => _ResultView(
                 photo: _photo,
+                demoBytes: _demoBytesCache,
                 styleId: _styleId,
                 colorIndex: _colorIndex,
                 generating: _generating,
@@ -457,7 +511,18 @@ class _AiHairScreenState extends State<AiHairScreen> {
 /// Maps the colour index to a readable name for the AI prompt.
 class HairColorName {
   static String from(int i) {
-    const names = ['Black', 'Brown', 'Chestnut', 'Blonde', 'Ash'];
+    // These strings go straight into the image prompt, so they are written the
+    // way a colourist would describe the dye — "vivid purple" alone tends to
+    // produce a flat cartoon wig.
+    const names = [
+      'Black',
+      'Brown',
+      'Chestnut',
+      'Blonde',
+      'Ash',
+      'vivid violet purple dyed',
+      'emerald green dyed',
+    ];
     return names[i % names.length];
   }
 }
@@ -628,6 +693,7 @@ class _GlowChip extends StatelessWidget {
 class _ResultView extends StatelessWidget {
   const _ResultView({
     required this.photo,
+    this.demoBytes,
     required this.styleId,
     required this.colorIndex,
     required this.generating,
@@ -641,6 +707,10 @@ class _ResultView extends StatelessWidget {
   });
 
   final Uint8List? photo;
+
+  /// The bundled demo photo, supplied when [photo] is null so the before/after
+  /// comparison still has a "before" to show on the demo face.
+  final Uint8List? demoBytes;
   final String styleId;
   final int colorIndex;
   final bool generating;
@@ -655,7 +725,6 @@ class _ResultView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = HairData.byId(styleId);
-    final color = HairColor.options[colorIndex];
     final realistic = result?.ok == true;
 
     final p = Paper.of(context);
@@ -670,19 +739,26 @@ class _ResultView extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               // ── The look ──────────────────────────────────────────────
-              if (realistic && photo != null)
+              if (realistic && (photo ?? demoBytes) != null)
                 // A real render AND the original → let them drag between the
-                // two. Seeing the change IS the product.
-                _CompareView(before: photo!, after: result!.image!)
+                // two. Seeing the change IS the product. The demo face gets
+                // this as well, using the bundled photo as the "before".
+                _CompareView(
+                    before: (photo ?? demoBytes)!, after: result!.image!)
               else if (realistic)
                 Image.memory(result!.image!,
                     fit: BoxFit.cover, gaplessPlayback: true)
               else ...[
                 if (photo == null)
-                  const CustomPaint(
-                    painter: FacePlaceholderPainter(
-                      skin: Color(0xFFE7C9A9),
-                      bg: Color(0xFF16243B),
+                  Image.asset(
+                    DemoFaces.base,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                    errorBuilder: (_, __, ___) => const CustomPaint(
+                      painter: FacePlaceholderPainter(
+                        skin: Color(0xFFE7C9A9),
+                        bg: Color(0xFF16243B),
+                      ),
                     ),
                   )
                 else
@@ -691,19 +767,13 @@ class _ResultView extends StatelessWidget {
                       gaplessPlayback: true,
                       errorBuilder: (_, __, ___) =>
                           const ColoredBox(color: Color(0xFF16243B))),
-                Center(
-                  child: FractionallySizedBox(
-                    widthFactor: 0.72,
-                    heightFactor: 0.66,
-                    alignment: const Alignment(0, -0.5),
-                    child: CustomPaint(
-                      painter: HairOverlayPainter(
-                        silhouette: style.silhouette,
-                        color: color,
-                      ),
-                    ),
-                  ),
-                ),
+                // The drawn hair overlay is GONE from this screen entirely —
+                // demo face and real selfie alike. Its geometry was built for
+                // the old cartoon placeholder head, so on any photograph it
+                // lands across the eyes, and it was painting hair on top of
+                // hair that is already in the picture. The demo face has real
+                // renders for every style, and a real selfie has the AI; a
+                // drawn blob helps neither.
               ],
 
               // ── Top scrim so the controls stay readable on any photo ──
@@ -795,7 +865,12 @@ class _ResultView extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _ColorStrip(
-                          selected: colorIndex, onPick: onPickColor),
+                        selected: colorIndex,
+                        onPick: onPickColor,
+                        // Demo face = photographed colours only; a real selfie
+                        // goes through the AI, which can do any of them.
+                        limitToRendered: photo == null,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     _GhostSquare(
@@ -1103,7 +1178,7 @@ class _FaceReadLine extends StatelessWidget {
             const SizedBox(width: 7),
             Expanded(
               child: Text(
-                '${analysis.shape.label} · ${analysis.recommended.name}',
+                '${analysis.shape.label} · ${L.tr(analysis.recommended.name)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.nunito(
@@ -1237,14 +1312,37 @@ class _StyleStrip extends StatelessWidget {
                               ),
                             ),
                             clipBehavior: Clip.antiAlias,
-                            child: CustomPaint(
-                              size: Size.infinite,
-                              painter: StyleGlyphPainter(
-                                silhouette: s.silhouette,
-                                ink: sel ? AppColors.accent : p.text,
-                                bust: p.textSecondary.withValues(alpha: 0.22),
-                              ),
-                            ),
+                            // The real photograph of this exact cut, not a
+                            // schematic glyph. A drawn icon shows the SHAPE of
+                            // a haircut; only a photo shows the fade line, the
+                            // texture and the curl pattern — which is what a
+                            // client is actually choosing between. Framed on
+                            // the head, since the thumbnail is small and the
+                            // hair is the only part that matters here.
+                            child: DemoFaces.hasRender(s.id)
+                                ? Image.asset(
+                                    DemoFaces.assetFor(s.id),
+                                    fit: BoxFit.cover,
+                                    alignment: const Alignment(0, -0.72),
+                                    errorBuilder: (_, __, ___) => CustomPaint(
+                                      size: Size.infinite,
+                                      painter: StyleGlyphPainter(
+                                        silhouette: s.silhouette,
+                                        ink: sel ? AppColors.accent : p.text,
+                                        bust: p.textSecondary
+                                            .withValues(alpha: 0.22),
+                                      ),
+                                    ),
+                                  )
+                                : CustomPaint(
+                                    size: Size.infinite,
+                                    painter: StyleGlyphPainter(
+                                      silhouette: s.silhouette,
+                                      ink: sel ? AppColors.accent : p.text,
+                                      bust: p.textSecondary
+                                          .withValues(alpha: 0.22),
+                                    ),
+                                  ),
                           ),
                         ),
                         if (isRec)
@@ -1266,7 +1364,7 @@ class _StyleStrip extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    s.name,
+                    L.tr(s.name),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.nunito(
@@ -1286,10 +1384,19 @@ class _StyleStrip extends StatelessWidget {
 }
 
 class _ColorStrip extends StatelessWidget {
-  const _ColorStrip({required this.selected, required this.onPick});
+  const _ColorStrip({
+    required this.selected,
+    required this.onPick,
+    this.limitToRendered = false,
+  });
 
   final int selected;
   final ValueChanged<int> onPick;
+
+  /// On the DEMO face only the photographed colours can actually be shown, so
+  /// the rest are hidden. A swatch that visibly does nothing when tapped reads
+  /// as a broken feature, which is worse than a shorter row.
+  final bool limitToRendered;
 
   @override
   Widget build(BuildContext context) {
@@ -1297,6 +1404,7 @@ class _ColorStrip extends StatelessWidget {
     return Row(
       children: [
         for (var i = 0; i < HairColor.options.length; i++)
+          if (!limitToRendered || DemoFaces.colorAvailable(i))
           GestureDetector(
             onTap: () => onPick(i),
             child: Container(

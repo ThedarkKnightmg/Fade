@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/i18n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import 'map_app_logos.dart';
 
 /// Try each URL in turn (app deep link first, then web fallback) until one opens.
 Future<void> _launchFirst(List<String> urls) async {
@@ -32,9 +33,22 @@ void showDirectionsSheet(
   final q = '$lat,$lng';
   final options = <_DirOption>[
     _DirOption(
+      'Google Maps',
+      MapApp.googleMaps,
+      [
+        // Turn-by-turn straight away. `google.navigation:` starts guidance in
+        // the Google Maps app; the https link below only opens a route PREVIEW
+        // you then have to tap "Start" on, which is why it was a poor primary.
+        'google.navigation:q=$lat,$lng&mode=d',
+        // Generic geo: — whatever the user's default map app is.
+        'geo:$lat,$lng?q=$lat,$lng(${Uri.encodeComponent(name)})',
+        // Web fallback: works with no maps app installed at all.
+        'https://www.google.com/maps/dir/?api=1&destination=$q&travelmode=driving',
+      ],
+    ),
+    _DirOption(
       'Yandex Maps',
-      Icons.navigation_rounded,
-      const Color(0xFFFF3D00),
+      MapApp.yandexMaps,
       [
         'yandexmaps://maps.yandex.ru/?rtext=~$lat,$lng&rtt=auto',
         'https://yandex.uz/maps/?rtext=~$lat,$lng&rtt=auto',
@@ -42,8 +56,7 @@ void showDirectionsSheet(
     ),
     _DirOption(
       'Yandex Go',
-      Icons.local_taxi_rounded,
-      const Color(0xFFFFCC00),
+      MapApp.yandexGo,
       [
         'yandextaxi://route?end-lat=$lat&end-lon=$lng&level=50',
         'https://yandex.uz/maps/?rtext=~$lat,$lng&rtt=taxi',
@@ -51,18 +64,11 @@ void showDirectionsSheet(
     ),
     _DirOption(
       'Uklon',
-      Icons.local_taxi_rounded,
-      const Color(0xFF00C24E),
+      MapApp.uklon,
       [
         'uklon://m/orders/create?route[1][lat]=$lat&route[1][lng]=$lng',
         'https://www.uklon.com.ua/',
       ],
-    ),
-    _DirOption(
-      'Google Maps',
-      Icons.map_rounded,
-      const Color(0xFF1A73E8),
-      ['https://www.google.com/maps/dir/?api=1&destination=$q'],
     ),
   ];
 
@@ -115,10 +121,9 @@ void showDirectionsSheet(
 }
 
 class _DirOption {
-  const _DirOption(this.label, this.icon, this.color, this.urls);
+  const _DirOption(this.label, this.app, this.urls);
   final String label;
-  final IconData icon;
-  final Color color;
+  final MapApp app;
   final List<String> urls;
 }
 
@@ -143,15 +148,9 @@ class _DirRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: option.color.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(option.icon, color: option.color, size: 22),
-            ),
+            // The app's own mark, so the row is picked out by brand rather
+            // than by reading four near-identical grey labels.
+            MapAppLogo(app: option.app, size: 40),
             const SizedBox(width: 12),
             Expanded(
                 child: Text(option.label, style: AppTypography.h4(context))),

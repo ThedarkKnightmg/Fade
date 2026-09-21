@@ -479,12 +479,20 @@ class PanelField extends StatelessWidget {
                 ),
               )
             else
-              Text(
-                value,
-                style: GoogleFonts.nunito(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: p.text,
+              // Flexible + ellipsis even in the "size to content" branch. The
+              // value here is translated copy (a service name), and Uzbek and
+              // Russian run much longer than English — unconstrained it pushed
+              // the whole field past the edge of its row.
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: p.text,
+                  ),
                 ),
               ),
             const SizedBox(width: 6),

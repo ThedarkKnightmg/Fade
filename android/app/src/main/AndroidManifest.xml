@@ -72,6 +72,13 @@
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="geo"/>
         </intent>
+        <!-- Turn-by-turn guidance in Google Maps. Without this scheme declared,
+             Android 11+ package visibility hides the handler and canLaunch/
+             launchUrl fails silently — the button would simply do nothing. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="google.navigation"/>
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="yandexmaps"/>

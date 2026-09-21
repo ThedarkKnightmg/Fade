@@ -45,7 +45,10 @@ mixin FadePointsState on ChangeNotifier, AppStatePlumbing {
 
   /// Live spendable balance (so'm) — the server figure when we have it, else the
   /// local mirror (the point lots below).
-  int get pointsBalanceSom {
+  int get pointsBalanceSom => _basePointsSom + _gameMintedSom;
+
+  /// The balance the SERVER knows about (or the local lot mirror when offline).
+  int get _basePointsSom {
     if (_serverPointsBalance != null) return _serverPointsBalance!;
     final now = DateTime.now();
     return _pointLots
@@ -53,6 +56,20 @@ mixin FadePointsState on ChangeNotifier, AppStatePlumbing {
             (l) => now.difference(l.earnedAt).inDays <= AppState.pointsExpiryDays)
         .fold(0, (s, l) => s + l.amount);
   }
+
+  /// Points minted locally that the server has no idea about — today, the
+  /// waiting-chair game's tokens.
+  ///
+  /// This exists because the balance PREFERS the server figure, and the server
+  /// has no endpoint for awarding game points. Anything minted locally was
+  /// therefore invisible the moment a session existed: the player cut a token,
+  /// watched "+25" fly up, and saw the balance never move.
+  ///
+  /// Kept as its own running total rather than a point lot so it survives that
+  /// preference — it is ADDED to whatever the base balance is, never replaced
+  /// by it. When a server-side award RPC exists this becomes the migration
+  /// point: award server-side, then retire this field.
+  int _gameMintedSom = 0;
 
   /// Points a completed booking earns — [AppState.pointsEarnRatePct]% of its
   /// so'm price.
@@ -64,6 +81,21 @@ mixin FadePointsState on ChangeNotifier, AppStatePlumbing {
     if (pts <= 0) return;
     _pointLots.add((amount: pts, earnedAt: DateTime.now()));
     _lastPointsEarned = pts;
+  }
+
+  /// Mint points from something that is not a booking (today: the waiting-chair
+  /// game). Kept as ONE named entry point so there is a single place to swap
+  /// for a server-authoritative award later — see the SECURITY note above.
+  ///
+  /// Every caller must be capped. Points are money, so an uncapped source is a
+  /// money printer: unlike cashback, which is bounded by a real cut at a real
+  /// price, a game can be played all day.
+  void _mintPoints(int som) {
+    if (som <= 0) return;
+    // Into the game bucket, NOT a point lot: a lot is invisible whenever a
+    // server balance exists (see [_gameMintedSom]).
+    _gameMintedSom += som;
+    _lastPointsEarned = som;
   }
 
   /// The most a client may apply to a booking of [priceSom]: their balance,
@@ -82,6 +114,15 @@ mixin FadePointsState on ChangeNotifier, AppStatePlumbing {
     var want = som.clamp(0, pointsBalanceSom);
     if (want < AppState.pointsMinRedemptionSom) return 0;
     final applied = want;
+    // Spend game-minted points FIRST. They are the only ones the server can't
+    // see, so leaving them until last would let a later server refresh make
+    // them look spendable twice. They also don't expire, so burning them early
+    // never costs the player anything.
+    if (_gameMintedSom > 0) {
+      final fromGame = want < _gameMintedSom ? want : _gameMintedSom;
+      _gameMintedSom -= fromGame;
+      want -= fromGame;
+    }
     _pointLots.sort((a, b) => a.earnedAt.compareTo(b.earnedAt)); // oldest first
     while (want > 0 && _pointLots.isNotEmpty) {
       final lot = _pointLots.first;
