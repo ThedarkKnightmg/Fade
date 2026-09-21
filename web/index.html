@@ -20,7 +20,7 @@
     font-src 'self' https://fonts.gstatic.com data:;
     img-src 'self' data: blob: https://*.maps.yandex.net https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org;
     media-src 'self' blob: mediastream:;
-    connect-src 'self' data: https://fonts.googleapis.com https://fonts.gstatic.com https://www.gstatic.com https://nominatim.openstreetmap.org https://*.maps.yandex.net https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://generativelanguage.googleapis.com https://*.workers.dev;
+    connect-src 'self' data: https://vlpfxcvoqucthtnueaoh.supabase.co wss://vlpfxcvoqucthtnueaoh.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com https://www.gstatic.com https://nominatim.openstreetmap.org https://*.maps.yandex.net https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://generativelanguage.googleapis.com https://*.workers.dev;
     worker-src 'self' blob:;
     object-src 'none';
     base-uri 'self';
@@ -59,6 +59,9 @@
 </head>
 <body>
   <div id="loading">FADE</div>
+  <!-- Must load before the app boots: the passkeys web plugin (pulled in by
+       supabase_flutter) looks for this global at startup. -->
+  <script src="passkeys_stub.js"></script>
   <script src="flutter_bootstrap.js" async></script>
   <script src="flutter_first_frame.js"></script>
 </body>
