@@ -222,8 +222,7 @@ class _AddressPickerScreenState extends State<AddressPickerScreen> {
       ),
       children: [
         TileLayer(
-          urlTemplate:
-              'https://{s}.basemaps.cartocdn.com/${p.isDark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}.png',
+          urlTemplate: cartoTileUrl(dark: p.isDark, plain: true),
           subdomains: const ['a', 'b', 'c', 'd'],
           tileProvider: CachedTileProvider(),
           userAgentPackageName: 'com.barber.app',
