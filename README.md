@@ -8,6 +8,8 @@ blue accent.
 > 56k lines of Dart across 164 files · 9 test suites · Supabase backend with
 > row-level security · EN / RU / UZ throughout
 
+**[⬇ Download the Android app (APK)](https://github.com/ThedarkKnightmg/Fade/releases/latest)** · Android 7+ · sign in with Telegram, Google or Apple
+
 ---
 
 ## What's in it
