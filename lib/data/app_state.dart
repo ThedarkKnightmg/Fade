@@ -2273,8 +2273,16 @@ class AppState extends ChangeNotifier
   // find a setting. EN/RU stay one tap away in Profile → Language.
   AppLanguage _language = AppLanguage.uz;
   AppLanguage get language => _language;
+
+  /// Whether this person has picked a language themselves. Until they have,
+  /// the first screen asks, because the Terms and Privacy Policy come next and
+  /// agreeing to them only means something in a language you can read.
+  bool _languageChosen = false;
+  bool get hasChosenLanguage => _languageChosen;
+
   void setLanguage(AppLanguage value) {
     _language = value;
+    _languageChosen = true;
     // Keep date/time formatting in step with the UI language (weekday/month
     // names) — otherwise dates stay in whatever locale was set at startup.
     Intl.defaultLocale = value.name;
@@ -2653,6 +2661,10 @@ class AppState extends ChangeNotifier
       _language = AppLanguage.values
           .firstWhere((l) => l.name == lang, orElse: () => _language);
     }
+    // Installs from before the language step: anyone already signed in has
+    // been using the app in its language, so don't stop them with the picker.
+    _languageChosen =
+        sp.getBool('langChosen') ?? _stage != AuthStage.anonymous;
     _isDarkMode = sp.getBool('dark') ?? _isDarkMode;
     _workStart = sp.getInt('workStart') ?? _workStart;
     _workEnd = sp.getInt('workEnd') ?? _workEnd;
@@ -2873,6 +2885,7 @@ class AppState extends ChangeNotifier
         'offDays', _offDays.map((d) => d.toString()).toList());
     await sp.setString('role', _activeRole.name);
     await sp.setString('lang', _language.name);
+    await sp.setBool('langChosen', _languageChosen);
     await sp.setBool('dark', _isDarkMode);
     await sp.setBool('schedSlots', _scheduleSlotsView);
     await sp.setInt('workStart', _workStart);

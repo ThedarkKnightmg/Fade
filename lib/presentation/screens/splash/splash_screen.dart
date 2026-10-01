@@ -4,6 +4,7 @@ import '../../../core/animations/app_animations.dart';
 import '../../../data/app_state.dart';
 import '../legal/consent_screen.dart';
 import '../onboarding/barber_registration_screen.dart';
+import '../onboarding/language_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../root_shell.dart';
 import 'scissors_intro.dart';
@@ -45,6 +46,11 @@ class _SplashScreenState extends State<SplashScreen> {
     // destination here covers anonymous, identified and ready alike.
     if (state.needsLegalConsent) {
       next = ConsentScreen(next: next);
+    }
+    // Language goes in front of everything, the Terms included: agreeing to
+    // a document is only meaningful in a language you can read.
+    if (!state.hasChosenLanguage) {
+      next = LanguageScreen(next: next);
     }
     Navigator.of(context).pushReplacement(FadeThroughPageRoute(child: next));
   }
