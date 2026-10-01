@@ -238,10 +238,11 @@ class HomeScreen extends StatelessWidget {
                 // touches no network, so it may as well be open to anyone —
                 // and the Fade Point tokens are a reason to open the app on a
                 // day you weren't going to book.
-                item(Icons.videogame_asset_rounded, L.gamesTitle, () {
-                  Navigator.of(context).pop();
-                  showGamesSheet(context);
-                }),
+                // item() has already closed the menu. A second pop here
+                // removed the home screen itself, leaving the games sheet
+                // over a black, empty navigator.
+                item(Icons.videogame_asset_rounded, L.gamesTitle,
+                    () => showGamesSheet(context)),
                 const SizedBox(height: 12),
               ],
             ),
