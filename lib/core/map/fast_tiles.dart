@@ -3,11 +3,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 
 /// CARTO basemaps API key. CARTO started requiring one in 2026 — without it
-/// every tile comes back stamped "API KEY REQUIRED". It is free (5M tile
-/// requests/month) and emailed instantly from carto.com/basemaps/apikey.
+/// every tile comes back stamped "API KEY REQUIRED". Free for commercial use
+/// up to 1M tile requests/month; keys come from carto.com/basemaps/apikey.
 /// Like the Supabase publishable key it ships in the client; restrict it to
 /// package uz.fade.app in the CARTO key settings so it can't be reused.
-const String cartoApiKey = '';
+const String cartoApiKey = 'cb1_45zv_1_043d992d9dc7591f72fa910d';
 
 /// CARTO basemaps — a fast global CDN served in standard EPSG:3857, so tiles
 /// load quickly and align natively (no projection transform like Yandex).
