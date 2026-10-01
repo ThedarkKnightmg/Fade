@@ -1080,6 +1080,10 @@ class L {
       "Bu buildda hech qanday kirish usuli sozlanmagan.");
   static String get barberPhoneVerified => _t('Verified — clients reach you here',
       'Подтверждён — клиенты звонят сюда', 'Tasdiqlangan — mijozlar shu raqamga');
+  static String get barberPhoneChatOnly => _t(
+      'Clients will message you in the app',
+      'Клиенты будут писать вам в приложении',
+      'Mijozlar sizga ilova orqali yozadi');
   static String get barberPhoneMissing => _t('No number on your account',
       'На аккаунте нет номера', 'Hisobingizda raqam yo\'q');
   static String get authPhoneInstead => _t('No Telegram? Use my phone number',
@@ -1305,6 +1309,12 @@ class L {
       'Yozuvlarni qabul qiling, mijozlarni tasdiqlang, kuningizni boshqaring.');
 
   // ── Barber registration ───────────────────────────────
+  static String get leaveBarberSetupQ => _t('Leave barber setup?',
+      'Выйти из настройки барбера?', 'Barber sozlashdan chiqasizmi?');
+  static String get leaveBarberSetupBody => _t(
+      "You'll be signed out and can choose again — as a client or a barber.",
+      'Вы выйдете из аккаунта и сможете выбрать снова — клиент или барбер.',
+      "Hisobdan chiqasiz va qaytadan tanlashingiz mumkin — mijoz yoki barber sifatida.");
   static String get setUpBarberProfile => _t('Set up your\nbarber profile',
       'Настройте свой\nпрофиль барбера', 'Barber profilingizni\nsozlang');
   static String get clientsSeeThis => _t(

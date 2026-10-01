@@ -16,6 +16,7 @@ import '../root_shell.dart';
 import 'barber_shop_attach_screen.dart';
 import 'coworker_join_screen.dart';
 import 'leader_loop_screen.dart';
+import 'role_choice_screen.dart';
 
 /// Barber sign-up: everything a client needs to see — photo, name, age, phone,
 /// shop, and location.
@@ -174,177 +175,247 @@ class _BarberRegistrationScreenState extends State<BarberRegistrationScreen> {
     );
   }
 
+  /// Back out of barber setup.
+  ///
+  /// Every route into this screen clears the stack (sign-in, registration and
+  /// the splash resume), so there is nothing behind it and a plain maybePop()
+  /// silently did nothing. Going back from here means "I picked the wrong
+  /// role", so confirm, sign out, and return to the client/barber choice.
+  Future<void> _leave() async {
+    final nav = Navigator.of(context);
+    if (nav.canPop()) {
+      nav.pop();
+      return;
+    }
+    final p = Paper.of(context);
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: p.bg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(L.leaveBarberSetupQ, style: AppTypography.h2(ctx)),
+              const SizedBox(height: 6),
+              Text(L.leaveBarberSetupBody,
+                  style: AppTypography.bodySmall(ctx)),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: PrimaryButton(
+                      label: L.stay,
+                      height: 50,
+                      style: PrimaryButtonStyle.ghost,
+                      onPressed: () => Navigator.pop(ctx, false),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: PrimaryButton(
+                      label: L.signOut,
+                      height: 50,
+                      onPressed: () => Navigator.pop(ctx, true),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (yes != true || !mounted) return;
+    AppState.instance.signOut();
+    nav.pushAndRemoveUntil(
+      FadeThroughPageRoute(child: const RoleChoiceScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    return Scaffold(
-      backgroundColor: p.bg,
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-          children: [
-            Row(
-              children: [
-                CircleBtn(
-                  icon: Icons.arrow_back_rounded,
-                  size: 42,
-                  onTap: () => Navigator.of(context).maybePop(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(L.setUpBarberProfile,
-                style: AppTypography.display(context)),
-            const SizedBox(height: 6),
-            Text(L.clientsSeeThis,
-                style: AppTypography.bodySmall(context)),
-            const SizedBox(height: 22),
-            Center(
-              child: GestureDetector(
-                onTap: _pickPhoto,
-                child: Container(
-                  width: 112,
-                  height: 112,
-                  decoration: BoxDecoration(
-                    color: p.card,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: p.border, width: 2),
-                    image: _photo != null
-                        ? DecorationImage(
-                            image: MemoryImage(_photo!), fit: BoxFit.cover)
-                        : null,
+    // The system back gesture takes the same path as the on-screen arrow,
+    // instead of closing the app from the middle of setup.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _leave();
+      },
+      child: Scaffold(
+        backgroundColor: p.bg,
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+            children: [
+              Row(
+                children: [
+                  CircleBtn(
+                    icon: Icons.arrow_back_rounded,
+                    size: 42,
+                    onTap: _leave,
                   ),
-                  child: _photo != null
-                      ? null
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.add_a_photo_rounded,
-                                color: AppColors.accent, size: 28),
-                            const SizedBox(height: 4),
-                            Text(L.addPhoto,
-                                style: AppTypography.caption(context)),
-                          ],
-                        ),
-                ),
+                ],
               ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                    child: _Field(
-                        controller: _first,
-                        label: L.firstNameLabel,
-                        icon: Icons.person_outline_rounded)),
-                const SizedBox(width: 12),
-                Expanded(
-                    child: _Field(
-                        controller: _surname,
-                        label: L.surnameLabel,
-                        icon: Icons.badge_outlined)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _Field(
-                controller: _age,
-                label: L.ageLabel,
-                icon: Icons.cake_outlined,
-                keyboard: TextInputType.number),
-            const SizedBox(height: 12),
-            // The number we already hold, shown rather than asked for. It reads
-            // as reassurance ("you're already verified") instead of one more
-            // field, and it cannot be swapped for a fake one.
-            _VerifiedPhoneRow(phone: _verifiedPhone),
-            const SizedBox(height: 18),
-            Text(L.chooseYourShop, style: AppTypography.h4(context)),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: _pickShop,
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: _selectedShop == null
-                      ? AppColors.accent.withValues(alpha: 0.08)
-                      : p.card,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: _selectedShop == null
-                        ? AppColors.accent.withValues(alpha: 0.4)
-                        : p.border,
-                    width: _selectedShop == null ? 1.2 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                        _selectedShop == null
-                            ? Icons.add_location_alt_rounded
-                            : Icons.storefront_rounded,
-                        color: AppColors.accent,
-                        size: 22),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _selectedShop == null
-                          ? Text(L.pickShopOnMap,
-                              style: GoogleFonts.nunito(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.accent))
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(_selectedShop!.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.h4(context)),
-                                Text(_selectedShop!.address,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.bodySmall(context)),
-                              ],
-                            ),
+              const SizedBox(height: 12),
+              Text(L.setUpBarberProfile,
+                  style: AppTypography.display(context)),
+              const SizedBox(height: 6),
+              Text(L.clientsSeeThis,
+                  style: AppTypography.bodySmall(context)),
+              const SizedBox(height: 22),
+              Center(
+                child: GestureDetector(
+                  onTap: _pickPhoto,
+                  child: Container(
+                    width: 112,
+                    height: 112,
+                    decoration: BoxDecoration(
+                      color: p.card,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: p.border, width: 2),
+                      image: _photo != null
+                          ? DecorationImage(
+                              image: MemoryImage(_photo!), fit: BoxFit.cover)
+                          : null,
                     ),
-                    Icon(Icons.chevron_right_rounded, color: p.textTertiary),
-                  ],
+                    child: _photo != null
+                        ? null
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.add_a_photo_rounded,
+                                  color: AppColors.accent, size: 28),
+                              const SizedBox(height: 4),
+                              Text(L.addPhoto,
+                                  style: AppTypography.caption(context)),
+                            ],
+                          ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
-            Text(L.yourRoleHere, style: AppTypography.h4(context)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _RolePill(
-                    label: L.ownerRole,
-                    sub: L.ownerRoleSub,
-                    icon: Icons.verified_rounded,
-                    selected: _isOwner,
-                    onTap: () => setState(() => _isOwner = true),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                      child: _Field(
+                          controller: _first,
+                          label: L.firstNameLabel,
+                          icon: Icons.person_outline_rounded)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                      child: _Field(
+                          controller: _surname,
+                          label: L.surnameLabel,
+                          icon: Icons.badge_outlined)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _Field(
+                  controller: _age,
+                  label: L.ageLabel,
+                  icon: Icons.cake_outlined,
+                  keyboard: TextInputType.number),
+              const SizedBox(height: 12),
+              // The number we already hold, shown rather than asked for. It reads
+              // as reassurance ("you're already verified") instead of one more
+              // field, and it cannot be swapped for a fake one.
+              _VerifiedPhoneRow(phone: _verifiedPhone),
+              const SizedBox(height: 18),
+              Text(L.chooseYourShop, style: AppTypography.h4(context)),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: _pickShop,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: _selectedShop == null
+                        ? AppColors.accent.withValues(alpha: 0.08)
+                        : p.card,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: _selectedShop == null
+                          ? AppColors.accent.withValues(alpha: 0.4)
+                          : p.border,
+                      width: _selectedShop == null ? 1.2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                          _selectedShop == null
+                              ? Icons.add_location_alt_rounded
+                              : Icons.storefront_rounded,
+                          color: AppColors.accent,
+                          size: 22),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _selectedShop == null
+                            ? Text(L.pickShopOnMap,
+                                style: GoogleFonts.nunito(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.accent))
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(_selectedShop!.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTypography.h4(context)),
+                                  Text(_selectedShop!.address,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTypography.bodySmall(context)),
+                                ],
+                              ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: p.textTertiary),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _RolePill(
-                    label: L.staffRole,
-                    sub: L.staffRoleSub,
-                    icon: Icons.content_cut_rounded,
-                    selected: !_isOwner,
-                    onTap: () => setState(() => _isOwner = false),
+              ),
+              const SizedBox(height: 18),
+              Text(L.yourRoleHere, style: AppTypography.h4(context)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _RolePill(
+                      label: L.ownerRole,
+                      sub: L.ownerRoleSub,
+                      icon: Icons.verified_rounded,
+                      selected: _isOwner,
+                      onTap: () => setState(() => _isOwner = true),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 26),
-            PrimaryButton(
-              label: L.finishOpenBarber,
-              height: 60,
-              icon: Icons.check_rounded,
-              onPressed: _finish,
-            ),
-          ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _RolePill(
+                      label: L.staffRole,
+                      sub: L.staffRoleSub,
+                      icon: Icons.content_cut_rounded,
+                      selected: !_isOwner,
+                      onTap: () => setState(() => _isOwner = false),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 26),
+              PrimaryButton(
+                label: L.finishOpenBarber,
+                height: 60,
+                icon: Icons.check_rounded,
+                onPressed: _finish,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -361,28 +432,38 @@ class _VerifiedPhoneRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    const green = Color(0xFF2FA84F);
+    // Google sign-in carries no phone number, so "verified" in green would be
+    // a false claim. Without a number the row turns neutral and says how
+    // clients will reach the barber instead.
+    final hasPhone = phone.isNotEmpty;
+    final tone = hasPhone ? const Color(0xFF2FA84F) : p.textSecondary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       decoration: BoxDecoration(
-        color: green.withValues(alpha: 0.07),
+        color: tone.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: green.withValues(alpha: 0.35)),
+        border: Border.all(color: tone.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.verified_rounded, size: 19, color: green),
+          Icon(
+              hasPhone
+                  ? Icons.verified_rounded
+                  : Icons.chat_bubble_outline_rounded,
+              size: 19,
+              color: tone),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  phone.isEmpty ? L.barberPhoneMissing : phone,
+                  hasPhone ? phone : L.barberPhoneMissing,
                   style: AppTypography.body(context)
                       .copyWith(fontWeight: FontWeight.w800),
                 ),
-                Text(L.barberPhoneVerified,
+                Text(
+                    hasPhone ? L.barberPhoneVerified : L.barberPhoneChatOnly,
                     style: AppTypography.caption(context)
                         .copyWith(color: p.textSecondary)),
               ],
