@@ -294,7 +294,18 @@ class _AiHairScreenState extends State<AiHairScreen> {
       // Free route — a Cloudflare worker. Normalise to a crisp 768px square
       // (1024 makes SD-1.5 inpainting output black), then mask the hair so
       // only it is repainted.
-      final square = await preparePhotoSquare(photo) ?? photo;
+      final square = await preparePhotoSquare(photo);
+      if (square == null) {
+        // Never fall back to the original: a full-size photo is exactly what
+        // makes SD-1.5 return a black image.
+        if (!mounted) return;
+        setState(() {
+          _result = HairAiResult(HairAiStatus.failed,
+              message: L.aiPhotoUnreadable);
+          _generating = false;
+        });
+        return;
+      }
       final mask = await buildHairMask(square, silhouette: style.silhouette);
       res = await _ai.generate(
         photo: square,

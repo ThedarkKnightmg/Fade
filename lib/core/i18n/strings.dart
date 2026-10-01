@@ -862,6 +862,10 @@ class L {
       "Suratingiz soch ko'rinishini yaratish uchun AI xizmatiga yuboriladi, so'ng o'chiriladi. U barberlarga yoki boshqalarga ko'rsatilmaydi. Davom etamizmi?");
   static String get aiConsentAccept =>
       _t('Send & generate', 'Отправить', 'Yuborish');
+  static String get aiPhotoUnreadable => _t(
+      "Couldn't read this photo. Try another one.",
+      'Не удалось прочитать фото. Попробуйте другое.',
+      "Bu suratni o'qib bo'lmadi. Boshqasini tanlang.");
   static String get aiRenderFailed => _t(
       "AI render didn't work", 'Не удалось сгенерировать', 'AI ishlamadi');
   static String get connectAiForHair => _t('Connect AI for photo-real hair',

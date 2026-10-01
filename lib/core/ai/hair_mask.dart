@@ -1,47 +1,44 @@
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:image/image.dart' as imglib;
+
 import '../../data/models/hairstyle.dart';
 import 'face_box.dart';
 
-/// Normalises a photo to a clean square PNG of [size]×[size] for the AI.
+/// Normalises a photo to a clean [size]x[size] JPEG for the AI.
 ///
 /// Square + a fixed size means the model never squishes a portrait into a
 /// square (the main cause of blur/distortion) and the returned image is crisp.
 /// The crop is biased toward the top so the head/hair is kept.
-Future<Uint8List?> preparePhotoSquare(Uint8List photo, {int size = 768}) async {
+///
+/// Done on the CPU with the `image` package, in a background isolate. It used
+/// to be drawn with a ui.PictureRecorder and read back with toImage(), and
+/// some Android GPUs read that back as a blank, black frame: the worker then
+/// edited a black photo and the user got a black result. Returns null if the
+/// photo can't be decoded; callers must not fall back to the original bytes,
+/// because a full-size photo is exactly what makes SD-1.5 return black.
+Future<Uint8List?> preparePhotoSquare(Uint8List photo, {int size = 768}) =>
+    Isolate.run(() => _squareOnCpu(photo, size));
+
+Uint8List? _squareOnCpu(Uint8List photo, int size) {
   try {
-    final codec = await ui.instantiateImageCodec(photo);
-    final frame = await codec.getNextFrame();
-    final src = frame.image;
-    final w = src.width.toDouble();
-    final h = src.height.toDouble();
-    if (w == 0 || h == 0) {
-      src.dispose();
-      return null;
-    }
-    final side = w < h ? w : h;
-    final sx = (w - side) / 2; // centre horizontally
-    final sy = (h - side) * 0.2; // bias up so the head/hair stays in frame
-
-    final recorder = ui.PictureRecorder();
-    final s = size.toDouble();
-    final canvas = ui.Canvas(recorder, ui.Rect.fromLTWH(0, 0, s, s));
-    canvas.drawImageRect(
-      src,
-      ui.Rect.fromLTWH(sx, sy, side, side),
-      ui.Rect.fromLTWH(0, 0, s, s),
-      ui.Paint()..filterQuality = ui.FilterQuality.high,
-    );
-    src.dispose();
-
-    final picture = recorder.endRecording();
-    final out = await picture.toImage(size, size);
-    picture.dispose();
-    final data = await out.toByteData(format: ui.ImageByteFormat.png);
-    out.dispose();
-    return data?.buffer.asUint8List();
+    final decoded = imglib.decodeImage(photo);
+    if (decoded == null) return null;
+    // Camera photos store "rotate me" in EXIF; bake it in so the head is up.
+    final src = imglib.bakeOrientation(decoded);
+    final side = math.min(src.width, src.height);
+    if (side == 0) return null;
+    final sx = (src.width - side) ~/ 2; // centre horizontally
+    final sy = ((src.height - side) * 0.2).round(); // bias up: keep the hair
+    final square =
+        imglib.copyCrop(src, x: sx, y: sy, width: side, height: side);
+    final out = imglib.copyResize(square,
+        width: size, height: size, interpolation: imglib.Interpolation.cubic);
+    return imglib.encodeJpg(out, quality: 92);
   } catch (_) {
     return null;
   }
@@ -57,6 +54,18 @@ Future<Uint8List?> preparePhotoSquare(Uint8List photo, {int size = 768}) async {
 /// punching out a soft face oval (instead of a flat top band) keeps the
 /// eyes/nose/mouth safe and gives the new hairline a natural curve.
 Future<Uint8List?> buildHairMask(Uint8List photo,
+    {HairSilhouette? silhouette}) async {
+  final gpu = await _buildHairMaskOnGpu(photo, silhouette: silhouette);
+  if (gpu != null && !await Isolate.run(() => _isBlank(gpu))) return gpu;
+  // Some Android GPUs read a drawn picture back as blank. An all-black mask
+  // tells the model to keep everything, so the hair would never change. Fall
+  // back to the fixed-layout mask, drawn on the CPU.
+  return Isolate.run(() => buildHairMaskOnCpu(photo, silhouette: silhouette));
+}
+
+/// The face-anchored mask, drawn on the GPU. Preferred, because it follows the
+/// detected head; [buildHairMask] checks its output before trusting it.
+Future<Uint8List?> _buildHairMaskOnGpu(Uint8List photo,
     {HairSilhouette? silhouette}) async {
   try {
     final codec = await ui.instantiateImageCodec(photo);
@@ -183,20 +192,7 @@ Future<Uint8List?> buildHairMask(Uint8List photo,
       );
     } else {
       // ── Fallback: no confident face found, use the old fixed layout ────
-      final (double crown, double hairline) = switch (silhouette) {
-        HairSilhouette.buzz => (0.15, 0.42),
-        HairSilhouette.crew => (0.12, 0.42),
-        HairSilhouette.caesar => (0.12, 0.44),
-        HairSilhouette.crop => (0.10, 0.44),
-        HairSilhouette.taper => (0.06, 0.45),
-        HairSilhouette.sidePart => (0.05, 0.45),
-        HairSilhouette.slick => (0.04, 0.46),
-        HairSilhouette.pompadour => (0.00, 0.48),
-        HairSilhouette.quiff => (0.00, 0.47),
-        HairSilhouette.curtains => (0.05, 0.50),
-        HairSilhouette.curly => (0.01, 0.47),
-        null => (0.05, 0.46),
-      };
+      final (double crown, double hairline) = _fixedHairBand(silhouette);
       final crownSoft = (crown + 0.04).clamp(0.0, 1.0);
       final solidEnd =
           (hairline - 0.12).clamp(crownSoft + 0.01, hairline - 0.01);
@@ -233,6 +229,79 @@ Future<Uint8List?> buildHairMask(Uint8List photo,
     final data = await img.toByteData(format: ui.ImageByteFormat.png);
     img.dispose();
     return data?.buffer.asUint8List();
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Where the hair band starts (crown) and ends (hairline), as fractions of the
+/// photo height, for the fixed layout used when no face is located.
+(double, double) _fixedHairBand(HairSilhouette? silhouette) =>
+    switch (silhouette) {
+      HairSilhouette.buzz => (0.15, 0.42),
+      HairSilhouette.crew => (0.12, 0.42),
+      HairSilhouette.caesar => (0.12, 0.44),
+      HairSilhouette.crop => (0.10, 0.44),
+      HairSilhouette.taper => (0.06, 0.45),
+      HairSilhouette.sidePart => (0.05, 0.45),
+      HairSilhouette.slick => (0.04, 0.46),
+      HairSilhouette.pompadour => (0.00, 0.48),
+      HairSilhouette.quiff => (0.00, 0.47),
+      HairSilhouette.curtains => (0.05, 0.50),
+      HairSilhouette.curly => (0.01, 0.47),
+      null => (0.05, 0.46),
+    };
+
+/// True when a mask has no white anywhere, i.e. nothing would be repainted.
+bool _isBlank(Uint8List png) {
+  final mask = imglib.decodeImage(png);
+  if (mask == null) return true;
+  for (var y = 0; y < mask.height; y += 8) {
+    for (var x = 0; x < mask.width; x += 8) {
+      if (mask.getPixel(x, y).luminance > 32) return false;
+    }
+  }
+  return true;
+}
+
+/// The fixed-layout hair mask drawn on the CPU: the same band and face oval as
+/// the GPU fallback, for devices whose GPU reads drawn pictures back blank.
+@visibleForTesting
+Uint8List? buildHairMaskOnCpu(Uint8List photo, {HairSilhouette? silhouette}) {
+  try {
+    final decoded = imglib.decodeImage(photo);
+    if (decoded == null) return null;
+    final w = decoded.width;
+    final h = decoded.height;
+    final (crown, hairline) = _fixedHairBand(silhouette);
+    final crownSoft = (crown + 0.04).clamp(0.0, 1.0);
+    final solidEnd = (hairline - 0.12).clamp(crownSoft + 0.01, hairline - 0.01);
+    final cx = w * 0.5, cy = h * 0.64, rx = w * 0.31, ry = h * 0.33;
+
+    final mask = imglib.Image(width: w, height: h);
+    for (var y = 0; y < h; y++) {
+      final f = y / h;
+      // White ramps in over the crown, holds, then fades out at the hairline.
+      final double band;
+      if (f < crown || f > hairline) {
+        band = 0;
+      } else if (f < crownSoft) {
+        band = (f - crown) / (crownSoft - crown);
+      } else if (f <= solidEnd) {
+        band = 1;
+      } else {
+        band = (hairline - f) / (hairline - solidEnd);
+      }
+      final dy = (y - cy) / ry;
+      for (var x = 0; x < w; x++) {
+        final dx = (x - cx) / rx;
+        final v = dx * dx + dy * dy <= 1 ? 0 : (band * 255).round();
+        mask.setPixelRgb(x, y, v, v, v);
+      }
+    }
+    // Soften the face edge so the new hairline blends instead of cutting.
+    return imglib.encodePng(
+        imglib.gaussianBlur(mask, radius: math.max(2, (w * 0.02).round())));
   } catch (_) {
     return null;
   }
