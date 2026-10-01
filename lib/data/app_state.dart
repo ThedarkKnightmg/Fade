@@ -2290,6 +2290,16 @@ class AppState extends ChangeNotifier
     _save();
   }
 
+  /// Switch the UI language without recording it as this person's choice.
+  /// The first-run picker previews each option live as it's tapped; only its
+  /// Continue button commits the choice through [setLanguage].
+  void previewLanguage(AppLanguage value) {
+    if (_language == value) return;
+    _language = value;
+    Intl.defaultLocale = value.name;
+    notifyListeners();
+  }
+
   // === AI engine (persisted so it survives a relaunch) ===
   // Google Gemini image key — optional premium route. Empty by default.
   String _geminiKey = '';

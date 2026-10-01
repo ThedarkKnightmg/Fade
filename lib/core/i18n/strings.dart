@@ -1319,6 +1319,8 @@ class L {
       "You'll be signed out and can choose again — as a client or a barber.",
       'Вы выйдете из аккаунта и сможете выбрать снова — клиент или барбер.',
       "Hisobdan chiqasiz va qaytadan tanlashingiz mumkin — mijoz yoki barber sifatida.");
+  static String get languageNext =>
+      _t('Continue', 'Далее', 'Davom etish');
   static String get setUpBarberProfile => _t('Set up your\nbarber profile',
       'Настройте свой\nпрофиль барбера', 'Barber profilingizni\nsozlang');
   static String get clientsSeeThis => _t(
