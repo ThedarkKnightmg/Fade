@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart'
     show CupertinoSliverRefreshControl, RefreshIndicatorMode;
@@ -701,9 +702,19 @@ class _ShopsSectionState extends State<_ShopsSection> {
 // Header bits.
 // ============================================================
 
-/// Yandex-style quick-action grid — four big, soft-tinted tiles for the app's
-/// main jobs (book, AI try-on, map, bookings), each colour-coded.
-class _QuickActions extends StatelessWidget {
+/// Yandex-style quick-action grid: four tiles for the app's main jobs (book,
+/// AI try-on, map, bookings).
+///
+/// Motion, three layers, all off with reduced motion:
+///  * Entrance, once per app launch: each tile is revealed by a "clipper
+///    pass", the same soft fade band and glowing edge line the language
+///    screen uses for its heading, travelling as a diagonal wave across the
+///    grid. Fade is named after the haircut; this is its signature move.
+///  * Press: the card sinks while its sticker lifts out of it, so the 3D
+///    sticker reads as a real object sitting in the card.
+///  * Scroll: the stickers lean with the scroll speed, like objects on a
+///    shelf when it moves, and settle back when it stops.
+class _QuickActions extends StatefulWidget {
   const _QuickActions({
     required this.onBook,
     required this.onAi,
@@ -717,80 +728,166 @@ class _QuickActions extends StatelessWidget {
   final VoidCallback onCuts;
 
   @override
+  State<_QuickActions> createState() => _QuickActionsState();
+}
+
+class _QuickActionsState extends State<_QuickActions>
+    with TickerProviderStateMixin {
+  /// The entrance plays once per launch, not on every return to Home.
+  static bool _introPlayed = false;
+
+  late final AnimationController _intro = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1150),
+    value: _introPlayed ? 1 : 0,
+  );
+
+  /// Sticker lean in degrees: kicked by scroll deltas, eased back to 0.
+  late final AnimationController _lean = AnimationController.unbounded(
+    vsync: this,
+  );
+
+  ScrollController? _scroll;
+  double _lastOffset = 0;
+  bool _reduce = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_reduce) {
+      _intro.value = 1;
+    } else if (!_introPlayed) {
+      _introPlayed = true;
+      _intro.forward(from: 0);
+    }
+    final next = PrimaryScrollController.maybeOf(context);
+    if (next != _scroll) {
+      _scroll?.removeListener(_onScroll);
+      _scroll = next?..addListener(_onScroll);
+      _lastOffset = next != null && next.hasClients ? next.offset : 0;
+    }
+  }
+
+  void _onScroll() {
+    final c = _scroll;
+    if (c == null || !c.hasClients || _reduce) return;
+    final delta = c.offset - _lastOffset;
+    _lastOffset = c.offset;
+    // Faster scroll, bigger lean; capped so it never looks broken.
+    final target = (delta * 0.8).clamp(-7.0, 7.0);
+    _lean.value = _lean.value * 0.5 + target * 0.5;
+    _lean.animateTo(0,
+        duration: const Duration(milliseconds: 650),
+        curve: AppCurves.easeOutQuart);
+  }
+
+  @override
+  void dispose() {
+    _scroll?.removeListener(_onScroll);
+    _intro.dispose();
+    _lean.dispose();
+    super.dispose();
+  }
+
+  /// Each tile's slice of the entrance, staggered as a diagonal wave:
+  /// top-left first, then the two on the diagonal together, then bottom-right.
+  Animation<double> _slice(int wave) {
+    const step = 0.16;
+    final begin = wave * step;
+    return CurvedAnimation(
+      parent: _intro,
+      curve: Interval(begin, begin + 1 - 2 * step, curve: Curves.easeInOutCubic),
+    );
+  }
+
+  Widget _tile(int wave,
+          {required String label,
+          required String sub,
+          required String asset,
+          required IconData icon,
+          required Color color,
+          double stickerScale = 1,
+          double stickerDy = 0,
+          required VoidCallback onTap}) =>
+      Expanded(
+        child: _QuickTile(
+          icon: icon,
+          color: color,
+          label: label,
+          sub: sub,
+          asset: asset,
+          stickerScale: stickerScale,
+          stickerDy: stickerDy,
+          reveal: _slice(wave),
+          lean: _lean,
+          onTap: onTap,
+        ),
+      );
+
+  @override
   Widget build(BuildContext context) {
-    // Even 12px gutters both ways, edge to edge with the rest of the page.
-    return Padding(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _QuickTile(
-                  icon: Icons.content_cut_rounded,
-                  color: AppColors.accent,
-                  label: L.quickBook,
-                  sub: L.quickBookSub,
-                  asset: 'assets/tiles/book.png',
-                  stickerScale: 1.5,
-                  stickerDy: 22,
-                  onTap: onBook,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _QuickTile(
-                  icon: Icons.auto_awesome_rounded,
-                  color: const Color(0xFF7A3CF0),
-                  label: L.quickAi,
-                  sub: L.quickAiSub,
-                  asset: 'assets/tiles/ai_star.png',
-                  onTap: onAi,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _QuickTile(
-                  icon: Icons.map_rounded,
-                  color: const Color(0xFF1FA463),
-                  label: L.quickNear,
-                  sub: L.quickNearSub,
-                  asset: 'assets/tiles/map.png',
-                  onTap: onMap,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _QuickTile(
-                  icon: Icons.event_note_rounded,
-                  color: const Color(0xFFD99A2E),
-                  label: L.quickCuts,
-                  sub: L.quickCutsSub,
-                  asset: 'assets/tiles/cuts.png',
-                  stickerScale: 1.25,
-                  stickerDy: 8,
-                  onTap: onCuts,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return Column(
+      children: [
+        Row(
+          children: [
+            _tile(0,
+                icon: Icons.content_cut_rounded,
+                color: AppColors.accent,
+                label: L.quickBook,
+                sub: L.quickBookSub,
+                asset: 'assets/tiles/book.png',
+                // A wide sticker (head, clippers, scissors): a touch smaller
+                // and lower so it clears the end of "find your barber".
+                stickerScale: 1.22,
+                stickerDy: 34,
+                onTap: widget.onBook),
+            const SizedBox(width: 12),
+            _tile(1,
+                icon: Icons.auto_awesome_rounded,
+                color: const Color(0xFF7A3CF0),
+                label: L.quickAi,
+                sub: L.quickAiSub,
+                asset: 'assets/tiles/ai_star.png',
+                onTap: widget.onAi),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _tile(1,
+                icon: Icons.map_rounded,
+                color: const Color(0xFF1FA463),
+                label: L.quickNear,
+                sub: L.quickNearSub,
+                asset: 'assets/tiles/map.png',
+                onTap: widget.onMap),
+            const SizedBox(width: 12),
+            _tile(2,
+                icon: Icons.event_note_rounded,
+                color: const Color(0xFFD99A2E),
+                label: L.quickCuts,
+                sub: L.quickCutsSub,
+                asset: 'assets/tiles/cuts.png',
+                stickerScale: 1.15,
+                stickerDy: 6,
+                onTap: widget.onCuts),
+          ],
+        ),
+      ],
     );
   }
 }
 
-class _QuickTile extends StatelessWidget {
+class _QuickTile extends StatefulWidget {
   const _QuickTile({
     required this.icon,
     required this.color,
     required this.label,
     required this.sub,
     required this.onTap,
+    required this.reveal,
+    required this.lean,
     this.asset,
     this.stickerScale = 1.0,
     this.stickerDy = 0,
@@ -802,106 +899,246 @@ class _QuickTile extends StatelessWidget {
   final String sub;
   final VoidCallback onTap;
 
-  /// Per-tile sticker size multiplier (1.0 = default). Bigger stickers pop
-  /// further above the platform.
+  /// 0 -> 1: this tile's clipper-pass entrance.
+  final Animation<double> reveal;
+
+  /// Sticker lean in degrees, driven by scrolling.
+  final Animation<double> lean;
+
+  /// Per-tile sticker size multiplier (1.0 = default).
   final double stickerScale;
 
-  /// Extra downward nudge (px) for the sticker — positive sits it lower.
+  /// Extra downward nudge (px) for the sticker; positive sits it lower.
   final double stickerDy;
 
-  /// Optional 3D sticker PNG (assets/tiles/…). Falls back to [icon] if missing.
+  /// Optional 3D sticker PNG (assets/tiles/...). Falls back to [icon].
   final String? asset;
+
+  @override
+  State<_QuickTile> createState() => _QuickTileState();
+}
+
+class _QuickTileState extends State<_QuickTile> {
+  bool _pressed = false;
+
+  /// Width of the soft band between revealed and hidden, as a fraction.
+  static const double _band = 0.3;
 
   Widget _iconChip(PaperPalette p, double size) => Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: color.withValues(alpha: p.isDark ? 0.28 : 0.18),
+          color: widget.color.withValues(alpha: p.isDark ? 0.28 : 0.18),
           borderRadius: BorderRadius.circular(size * 0.3),
         ),
-        child: Icon(icon, size: size * 0.5, color: color),
+        child: Icon(widget.icon, size: size * 0.5, color: widget.color),
       );
+
+  Widget _sticker(PaperPalette p, double size) {
+    final asset = widget.asset;
+    if (asset == null) return _iconChip(p, size * 0.6);
+    if (asset.endsWith('.svg')) {
+      return SvgPicture.asset(asset, width: size, height: size);
+    }
+    return Image.asset(
+      asset,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      // Decode at the on-screen size so it stays sharp on high-DPI screens.
+      // Width only: a cacheHeight too would force a square decode.
+      cacheWidth: (380 * widget.stickerScale).round(),
+      filterQuality: FilterQuality.high,
+      errorBuilder: (_, __, ___) => SvgPicture.asset(
+        asset.replaceFirst('.png', '.svg'),
+        width: size,
+        height: size,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // Yandex Go's tile: the label and a short line of context sit INSIDE the
-    // card, top-left and bold; the 3D sticker is tucked into the bottom-right
-    // corner and cropped by the card's edge. The sticker's top is kept below
-    // the text block, so it can never cover the words.
-    const double tileH = 124;
-    final double size = 78 * stickerScale;
-    final Widget sticker = asset == null
-        ? _iconChip(p, 56)
-        : asset!.endsWith('.svg')
-            ? SvgPicture.asset(asset!, width: size, height: size)
-            : Image.asset(
-                asset!,
-                width: size,
-                height: size,
-                fit: BoxFit.contain,
-                // Decode at a resolution matching the on-screen size so it
-                // stays sharp on high-DPI screens. Width only: a cacheHeight
-                // too would force a square decode and stretch the sticker.
-                cacheWidth: (360 * stickerScale).round(),
-                filterQuality: FilterQuality.high,
-                // Missing PNG -> fall back to the vector sticker.
-                errorBuilder: (_, __, ___) => SvgPicture.asset(
-                  asset!.replaceFirst('.png', '.svg'),
-                  width: size,
-                  height: size,
-                ),
-              );
+    // Shorter box, bigger sticker: the sticker fills more of the card and is
+    // cropped by its edge, so the grid feels full rather than airy. Its top
+    // stays below the text block.
+    const double tileH = 112;
+    final double size = 92 * widget.stickerScale;
 
-    return PressableScale(
-      onTap: onTap,
-      pressedScale: 0.97,
-      child: Container(
-        height: tileH,
-        decoration: clayDecoration(p, radius: 22),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -10,
-                bottom: -12 - stickerDy * 0.4,
-                child: sticker,
+    // Press: the sticker pops up out of the card while the card sinks.
+    final Widget sticker = AnimatedBuilder(
+      animation: widget.lean,
+      builder: (context, child) => Transform.rotate(
+        angle: widget.lean.value * math.pi / 180,
+        alignment: Alignment.bottomCenter,
+        child: child,
+      ),
+      child: AnimatedSlide(
+        duration: Duration(milliseconds: _pressed ? 160 : 260),
+        curve: AppCurves.easeOutQuart,
+        offset: _pressed ? const Offset(-0.03, -0.08) : Offset.zero,
+        child: AnimatedRotation(
+          duration: Duration(milliseconds: _pressed ? 160 : 260),
+          curve: AppCurves.easeOutQuart,
+          turns: _pressed ? -0.014 : 0,
+          child: AnimatedScale(
+            duration: Duration(milliseconds: _pressed ? 160 : 260),
+            curve: AppCurves.easeOutQuart,
+            scale: _pressed ? 1.12 : 1,
+            alignment: Alignment.bottomRight,
+            child: _sticker(p, size),
+          ),
+        ),
+      ),
+    );
+
+    final Widget content = ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            Positioned(
+              right: -14,
+              bottom: -14 - widget.stickerDy * 0.4,
+              child: sticker,
+            ),
+            Positioned(
+              left: 14,
+              top: 13,
+              right: 14,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.nunito(
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                      letterSpacing: -0.2,
+                      color: p.text,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    widget.sub,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.nunito(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: p.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-              Positioned(
-                left: 14,
-                top: 14,
-                right: 14,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          ],
+        ),
+      );
+
+    // The card takes its shadow depth as an argument: during the entrance the
+    // shadow grows in with the pass. A full shadow from the start reaches
+    // past the card's edge, outside the reveal mask, and showed the empty
+    // outlines of tiles the pass hadn't reached yet.
+    Widget cardAt(double depth) => Container(
+      height: tileH,
+      decoration: clayDecoration(p, radius: 22, depth: depth),
+      child: content,
+    );
+
+    return Listener(
+      onPointerDown: (_) => setState(() => _pressed = true),
+      onPointerUp: (_) => setState(() => _pressed = false),
+      onPointerCancel: (_) => setState(() => _pressed = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          scale: _pressed ? 0.97 : 1,
+          child: AnimatedBuilder(
+            animation: widget.reveal,
+            builder: (context, _) {
+              final v = widget.reveal.value;
+              if (v >= 1) return cardAt(1);
+              final card = cardAt(v);
+              // The clipper pass: a soft band sweeps left to right, the tile
+              // appears behind it, and a glowing line rides its edge.
+              final edge = -_band + (1 + _band) * v;
+              // The line rides the band's middle, and only while that's
+              // over this tile; before and after, it would hang beside it.
+              final lineAt = edge + _band * 0.5;
+              final lineOnTile = lineAt > 0.02 && lineAt < 0.98;
+              return LayoutBuilder(
+                builder: (context, box) => Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.nunito(
-                        fontSize: 16.5,
-                        fontWeight: FontWeight.w900,
-                        height: 1.1,
-                        letterSpacing: -0.2,
-                        color: p.text,
+                    Transform.translate(
+                      offset: Offset(0, 10 * (1 - v)),
+                      child: ShaderMask(
+                        blendMode: BlendMode.dstIn,
+                        // Laid out over three tile-widths (one each side),
+                        // so the band starts off the card. Clamped onto the
+                        // card itself, the gradient's first pixel column was
+                        // always opaque and showed a sliver of the tile.
+                        shaderCallback: (rect) => LinearGradient(
+                          colors: const [
+                            Colors.white,
+                            Colors.white,
+                            Colors.transparent,
+                            Colors.transparent,
+                          ],
+                          stops: [
+                            0,
+                            (1 + edge) / 3,
+                            (1 + edge + _band) / 3,
+                            1,
+                          ],
+                        ).createShader(Rect.fromLTRB(rect.left - rect.width,
+                            rect.top, rect.right + rect.width, rect.bottom)),
+                        child: card,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      sub,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.nunito(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: p.textSecondary,
+                    if (lineOnTile)
+                      Positioned(
+                        left: lineAt * box.maxWidth,
+                        top: 6,
+                        bottom: 6,
+                        child: Opacity(
+                          opacity: math.sin(math.pi * v).clamp(0.0, 1.0),
+                          child: Container(
+                            width: 2.5,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(2),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  AppColors.accent.withValues(alpha: 0),
+                                  AppColors.accent,
+                                  AppColors.accent.withValues(alpha: 0),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      AppColors.accent.withValues(alpha: 0.5),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
