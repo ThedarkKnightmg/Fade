@@ -710,10 +710,11 @@ class _ShopsSectionState extends State<_ShopsSection> {
 ///    pass", the same soft fade band and glowing edge line the language
 ///    screen uses for its heading, travelling as a diagonal wave across the
 ///    grid. Fade is named after the haircut; this is its signature move.
-///  * Press: the card sinks while its sticker lifts out of it, so the 3D
-///    sticker reads as a real object sitting in the card.
-///  * Scroll: the stickers lean with the scroll speed, like objects on a
-///    shelf when it moves, and settle back when it stops.
+///  * Glint: once the tiles are in, a single streak of light crosses each
+///    sticker in the same wave, masked to the sticker, so they read as glossy
+///    3D objects. The stickers themselves never move.
+///  * Press: a soft light in the tile's colour blooms from the finger and the
+///    card dips a little; it fades when the finger lifts.
 class _QuickActions extends StatefulWidget {
   const _QuickActions({
     required this.onBook,
@@ -742,51 +743,32 @@ class _QuickActionsState extends State<_QuickActions>
     value: _introPlayed ? 1 : 0,
   );
 
-  /// Sticker lean in degrees: kicked by scroll deltas, eased back to 0.
-  late final AnimationController _lean = AnimationController.unbounded(
+  /// One light streak across the stickers, after the entrance.
+  late final AnimationController _glint = AnimationController(
     vsync: this,
+    duration: const Duration(milliseconds: 1300),
+    value: _introPlayed ? 1 : 0,
   );
-
-  ScrollController? _scroll;
-  double _lastOffset = 0;
-  bool _reduce = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    if (_reduce) {
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduce) {
       _intro.value = 1;
+      _glint.value = 1;
     } else if (!_introPlayed) {
       _introPlayed = true;
-      _intro.forward(from: 0);
+      _intro.forward(from: 0).whenComplete(() {
+        if (mounted) _glint.forward(from: 0);
+      });
     }
-    final next = PrimaryScrollController.maybeOf(context);
-    if (next != _scroll) {
-      _scroll?.removeListener(_onScroll);
-      _scroll = next?..addListener(_onScroll);
-      _lastOffset = next != null && next.hasClients ? next.offset : 0;
-    }
-  }
-
-  void _onScroll() {
-    final c = _scroll;
-    if (c == null || !c.hasClients || _reduce) return;
-    final delta = c.offset - _lastOffset;
-    _lastOffset = c.offset;
-    // Faster scroll, bigger lean; capped so it never looks broken.
-    final target = (delta * 0.8).clamp(-7.0, 7.0);
-    _lean.value = _lean.value * 0.5 + target * 0.5;
-    _lean.animateTo(0,
-        duration: const Duration(milliseconds: 650),
-        curve: AppCurves.easeOutQuart);
   }
 
   @override
   void dispose() {
-    _scroll?.removeListener(_onScroll);
     _intro.dispose();
-    _lean.dispose();
+    _glint.dispose();
     super.dispose();
   }
 
@@ -798,6 +780,16 @@ class _QuickActionsState extends State<_QuickActions>
     return CurvedAnimation(
       parent: _intro,
       curve: Interval(begin, begin + 1 - 2 * step, curve: Curves.easeInOutCubic),
+    );
+  }
+
+  /// Each sticker's glint, in the same diagonal wave as the entrance.
+  Animation<double> _glintSlice(int wave) {
+    const step = 0.18;
+    final begin = wave * step;
+    return CurvedAnimation(
+      parent: _glint,
+      curve: Interval(begin, begin + 1 - 2 * step, curve: Curves.easeInOutSine),
     );
   }
 
@@ -820,7 +812,7 @@ class _QuickActionsState extends State<_QuickActions>
           stickerScale: stickerScale,
           stickerDy: stickerDy,
           reveal: _slice(wave),
-          lean: _lean,
+          glint: _glintSlice(wave),
           onTap: onTap,
         ),
       );
@@ -887,7 +879,7 @@ class _QuickTile extends StatefulWidget {
     required this.sub,
     required this.onTap,
     required this.reveal,
-    required this.lean,
+    required this.glint,
     this.asset,
     this.stickerScale = 1.0,
     this.stickerDy = 0,
@@ -902,8 +894,8 @@ class _QuickTile extends StatefulWidget {
   /// 0 -> 1: this tile's clipper-pass entrance.
   final Animation<double> reveal;
 
-  /// Sticker lean in degrees, driven by scrolling.
-  final Animation<double> lean;
+  /// 0 -> 1: one streak of light across the sticker; idle at 0 and 1.
+  final Animation<double> glint;
 
   /// Per-tile sticker size multiplier (1.0 = default).
   final double stickerScale;
@@ -918,8 +910,47 @@ class _QuickTile extends StatefulWidget {
   State<_QuickTile> createState() => _QuickTileState();
 }
 
-class _QuickTileState extends State<_QuickTile> {
+class _QuickTileState extends State<_QuickTile>
+    with TickerProviderStateMixin {
   bool _pressed = false;
+
+  /// Where the finger went down, in the tile's coordinates.
+  Offset _touch = Offset.zero;
+
+  /// The press light: [_bloom] grows it, [_bloomFade] fades it on release.
+  late final AnimationController _bloom = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 420),
+  );
+  late final AnimationController _bloomFade = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 320),
+  );
+
+  bool get _reduce => MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+
+  void _down(Offset at) {
+    setState(() {
+      _pressed = true;
+      _touch = at;
+    });
+    if (_reduce) return;
+    _bloomFade.value = 1;
+    _bloom.forward(from: 0);
+  }
+
+  void _up() {
+    setState(() => _pressed = false);
+    if (_reduce) return;
+    _bloomFade.reverse();
+  }
+
+  @override
+  void dispose() {
+    _bloom.dispose();
+    _bloomFade.dispose();
+    super.dispose();
+  }
 
   /// Width of the soft band between revealed and hidden, as a fraction.
   static const double _band = 0.3;
@@ -966,29 +997,68 @@ class _QuickTileState extends State<_QuickTile> {
     const double tileH = 112;
     final double size = 92 * widget.stickerScale;
 
-    // Press: the sticker pops up out of the card while the card sinks.
+    // The sticker stays put. Once, after the entrance, a streak of light
+    // crosses it; srcATop keeps the light on the sticker's own pixels.
+    final Widget still = _sticker(p, size);
     final Widget sticker = AnimatedBuilder(
-      animation: widget.lean,
-      builder: (context, child) => Transform.rotate(
-        angle: widget.lean.value * math.pi / 180,
-        alignment: Alignment.bottomCenter,
-        child: child,
-      ),
-      child: AnimatedSlide(
-        duration: Duration(milliseconds: _pressed ? 160 : 260),
-        curve: AppCurves.easeOutQuart,
-        offset: _pressed ? const Offset(-0.03, -0.08) : Offset.zero,
-        child: AnimatedRotation(
-          duration: Duration(milliseconds: _pressed ? 160 : 260),
-          curve: AppCurves.easeOutQuart,
-          turns: _pressed ? -0.014 : 0,
-          child: AnimatedScale(
-            duration: Duration(milliseconds: _pressed ? 160 : 260),
-            curve: AppCurves.easeOutQuart,
-            scale: _pressed ? 1.12 : 1,
-            alignment: Alignment.bottomRight,
-            child: _sticker(p, size),
-          ),
+      animation: widget.glint,
+      child: still,
+      builder: (context, child) {
+        final g = widget.glint.value;
+        if (g <= 0 || g >= 1) return child!;
+        final x = -0.3 + 1.6 * g;
+        return ShaderMask(
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (rect) => LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withValues(alpha: 0),
+              Colors.white.withValues(alpha: 0.7),
+              Colors.white.withValues(alpha: 0),
+            ],
+            stops: [
+              (x - 0.12).clamp(0.0, 1.0),
+              x.clamp(0.0, 1.0),
+              (x + 0.12).clamp(0.0, 1.0),
+            ],
+          ).createShader(rect),
+          child: child,
+        );
+      },
+    );
+
+    // The press light, under the sticker and the text.
+    final Widget bloom = Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: Listenable.merge([_bloom, _bloomFade]),
+          builder: (context, _) {
+            final fade = _bloomFade.value;
+            if (fade == 0) return const SizedBox.shrink();
+            final grow = Curves.easeOutCubic.transform(_bloom.value);
+            return LayoutBuilder(
+              builder: (context, box) {
+                final w = box.maxWidth, h = box.maxHeight;
+                return DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment(
+                        w == 0 ? 0 : (_touch.dx / w) * 2 - 1,
+                        h == 0 ? 0 : (_touch.dy / h) * 2 - 1,
+                      ),
+                      radius: 0.3 + 1.5 * grow,
+                      colors: [
+                        widget.color.withValues(
+                            alpha: (p.isDark ? 0.26 : 0.16) * fade),
+                        widget.color.withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
         ),
       ),
     );
@@ -998,6 +1068,7 @@ class _QuickTileState extends State<_QuickTile> {
         child: Stack(
           clipBehavior: Clip.hardEdge,
           children: [
+            bloom,
             Positioned(
               right: -14,
               bottom: -14 - widget.stickerDy * 0.4,
@@ -1051,16 +1122,16 @@ class _QuickTileState extends State<_QuickTile> {
     );
 
     return Listener(
-      onPointerDown: (_) => setState(() => _pressed = true),
-      onPointerUp: (_) => setState(() => _pressed = false),
-      onPointerCancel: (_) => setState(() => _pressed = false),
+      onPointerDown: (e) => _down(e.localPosition),
+      onPointerUp: (_) => _up(),
+      onPointerCancel: (_) => _up(),
       child: GestureDetector(
         onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
         child: AnimatedScale(
-          duration: const Duration(milliseconds: 140),
-          curve: Curves.easeOut,
-          scale: _pressed ? 0.97 : 1,
+          duration: Duration(milliseconds: _pressed ? 120 : 220),
+          curve: AppCurves.easeOutQuart,
+          scale: _pressed ? 0.965 : 1,
           child: AnimatedBuilder(
             animation: widget.reveal,
             builder: (context, _) {
