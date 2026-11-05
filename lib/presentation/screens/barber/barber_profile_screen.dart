@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/animations/app_animations.dart';
+import '../../../core/animations/motion.dart';
 import '../../../core/format/money.dart';
 import '../../../core/format/thousands_formatter.dart';
 import '../../../core/i18n/strings.dart';
@@ -1252,47 +1253,42 @@ class _WalletTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = AppState.instance;
-    return GestureDetector(
+    final p = Paper.of(context);
+    // The same dark card the wallet opens on, so tapping it feels like
+    // opening the card rather than going somewhere else.
+    return PressableScale(
       onTap: () => Navigator.of(context)
           .push(FadeThroughPageRoute(child: const WalletScreen())),
-      behavior: HitTestBehavior.opaque,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF3D9BFF), Color(0xFF1E5FCC)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.accent.withValues(alpha: 0.32),
-                blurRadius: 22,
-                spreadRadius: -6,
-                offset: const Offset(0, 12),
-              ),
-            ],
+            color: p.isDark ? p.cardAlt : const Color(0xFF15181D),
+            border: p.isDark ? Border.all(color: p.border) : null,
           ),
           child: Stack(
             children: [
               Positioned.fill(
-                child: Breathe(
-                  builder: (context, t) => DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: Alignment(-0.9 + 1.8 * t, -0.8),
-                        radius: 1.0,
-                        colors: [
-                          Colors.white.withValues(alpha: 0.18),
-                          Colors.white.withValues(alpha: 0.0),
-                        ],
-                        stops: const [0.0, 0.6],
-                      ),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.07),
+                        Colors.white.withValues(alpha: 0),
+                      ],
+                      stops: const [0, 0.55],
                     ),
                   ),
                 ),
+              ),
+              Positioned(
+                right: -16,
+                bottom: -20,
+                child: Icon(Icons.content_cut_rounded,
+                    size: 104, color: Colors.white.withValues(alpha: 0.05)),
               ),
               Padding(
                 padding: const EdgeInsets.all(18),
@@ -1306,24 +1302,8 @@ class _WalletTile extends StatelessWidget {
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.5,
-                              color: Colors.white.withValues(alpha: 0.85),
+                              color: Colors.white.withValues(alpha: 0.55),
                             )),
-                        const Spacer(),
-                        // Skeuomorphic card chip.
-                        Container(
-                          width: 34,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFF3D98A), Color(0xFFD9A94A)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.4)),
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 14),
@@ -1333,12 +1313,6 @@ class _WalletTile extends StatelessWidget {
                         fontSize: 26,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
-                        shadows: const [
-                          Shadow(
-                              color: Color(0x55001B4D),
-                              offset: Offset(0, 1.5),
-                              blurRadius: 1),
-                        ],
                       ),
                     ),
                     const SizedBox(height: 12),
