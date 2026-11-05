@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -580,36 +581,12 @@ class _IntroView extends StatelessWidget {
           style:
               AppTypography.bodyLarge(context).copyWith(color: p.textSecondary),
         ),
-        const SizedBox(height: 28),
-        // Glowing hero orb, gently floating.
-        Center(
-          child: Floaty(
-            dy: 10,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF3D9BFF), Color(0xFF1E6FE0)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.accent.withValues(alpha: 0.5),
-                    blurRadius: 40,
-                    spreadRadius: 4,
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.auto_awesome_rounded,
-                  size: 64, color: Colors.white),
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 34),
+        const SizedBox(height: 24),
+        // Show, don't decorate: the demo face before and after, cycling
+        // through the styles that have real renders. Tapping it opens the
+        // demo, so it doubles as the way in.
+        _BeforeAfter(onTap: onDemo),
+        const SizedBox(height: 24),
         PrimaryButton(
           label: L.takeSelfie,
           icon: Icons.photo_camera_rounded,
@@ -672,26 +649,146 @@ class _IntroView extends StatelessWidget {
 class _GlowChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final p = Paper.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF3D9BFF), Color(0xFF1E6FE0)],
-        ),
+        color: p.tint,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.auto_awesome_rounded, size: 14, color: Colors.white),
+          const Icon(Icons.auto_awesome_rounded,
+              size: 14, color: AppColors.accent),
           const SizedBox(width: 5),
           Text('AI',
               style: GoogleFonts.nunito(
                   fontSize: 13,
                   fontWeight: FontWeight.w900,
-                  color: Colors.white,
+                  color: AppColors.accent,
                   letterSpacing: 1)),
         ],
+      ),
+    );
+  }
+}
+
+/// The demo face before and after: the plain photo on the left, and on the
+/// right the same face cycling through the styles that have real renders.
+class _BeforeAfter extends StatefulWidget {
+  const _BeforeAfter({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_BeforeAfter> createState() => _BeforeAfterState();
+}
+
+class _BeforeAfterState extends State<_BeforeAfter> {
+  static const _styles = [
+    'h_slick',
+    'h_crop',
+    'h_pomp',
+    'h_curly',
+    'h_taper',
+    'h_buzz',
+  ];
+
+  Timer? _timer;
+  int _i = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduce) {
+      _timer?.cancel();
+      _timer = null;
+    } else {
+      _timer ??= Timer.periodic(const Duration(milliseconds: 2600), (_) {
+        if (mounted) setState(() => _i = (_i + 1) % _styles.length);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Widget _photo(String asset) => Image.asset(
+        asset,
+        key: ValueKey(asset),
+        fit: BoxFit.cover,
+        alignment: Alignment.topCenter,
+        width: double.infinity,
+        height: double.infinity,
+        filterQuality: FilterQuality.medium,
+      );
+
+  Widget _label(String text, {required bool accent}) => Positioned(
+        left: 10,
+        bottom: 10,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: accent ? AppColors.accent : Colors.white,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            text,
+            style: GoogleFonts.nunito(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              color: accent ? Colors.white : const Color(0xFF121417),
+            ),
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return PressableScale(
+      onTap: widget.onTap,
+      pressedScale: 0.98,
+      child: SizedBox(
+        height: 230,
+        child: Row(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _photo(DemoFaces.base),
+                    _label(L.beforeWord, accent: false),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 700),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: _photo(DemoFaces.assetFor(_styles[_i])),
+                    ),
+                    _label(L.afterWord, accent: true),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

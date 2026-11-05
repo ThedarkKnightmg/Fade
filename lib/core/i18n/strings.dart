@@ -2617,7 +2617,7 @@ class L {
       'Take a selfie and our AI re-renders your hair so you can see a new cut on your real face before you book.',
       'Сделайте селфи — AI перерисует ваши волосы, и вы увидите новую стрижку на своём лице ещё до записи.',
       "Selfi oling — AI sochingizni qayta chizadi va yozilishdan oldin yangi soch turini o'z yuzingizda ko'rasiz.");
-  static String get stTryDemoFace => _t('try a demo face →', 'демо-лицо →', 'demo yuz →');
+  static String get stTryDemoFace => _t('Try a demo face →', 'Демо-лицо →', 'Demo yuz →');
   static String get stAiRender => _t('AI render', 'AI-рендер', 'AI render');
   static String get stStylisedPreview => _t('Stylised preview', 'Стилизованное превью', "Uslublangan ko'rinish");
   static String get stTapCheckKey => _t(
