@@ -523,16 +523,14 @@ class _VipValueStrip extends StatelessWidget {
                         child: ColoredBox(
                             color: AppColors.accent.withValues(alpha: 0.12)),
                       ),
+                      // Full height and anchored left: as a bare Stack child
+                      // the fill got no height (and centred), so the bar
+                      // always looked empty.
                       FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        heightFactor: 1,
                         widthFactor: (done / goal).clamp(0.0, 1.0),
-                        child: const DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(colors: [
-                              Color(0xFF4FA3FF),
-                              AppColors.accentDeep,
-                            ]),
-                          ),
-                        ),
+                        child: const ColoredBox(color: AppColors.accent),
                       ),
                     ],
                   ),
@@ -653,20 +651,11 @@ class _NextBookingCardState extends State<_NextBookingCard> {
     if (widget.booking == null) return _empty(context);
     return Container(
       padding: const EdgeInsets.all(18),
+      // The dashboard's one coloured card: solid accent, no gradient or glow,
+      // matching the client side.
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF4AA3FF), Color(0xFF1E6FE0)],
-        ),
+        color: AppColors.accent,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-              color: AppColors.accent.withValues(alpha: 0.35),
-              blurRadius: 22,
-              spreadRadius: -6,
-              offset: const Offset(0, 12)),
-        ],
       ),
       child: _content(context, widget.booking!),
     );
@@ -1324,9 +1313,11 @@ class _GoalCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 10),
               if (!reached)
-                Flexible(
+                // Expanded, not Spacer + Flexible: those split the free
+                // width in half and cut "... so'm to go" short.
+                Expanded(
                   child: Text(
                     L.toGoLabel(Money.somValue(toGo < 0 ? 0 : toGo)),
                     maxLines: 1,

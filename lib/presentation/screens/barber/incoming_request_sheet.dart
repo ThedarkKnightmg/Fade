@@ -706,11 +706,18 @@ class _BtnState extends State<_Btn> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(widget.label,
-                  style: GoogleFonts.nunito(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: filled ? Colors.white : p.textSecondary)),
+              // Shrinks a little on narrow phones rather than overflowing.
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(widget.label,
+                      maxLines: 1,
+                      style: GoogleFonts.nunito(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: filled ? Colors.white : p.textSecondary)),
+                ),
+              ),
               if (widget.icon != null) ...[
                 const SizedBox(width: 8),
                 Icon(widget.icon, size: 18, color: Colors.white),

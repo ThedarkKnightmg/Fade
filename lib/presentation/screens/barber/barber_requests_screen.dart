@@ -90,7 +90,12 @@ class _Header extends StatelessWidget {
           children: [
             Icon(Icons.swipe_rounded, size: 15, color: p.textTertiary),
             const SizedBox(width: 6),
-            Text(L.swipeToAct, style: AppTypography.bodySmall(context)),
+            Flexible(
+              child: Text(L.swipeToAct,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodySmall(context)),
+            ),
           ],
         ),
       ],
@@ -291,7 +296,11 @@ class _CardBody extends StatelessWidget {
           // Meta chips: when · service · distance.
           Row(
             children: [
-              Flexible(child: _MetaChip(icon: Icons.schedule_rounded, text: whenLabel)),
+              // The time is what a barber needs most, so it keeps its full
+              // width; the shorter chips share what's left. As three equal
+              // Flexibles, "Today · 13:00" was cut to "Today · 1…".
+              _MetaChip(
+                  icon: Icons.schedule_rounded, text: whenLabel, shrink: false),
               const SizedBox(width: 8),
               Flexible(
                 child: _MetaChip(
@@ -344,13 +353,19 @@ class _CardBody extends StatelessWidget {
                     ],
                   ),
                 ),
-                Text('${L.tr(b.service.name)} · ${b.service.formattedDuration}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.nunito(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF177A48))),
+                // Flexible so the ellipsis can work: unconstrained, this
+                // pushed the row past the card edge on small phones.
+                Flexible(
+                  child: Text(
+                      '${L.tr(b.service.name)} · ${b.service.formattedDuration}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: GoogleFonts.nunito(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF177A48))),
+                ),
               ],
             ),
           ),
@@ -386,9 +401,20 @@ class _CardBody extends StatelessWidget {
 
 /// Small meta chip on the request card (time · duration · distance).
 class _MetaChip extends StatelessWidget {
-  const _MetaChip({required this.icon, required this.text});
+  const _MetaChip({required this.icon, required this.text, this.shrink = true});
   final IconData icon;
   final String text;
+
+  /// Whether the text may shrink (with an ellipsis) to fit a Flexible slot.
+  /// The time chip sits outside any Flexible at its natural width, where a
+  /// Flexible inside would get an unbounded width and fail layout.
+  final bool shrink;
+
+  Widget _label(PaperPalette p) => Text(text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: GoogleFonts.nunito(
+          fontSize: 12, fontWeight: FontWeight.w700, color: p.textSecondary));
 
   @override
   Widget build(BuildContext context) {
@@ -404,15 +430,10 @@ class _MetaChip extends StatelessWidget {
         children: [
           Icon(icon, size: 13, color: AppColors.accent),
           const SizedBox(width: 4),
-          Flexible(
-            child: Text(text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.nunito(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: p.textSecondary)),
-          ),
+          if (shrink)
+            Flexible(child: _label(p))
+          else
+            _label(p),
         ],
       ),
     );

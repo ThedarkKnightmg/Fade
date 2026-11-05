@@ -360,11 +360,17 @@ class _DayGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, c) {
-        final laneW = c.maxWidth - _gutter - 20; // 20 = right padding
+        // The scroll view pads 20 on each side, so the lanes get maxWidth - 40.
+        final laneW = c.maxWidth - _gutter - 40;
         return SingleChildScrollView(
           controller: controller,
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 150),
+          // Full width, explicitly. The screen's Column lets children pick
+          // their own width, and a Stack of Positioned blocks has none, so
+          // the grid shrank to its 40px of padding and clipped every hour
+          // label and booking: barbers saw an empty schedule.
           child: SizedBox(
+            width: double.infinity,
             height: gridHeight,
             child: Stack(
               children: [
