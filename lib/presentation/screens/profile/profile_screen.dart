@@ -475,7 +475,7 @@ class ProfileScreen extends StatelessWidget {
                         icon: Icons.dark_mode_rounded,
                         label: L.darkMode,
                         tint: AppColors.accent,
-                        trailing: _PillSwitch(
+                        trailing: FadeSwitch(
                           value: state.isDarkMode,
                           onChanged: (_) => state.toggleDarkMode(),
                         ),
@@ -485,7 +485,7 @@ class ProfileScreen extends StatelessWidget {
                         icon: Icons.notifications_rounded,
                         label: L.reminders,
                         tint: AppColors.accent,
-                        trailing: _PillSwitch(
+                        trailing: FadeSwitch(
                           value: state.remindersOn,
                           onChanged: state.setReminders,
                         ),
@@ -698,53 +698,3 @@ class _SettingRow extends StatelessWidget {
 }
 
 /// Pill switch — accent thumb on an action track when on.
-class _PillSwitch extends StatelessWidget {
-  const _PillSwitch({required this.value, required this.onChanged});
-
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
-        width: 52,
-        height: 30,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          color: value
-              ? p.action
-              : (p.isDark ? p.cardAlt : const Color(0xFFE2E4E8)),
-          borderRadius: BorderRadius.circular(99),
-        ),
-        child: AnimatedAlign(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-          // A white knob on either track. It used to be accent-blue on an
-          // accent-blue track when ON, so the knob vanished.
-          child: Container(
-            width: 24,
-            height: 24,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0x26000000),
-                  blurRadius: 3,
-                  offset: Offset(0, 1),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-

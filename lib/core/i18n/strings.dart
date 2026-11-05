@@ -287,7 +287,7 @@ class L {
       _t('Edit address', 'Изменить адрес', 'Manzilni tahrirlash');
   static String get share => _t('Share', 'Поделиться', 'Ulashish');
   static String get myBookings =>
-      _t('My Bookings', 'Мои записи', 'Mening yozuvlarim');
+      _t('My bookings', 'Мои записи', 'Mening yozuvlarim');
   static String get noUpcomingCuts => _t(
       'No upcoming cuts yet', 'Нет предстоящих записей', "Hozircha yozuv yo'q");
   static String get nextVisit =>

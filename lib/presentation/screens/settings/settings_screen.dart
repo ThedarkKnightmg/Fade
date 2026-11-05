@@ -393,7 +393,7 @@ class SettingsScreen extends StatelessWidget {
                         iconOn: Icons.dark_mode_rounded,
                         iconActive: state.isDarkMode,
                         label: L.darkMode,
-                        trailing: _MiniSwitch(
+                        trailing: FadeSwitch(
                           value: state.isDarkMode,
                           onChanged: (_) => state.toggleDarkMode(),
                         ),
@@ -405,7 +405,7 @@ class SettingsScreen extends StatelessWidget {
                         iconOn: Icons.notifications_active_rounded,
                         iconActive: state.remindersOn,
                         label: L.reminders,
-                        trailing: _MiniSwitch(
+                        trailing: FadeSwitch(
                           value: state.remindersOn,
                           onChanged: state.setReminders,
                         ),
@@ -706,42 +706,3 @@ class _VerifiedBadge extends StatelessWidget {
 }
 
 /// Compact pill switch with an accent thumb (mirrors the profile switch).
-class _MiniSwitch extends StatelessWidget {
-  const _MiniSwitch({required this.value, required this.onChanged});
-
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
-        width: 52,
-        height: 30,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          color: value ? p.action : p.cardAlt,
-          borderRadius: BorderRadius.circular(99),
-          border: Border.all(color: value ? Colors.transparent : p.border),
-        ),
-        child: AnimatedAlign(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutBack,
-          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: value ? AppColors.accent : p.textTertiary,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

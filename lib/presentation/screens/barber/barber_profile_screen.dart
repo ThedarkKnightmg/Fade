@@ -728,10 +728,8 @@ class _ServiceRow extends StatelessWidget {
                 ),
               ),
             ),
-            Switch.adaptive(
+            FadeSwitch(
               value: svc.enabled,
-              activeThumbColor: Colors.white,
-              activeTrackColor: AppColors.accent,
               onChanged: (_) {
                 HapticFeedback.lightImpact();
                 AppState.instance.toggleService(svc.id);

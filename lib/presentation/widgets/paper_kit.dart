@@ -496,3 +496,65 @@ class SketchGridPainter extends CustomPainter {
   bool shouldRepaint(SketchGridPainter old) =>
       old.color != color || old.gap != gap;
 }
+
+/// The app's one toggle. A white knob on a grey track when off and on a
+/// coloured track when on ([activeColor], the accent by default), sliding
+/// without overshoot. It replaces four separate switches, two of which drew
+/// an accent knob on an accent track so the "on" state lost its knob.
+class FadeSwitch extends StatelessWidget {
+  const FadeSwitch({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.activeColor,
+  });
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final Color? activeColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final on = activeColor ?? p.action;
+    final off = p.isDark ? p.cardAlt : const Color(0xFFE2E4E8);
+    return Semantics(
+      toggled: value,
+      enabled: onChanged != null,
+      child: GestureDetector(
+        onTap: onChanged == null ? null : () => onChanged!(!value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          width: 52,
+          height: 30,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: value ? on : off,
+            borderRadius: BorderRadius.circular(99),
+          ),
+          child: AnimatedAlign(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x26000000),
+                    blurRadius: 3,
+                    offset: Offset(0, 1),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

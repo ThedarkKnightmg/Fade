@@ -593,10 +593,9 @@ class _AvailabilityCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Switch.adaptive(
+          FadeSwitch(
             value: accepting,
-            activeThumbColor: Colors.white,
-            activeTrackColor: green,
+            activeColor: green,
             onChanged: (_) {
               HapticFeedback.mediumImpact();
               AppState.instance.toggleAccepting();
