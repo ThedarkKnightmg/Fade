@@ -341,7 +341,7 @@ class _DesiredStyleBanner extends StatelessWidget {
         final style = HairData.byId(id);
         return PaperCard(
           radius: 22,
-          color: AppColors.accentSoft,
+          color: Paper.of(context).tint,
           borderColor: AppColors.accent,
           padding: const EdgeInsets.all(14),
           child: Row(

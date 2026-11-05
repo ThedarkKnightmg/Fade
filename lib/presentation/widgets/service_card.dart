@@ -30,7 +30,7 @@ class ServiceCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.accentSoft,
+              color: Paper.of(context).tint,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(service.icon, size: 20, color: AppColors.accentDeep),

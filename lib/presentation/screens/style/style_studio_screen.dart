@@ -373,7 +373,7 @@ class _AddPhotoCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
         decoration: BoxDecoration(
-          color: AppColors.accentSoft,
+          color: Paper.of(context).tint,
           borderRadius: BorderRadius.circular(28),
         ),
         child: Column(

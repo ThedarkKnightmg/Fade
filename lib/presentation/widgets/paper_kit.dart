@@ -104,16 +104,16 @@ BoxDecoration clayDecoration(
   return BoxDecoration(
     color: base,
     borderRadius: BorderRadius.circular(radius),
+    // White on the grey canvas is the separation; no outline unless asked.
     border: borderColor != null
         ? Border.all(color: borderColor, width: 1.4)
-        : (p.isDark ? null : Border.all(color: p.border, width: 1)),
+        : null,
     boxShadow: [
-      // One soft, low shadow — gentle float, not a fat clay puff.
+      // A faint, close shadow: the card sits on the page rather than floats.
       BoxShadow(
         color: p.shadow,
-        blurRadius: 18 * depth,
-        spreadRadius: -4,
-        offset: Offset(0, 8 * depth),
+        blurRadius: 12 * depth,
+        offset: Offset(0, 3 * depth),
       ),
     ],
   );
@@ -267,10 +267,11 @@ class CircleBtn extends StatelessWidget {
     final fg = iconColor ?? (filled ? p.onAction : p.text);
     return Material(
       color: bg,
-      elevation: 6,
+      // Flat on light (white on grey reads on its own); lifted on navy.
+      elevation: p.isDark ? 6 : 0,
       shadowColor: p.shadow,
       shape: CircleBorder(
-        side: filled || fillColor != null
+        side: filled || fillColor != null || !p.isDark
             ? BorderSide.none
             : BorderSide(color: p.border),
       ),

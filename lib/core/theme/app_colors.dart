@@ -70,6 +70,7 @@ class PaperPalette {
     required this.panelTextDim,
     required this.shadow,
     required this.clayLight,
+    required this.tint,
     required this.isDark,
   });
 
@@ -100,6 +101,11 @@ class PaperPalette {
   /// The top-left highlight that gives clay its inflated, lit-from-above look.
   final Color clayLight;
 
+  /// Soft accent-tinted fill for icon tiles, badges and selected chips. Light
+  /// blue on the light theme, deep blue on navy: the old shared deep-blue
+  /// constant read as a heavy dark square on light screens.
+  final Color tint;
+
   final bool isDark;
 
   static const PaperPalette dark = PaperPalette(
@@ -121,37 +127,36 @@ class PaperPalette {
     panelTextDim: Color(0x8CB7C3D6),
     shadow: Color(0x73020610),
     clayLight: Color(0x14A9C6FF),
+    tint: AppColors.accentSoft,
     isDark: true,
   );
 
-  // A genuine LIGHT theme — same electric-blue accent on a soft, airy canvas.
-  // The "panel" tokens stay dark so the booking cockpit / AI surfaces read as
-  // crisp dark accents on the light background.
-  // Claymorphism (default look) — a soft periwinkle canvas with puffy,
-  // near-white surfaces that pop via a big ambient shadow + a white highlight.
-  // Yandex-clean, blue-tinted: a bright near-white cool canvas, crisp white
-  // cards, near-black ink, and a soft low shadow — with the blue accent + slight
-  // blue gradients reserved for hero surfaces (liquid-glass done per-surface).
+  // The light theme, tuned the way Yandex's apps are: a NEUTRAL light-grey
+  // canvas (no blue cast) so the one blue accent is the only colour on the
+  // page, crisp white cards that sit on it without outlines, near-black ink,
+  // neutral greys for secondary text, and a barely-there shadow. The "panel"
+  // tokens stay dark for the booking cockpit / AI surfaces.
   static const PaperPalette light = PaperPalette(
-    bg: Color(0xFFEEF1F6),
-    bgGradientTop: Color(0xFFF7F9FD),
-    bgGradientBottom: Color(0xFFE8EDF4),
+    bg: Color(0xFFF2F3F5),
+    bgGradientTop: Color(0xFFF7F8FA),
+    bgGradientBottom: Color(0xFFECEEF1),
     card: Color(0xFFFFFFFF),
-    cardAlt: Color(0xFFF1F4FA),
-    text: Color(0xFF1B2434),
-    textSecondary: Color(0xFF69728A),
-    textTertiary: Color(0xFFA3ABBC),
-    border: Color(0xFFE7EBF2),
-    divider: Color(0xFFEDF0F5),
+    cardAlt: Color(0xFFF4F5F7),
+    text: Color(0xFF121417),
+    textSecondary: Color(0xFF6B7079),
+    textTertiary: Color(0xFFA3A7AF),
+    border: Color(0xFFE8E9EC),
+    divider: Color(0xFFEFF0F2),
     action: AppColors.accent,
     onAction: Colors.white,
     panel: Color(0xFF161F3A),
     panelField: Color(0xFF24304E),
     panelText: Color(0xFFEEF3FB),
     panelTextDim: Color(0x8CB7C3D6),
-    // A soft, low, neutral-blue shadow — flat cards that float gently, not clay.
-    shadow: Color(0x12233A63),
+    // Neutral and faint: separation comes from white-on-grey, not shadow.
+    shadow: Color(0x120B1220),
     clayLight: Color(0x33FFFFFF),
+    tint: Color(0xFFE8F1FF),
     isDark: false,
   );
 }

@@ -63,17 +63,17 @@ class _PrimaryButtonState extends State<PrimaryButton> {
               borderRadius: BorderRadius.circular(999),
               border:
                   border == null ? null : Border.all(color: border, width: 1.4),
-              // Puffy clay pop — a soft, colour-matched shadow beneath. Ghost
-              // buttons stay flat. Fades out while pressed (compressed clay).
+              // A short, faint shadow, not a coloured glow: the button reads
+              // as solid and tappable without haloing the page. Ghost
+              // buttons stay flat; pressing settles it onto the page.
               boxShadow: (widget.style == PrimaryButtonStyle.ghost ||
                       widget.onPressed == null)
                   ? null
                   : [
                       BoxShadow(
-                        color: bg.withValues(alpha: _pressed ? 0.18 : 0.42),
-                        blurRadius: _pressed ? 8 : 18,
-                        spreadRadius: -1,
-                        offset: Offset(0, _pressed ? 3 : 9),
+                        color: bg.withValues(alpha: _pressed ? 0.10 : 0.22),
+                        blurRadius: _pressed ? 4 : 10,
+                        offset: Offset(0, _pressed ? 1 : 4),
                       ),
                     ],
             ),

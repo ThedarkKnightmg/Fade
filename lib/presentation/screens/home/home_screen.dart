@@ -190,7 +190,7 @@ class HomeScreen extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: AppColors.accentSoft,
+                color: Paper.of(context).tint,
                 borderRadius: BorderRadius.circular(13),
               ),
               child: Icon(icon, color: AppColors.accent, size: 20),
@@ -427,80 +427,12 @@ class HomeScreen extends StatelessWidget {
                 // at the top until the user sets a location.
                 if (state.address == null) ...[
                   FadeSlideIn(
-                    child: PressableScale(
-                      onTap: () => _detectLocation(context),
-                      child: Row(
-                        children: [
-                          RadarPulse(
-                            maxRadius: 26,
-                            child: Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: AppColors.accent,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.accent
-                                        .withValues(alpha: 0.4),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(Icons.near_me_rounded,
-                                  color: Colors.white, size: 26),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(L.findShopsNearYou,
-                                    style: AppTypography.h3(context)),
-                                const SizedBox(height: 2),
-                                Text(
-                                  L.tapToDetect,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.bodySmall(context),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.chevron_right_rounded,
-                              color: p.textTertiary),
-                        ],
-                      ),
+                    child: _LocationPrompt(
+                      onLocate: () => _detectLocation(context),
+                      onEnterAddress: () => _openAddressPicker(context),
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 60),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _PillButton(
-                            icon: Icons.edit_location_alt_outlined,
-                            label: L.enterAddress,
-                            filled: false,
-                            onTap: () => _openAddressPicker(context),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _PillButton(
-                            icon: Icons.my_location_rounded,
-                            label: L.locateMe,
-                            filled: true,
-                            onTap: () => _detectLocation(context),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                 ],
                 // Yandex-style quick actions — the big, appealing tiles.
                 _QuickActions(
@@ -786,10 +718,9 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Inset + wider gaps make the four tiles read as smaller, more separated
-    // cards (closer to Yandex's proportions).
+    // Even 12px gutters both ways, edge to edge with the rest of the page.
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           Row(
@@ -806,7 +737,7 @@ class _QuickActions extends StatelessWidget {
                   onTap: onBook,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: _QuickTile(
                   icon: Icons.auto_awesome_rounded,
@@ -832,7 +763,7 @@ class _QuickActions extends StatelessWidget {
                   onTap: onMap,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: _QuickTile(
                   icon: Icons.event_note_rounded,
@@ -894,87 +825,85 @@ class _QuickTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    // Yandex-style: a flat light-gray box with the big 3D sticker centred
-    // inside it and the label centred at the bottom (inside the box).
-    const double s = 110;
+    // Yandex Go's tile: the label and a short line of context sit INSIDE the
+    // card, top-left and bold; the 3D sticker is tucked into the bottom-right
+    // corner and cropped by the card's edge. The sticker's top is kept below
+    // the text block, so it can never cover the words.
+    const double tileH = 124;
+    final double size = 78 * stickerScale;
     final Widget sticker = asset == null
-        ? _iconChip(p, 84)
+        ? _iconChip(p, 56)
         : asset!.endsWith('.svg')
-            ? SvgPicture.asset(asset!, width: s, height: s)
+            ? SvgPicture.asset(asset!, width: size, height: size)
             : Image.asset(
                 asset!,
-                width: s,
-                height: s,
+                width: size,
+                height: size,
                 fit: BoxFit.contain,
-                // Decode at a resolution that matches the ON-SCREEN size (bigger
-                // stickers + high-DPI screens need more pixels or they look
-                // blurry). Width ONLY — a cacheHeight too would force a square
-                // decode and stretch non-square stickers.
-                cacheWidth: (480 * stickerScale).round(),
+                // Decode at a resolution matching the on-screen size so it
+                // stays sharp on high-DPI screens. Width only: a cacheHeight
+                // too would force a square decode and stretch the sticker.
+                cacheWidth: (360 * stickerScale).round(),
                 filterQuality: FilterQuality.high,
-                // Missing PNG → fall back to the vector sticker.
+                // Missing PNG -> fall back to the vector sticker.
                 errorBuilder: (_, __, ___) => SvgPicture.asset(
                   asset!.replaceFirst('.png', '.svg'),
-                  width: s,
-                  height: s,
+                  width: size,
+                  height: size,
                 ),
               );
 
-    final Widget labelText = Text(
-      label,
-      textAlign: TextAlign.center,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: GoogleFonts.nunito(
-        fontSize: 13.5,
-        fontWeight: FontWeight.w800,
-        color: p.text,
-      ),
-    );
-
-    // Big 3D sticker that sits on the box (static — no hover/float).
-    final Widget stickerBox = SizedBox(
-      width: 96 * stickerScale,
-      height: 100 * stickerScale,
-      child: FittedBox(fit: BoxFit.contain, child: sticker),
-    );
     return PressableScale(
       onTap: onTap,
-      pressedScale: 0.96,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // The clay box is just a platform now; the sticker sits on it and
-          // pops above — the label lives OUTSIDE (below), so it has the full
-          // tile width and can never overflow or be covered.
-          SizedBox(
-            height: 98,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    height: 58,
-                    decoration: clayDecoration(p, radius: 20),
-                  ),
+      pressedScale: 0.97,
+      child: Container(
+        height: tileH,
+        decoration: clayDecoration(p, radius: 22),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -10,
+                bottom: -12 - stickerDy * 0.4,
+                child: sticker,
+              ),
+              Positioned(
+                left: 14,
+                top: 14,
+                right: 14,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.nunito(
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w900,
+                        height: 1.1,
+                        letterSpacing: -0.2,
+                        color: p.text,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      sub,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.nunito(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: p.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  // Bigger stickers sit a touch lower so they don't pop up as
-                  // high above the box; stickerDy nudges it further down.
-                  bottom: 4 - (stickerScale - 1.0) * 22 - stickerDy,
-                  child: Center(child: stickerBox),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          labelText,
-        ],
+        ),
       ),
     );
   }
@@ -1381,6 +1310,91 @@ class _BonusSheet extends StatelessWidget {
   }
 }
 
+/// "Find shops near you": one compact card instead of a hero row plus two
+/// big buttons. The main action (detect location) is the button; typing an
+/// address stays one tap away as a link, for people who'd rather not share GPS.
+class _LocationPrompt extends StatelessWidget {
+  const _LocationPrompt({required this.onLocate, required this.onEnterAddress});
+
+  final VoidCallback onLocate;
+  final VoidCallback onEnterAddress;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      decoration: clayDecoration(p, radius: 22),
+      child: Row(
+        children: [
+          // No icon square: the button already carries the location icon, and
+          // the title needs the room to show in full in every language.
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  L.findShopsNearYou,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.nunito(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w900,
+                    color: p.text,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                GestureDetector(
+                  onTap: onEnterAddress,
+                  behavior: HitTestBehavior.opaque,
+                  child: Text(
+                    L.enterAddress,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.nunito(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          PressableScale(
+            onTap: onLocate,
+            child: Container(
+              height: 40,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: AppColors.accent,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.my_location_rounded,
+                      size: 17, color: Colors.white),
+                  const SizedBox(width: 6),
+                  Text(
+                    L.locateMe,
+                    style: GoogleFonts.nunito(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RoundIcon extends StatelessWidget {
   const _RoundIcon({required this.icon, this.onTap});
 
@@ -1393,71 +1407,16 @@ class _RoundIcon extends StatelessWidget {
     return Material(
       color: p.card,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: p.border),
+        borderRadius: BorderRadius.circular(14),
+        side: p.isDark ? BorderSide(color: p.border) : BorderSide.none,
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         child: SizedBox(
           width: 44,
           height: 44,
           child: Icon(icon, size: 22, color: p.text),
-        ),
-      ),
-    );
-  }
-}
-
-class _PillButton extends StatelessWidget {
-  const _PillButton({
-    required this.icon,
-    required this.label,
-    required this.filled,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool filled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    return Material(
-      color: filled ? AppColors.accent : p.card,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Container(
-          height: 58,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            border: filled ? null : Border.all(color: p.border),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon,
-                  size: 20, color: filled ? Colors.white : p.textSecondary),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.nunito(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: filled ? Colors.white : p.text,
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

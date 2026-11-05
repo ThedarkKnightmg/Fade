@@ -397,7 +397,7 @@ class _LanguageCardContent extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: selected
                       ? Colors.white.withValues(alpha: 0.22)
-                      : AppColors.accentSoft,
+                      : Paper.of(context).tint,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 // The code badge turns into a check when chosen.

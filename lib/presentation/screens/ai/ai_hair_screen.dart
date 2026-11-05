@@ -1203,7 +1203,7 @@ class _FaceReadLine extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: AppColors.accentSoft,
+                color: Paper.of(context).tint,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text('$pct% ${L.matchWord}',
@@ -1248,7 +1248,7 @@ class _ConnectAiBanner extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: clayDecoration(
           p,
-          color: AppColors.accentSoft,
+          color: Paper.of(context).tint,
           radius: 18,
           borderColor: AppColors.accent.withValues(alpha: 0.5),
         ),
