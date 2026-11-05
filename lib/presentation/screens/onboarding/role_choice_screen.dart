@@ -62,7 +62,6 @@ class _RoleChoiceScreenState extends State<RoleChoiceScreen> {
       backgroundColor: p.bg,
       body: Stack(
         children: [
-          Positioned.fill(child: _Aura(reduced: reduced)),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
@@ -104,7 +103,6 @@ class _RoleChoiceScreenState extends State<RoleChoiceScreen> {
                       icon: Icons.content_cut_rounded,
                       title: L.imABarber,
                       sub: L.barberRoleSub,
-                      accent: true,
                       reduced: reduced,
                       state: _stateFor(AppRole.barber),
                       onTap: () => _go(AppRole.barber, reduced: reduced),
@@ -130,59 +128,6 @@ class _RoleChoiceScreenState extends State<RoleChoiceScreen> {
 /// How a card should present while a choice is being made.
 enum _CardState { idle, chosen, receding }
 
-/// Slow-drifting accent haze behind the content. Two radial gradients — no
-/// BackdropFilter, so this costs essentially nothing per frame.
-class _Aura extends StatelessWidget {
-  const _Aura({required this.reduced});
-
-  final bool reduced;
-
-  Widget _blob(Alignment at, double size, double alpha) => Align(
-        alignment: at,
-        child: IgnorePointer(
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  AppColors.accent.withValues(alpha: alpha),
-                  AppColors.accent.withValues(alpha: 0),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    final blobs = [
-      _blob(const Alignment(-1.1, -0.85), 360, 0.20),
-      _blob(const Alignment(1.25, 0.15), 420, 0.13),
-    ];
-    if (reduced) return Stack(children: blobs);
-    // Counter-drifting on a long period: perceptible as "alive", never as
-    // movement competing with the content.
-    return Breathe(
-      period: const Duration(milliseconds: 9000),
-      builder: (context, t) => Stack(
-        children: [
-          Transform.translate(
-            offset: Offset(0, -18 + 36 * t),
-            child: blobs[0],
-          ),
-          Transform.translate(
-            offset: Offset(0, 20 - 34 * t),
-            child: blobs[1],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _RoleCard extends StatelessWidget {
   const _RoleCard({
     required this.icon,
@@ -191,7 +136,6 @@ class _RoleCard extends StatelessWidget {
     required this.onTap,
     required this.state,
     required this.reduced,
-    this.accent = false,
   });
 
   final IconData icon;
@@ -200,20 +144,24 @@ class _RoleCard extends StatelessWidget {
   final VoidCallback onTap;
   final _CardState state;
   final bool reduced;
-  final bool accent;
 
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
     final chosen = state == _CardState.chosen;
     final receding = state == _CardState.receding;
+    // Both roles start as equal white cards: filling one blue up front made
+    // "barber" look like the recommended pick, though most people are
+    // clients. The fill is now the response to a tap, as on the language
+    // screen.
+    final filled = chosen;
 
     // Glow tracks the commit: idle keeps the accent card lifted, chosen throws
     // a wider, stronger pool of light, receding drops it entirely.
     final double glow = switch (state) {
-      _CardState.chosen => 0.45,
+      _CardState.chosen => 0.25,
       _CardState.receding => 0.0,
-      _CardState.idle => accent ? 0.30 : 0.0,
+      _CardState.idle => filled ? 0.20 : 0.0,
     };
 
     return PressableScale(
@@ -231,9 +179,9 @@ class _RoleCard extends StatelessWidget {
             curve: AppCurves.easeOutQuart,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: accent ? AppColors.accent : p.card,
+              color: filled ? AppColors.accent : p.card,
               borderRadius: BorderRadius.circular(26),
-              border: accent ? null : Border.all(color: p.border),
+              border: filled ? null : Border.all(color: p.border),
               boxShadow: glow == 0
                   ? null
                   : [
@@ -248,7 +196,7 @@ class _RoleCard extends StatelessWidget {
               children: [
                 _IconTile(
                   icon: icon,
-                  accent: accent,
+                  accent: filled,
                   reduced: reduced,
                   chosen: chosen,
                 ),
@@ -260,13 +208,13 @@ class _RoleCard extends StatelessWidget {
                       Text(
                         title,
                         style: AppTypography.h3(context)
-                            .copyWith(color: accent ? Colors.white : null),
+                            .copyWith(color: filled ? Colors.white : null),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         sub,
                         style: AppTypography.bodySmall(context).copyWith(
-                            color: accent
+                            color: filled
                                 ? Colors.white.withValues(alpha: 0.85)
                                 : null),
                       ),
@@ -281,7 +229,7 @@ class _RoleCard extends StatelessWidget {
                   curve: AppCurves.easeOutQuart,
                   offset: chosen ? const Offset(0.35, 0) : Offset.zero,
                   child: Icon(Icons.arrow_forward_rounded,
-                      color: accent ? Colors.white : p.textTertiary),
+                      color: filled ? Colors.white : p.textTertiary),
                 ),
               ],
             ),

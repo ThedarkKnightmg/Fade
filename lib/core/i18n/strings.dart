@@ -1063,7 +1063,7 @@ class L {
   static String get authBarberTitleMark =>
       _t('your rules', 'ваши правила', 'sizning qoidangiz');
   static String get authClientWhy => _t(
-      'Sign in with the app you already use. Your barber gets a number to reach you on if he runs late — nothing else.',
+      'Sign in with the app you already use. Your barber gets a number to reach you on if they run late — nothing else.',
       'Войдите через привычное приложение. Барберу нужен только номер, чтобы предупредить об опоздании.',
       "O'zingiz ishlatadigan ilova orqali kiring. Barberga faqat kechiksa xabar berish uchun raqam kerak.");
   static String get authBarberWhy => _t(
@@ -1301,12 +1301,12 @@ class L {
       'Pick your side — you can switch anytime.',
       'Выберите сторону — переключиться можно в любой момент.',
       'Tomoningizni tanlang — istalgan vaqtda almashtirasiz.');
-  static String get imAClient => _t("I'm a Client", 'Я клиент', 'Men mijozman');
+  static String get imAClient => _t("I'm a client", 'Я клиент', 'Men mijozman');
   static String get clientRoleSub => _t(
       'Find shops, book cuts, try styles with AI.',
       'Ищите барбершопы, записывайтесь, примеряйте образы с AI.',
       'Barbershop toping, yoziling, AI bilan uslub sinang.');
-  static String get imABarber => _t("I'm a Barber", 'Я барбер', 'Men barberman');
+  static String get imABarber => _t("I'm a barber", 'Я барбер', 'Men barberman');
   static String get barberRoleSub => _t(
       'Take bookings, confirm clients, manage your day.',
       'Принимайте записи, подтверждайте клиентов, ведите день.',
