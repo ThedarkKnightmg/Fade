@@ -2143,27 +2143,17 @@ class _BookingsCardState extends State<_BookingsCard> {
 
     return PressableScale(
       onTap: widget.onTap,
+      // Solid accent without a glow, like the app's other coloured cards. The
+      // occasional sheen stays: it points at the one thing the user is
+      // waiting on.
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.accent.withValues(alpha: 0.35),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
-            ),
-          ],
         ),
         child: SheenSweep(
           radius: 28,
           child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF3D9BFF), Color(0xFF1E6FE0)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
+            decoration: const BoxDecoration(color: AppColors.accent),
             padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
