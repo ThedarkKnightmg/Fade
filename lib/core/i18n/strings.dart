@@ -2293,9 +2293,9 @@ class L {
       'Yozuv yangiliklari va so\'rovlar shu yerga keladi.');
   static String get vipClub => _t('VIP Club', 'VIP-клуб', 'VIP klub');
   static String get noBarberPinned => _t(
-      'no barber pinned yet — find your person',
-      'барбер ещё не выбран — найдите своего',
-      "barber tanlanmagan — o'zingiznikini toping");
+      'No barber pinned yet — find your person',
+      'Барбер ещё не выбран — найдите своего',
+      "Barber tanlanmagan — o'zingiznikini toping");
   static String get memberSincePrefix =>
       _t('member since', 'с нами с', "a'zo:");
   static String get madeWith =>

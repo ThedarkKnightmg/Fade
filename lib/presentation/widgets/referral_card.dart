@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/animations/motion.dart';
 import '../../core/i18n/strings.dart';
+import '../../core/theme/app_colors.dart';
 import '../../data/app_state.dart';
+import 'paper_kit.dart';
 
 /// "Invite friends, go VIP" referral — reciprocity + viral growth loop.
 /// Lives on the Profile screen (account/growth), not cluttering Home.
@@ -13,39 +16,36 @@ class ReferralCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final code =
-        'CUT-${(AppState.instance.user.hashCode.abs() % 9000) + 1000}';
+    final p = Paper.of(context);
+    // A white card like the rest of the page: one green gradient block
+    // stacked on the blue "Become a barber" card made the profile loud.
     return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1F8F5F), Color(0xFF135C3B)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1F8F5F).withValues(alpha: 0.32),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: clayDecoration(p, radius: 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.card_giftcard_rounded,
-                  color: Colors.white, size: 22),
-              const SizedBox(width: 8),
-              Text(
-                L.wdInviteVip,
-                style: GoogleFonts.nunito(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: p.tint,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.card_giftcard_rounded,
+                    color: AppColors.accent, size: 21),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  L.wdInviteVip,
+                  style: GoogleFonts.nunito(
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w900,
+                    color: p.text,
+                  ),
                 ),
               ),
             ],
@@ -56,7 +56,7 @@ class ReferralCard extends StatelessWidget {
             style: GoogleFonts.nunito(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.85),
+              color: p.textSecondary,
               height: 1.3,
             ),
           ),
@@ -65,43 +65,45 @@ class ReferralCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  height: 46,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.4),
-                        width: 1.4),
+                    color: p.cardAlt,
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Text(
-                    code,
-                    style: GoogleFonts.nunito(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
-                      color: Colors.white,
+                  // The server-minted code. It used to be built from the user
+                  // object's hashCode, which changes on every launch.
+                  child: FutureBuilder<String>(
+                    future: AppState.instance.referralCode(),
+                    builder: (context, snap) => Text(
+                      snap.data ?? '······',
+                      style: GoogleFonts.nunito(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2,
+                        color: p.text,
+                      ),
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 10),
-              GestureDetector(
+              PressableScale(
                 onTap: onShare,
-                behavior: HitTestBehavior.opaque,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 18, vertical: 13),
+                  height: 46,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.accent,
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
                     L.share,
                     style: GoogleFonts.nunito(
                       fontSize: 14,
                       fontWeight: FontWeight.w900,
-                      color: const Color(0xFF135C3B),
+                      color: Colors.white,
                     ),
                   ),
                 ),

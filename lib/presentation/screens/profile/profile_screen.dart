@@ -95,12 +95,13 @@ class ProfileScreen extends StatelessWidget {
     if (picked != null) AppState.instance.setLanguage(picked);
   }
 
-  void _shareInvite(BuildContext context) {
-    final code =
-        'CUT-${(AppState.instance.user.hashCode.abs() % 9000) + 1000}';
-    Clipboard.setData(ClipboardData(
-      text: L.pfInviteShare(code),
-    ));
+  Future<void> _shareInvite(BuildContext context) async {
+    // The server-minted code, the same one the card shows. It used to be
+    // derived from the user object's hashCode, which changes every launch,
+    // so a shared code could stop matching this account.
+    final code = await AppState.instance.referralCode();
+    await Clipboard.setData(ClipboardData(text: L.pfInviteShare(code)));
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(L.inviteCopiedFriend)),
     );
@@ -172,7 +173,6 @@ class ProfileScreen extends StatelessWidget {
         final user = state.user;
         final my = state.myBarber;
         final cuts = state.fadePoints; // THE Fade-points number (badge-matched)
-        final streak = 2 + (cuts % 7); // weeks on the books — "keep it lit"
         final upcoming =
             state.bookingsByStatus(BookingStatus.upcoming).length +
                 state.bookingsByStatus(BookingStatus.requested).length;
@@ -258,24 +258,9 @@ class ProfileScreen extends StatelessWidget {
                               color: AppColors.gold,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE0683C)
-                                  .withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              '🔥 $streak wks',
-                              style: GoogleFonts.nunito(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                                color: const Color(0xFFE0683C),
-                              ),
-                            ),
-                          ),
+                          // (A "🔥 N wks" streak chip used to sit here. Its
+                          // number came from a formula, not from visits, so it
+                          // was removed rather than shown as if it were real.)
                           const Spacer(),
                           MiniPill('$cuts / ${AppState.fadePointsGoal} CUTS'),
                         ],
@@ -531,7 +516,9 @@ class ProfileScreen extends StatelessWidget {
                 delay: const Duration(milliseconds: 300),
                 child: Center(
                   child: Text(
-                    '${L.memberSincePrefix} ${DateFormat('MMMM yyyy').format(state.memberSince)} · ${L.madeWith}',
+                    state.memberSince == null
+                        ? L.madeWith
+                        : '${L.memberSincePrefix} ${DateFormat('MMMM yyyy').format(state.memberSince!)} · ${L.madeWith}',
                     textAlign: TextAlign.center,
                     style: AppTypography.caption(context)
                         .copyWith(color: p.textTertiary),
@@ -594,21 +581,10 @@ class _BecomeBarberCard extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Container(
         padding: const EdgeInsets.all(16),
+        // The page's one coloured card: solid accent, no gradient or glow.
         decoration: BoxDecoration(
+          color: AppColors.accent,
           borderRadius: BorderRadius.circular(24),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF4AA3FF), Color(0xFF1E6FE0)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.accent.withValues(alpha: 0.38),
-              blurRadius: 22,
-              spreadRadius: -6,
-              offset: const Offset(0, 12),
-            ),
-          ],
         ),
         child: Row(
           children: [
@@ -616,10 +592,8 @@ class _BecomeBarberCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.22),
+                color: Colors.white.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(14),
-                border:
-                    Border.all(color: Colors.white.withValues(alpha: 0.35)),
               ),
               child: const Icon(Icons.content_cut_rounded,
                   color: Colors.white, size: 24),
@@ -742,22 +716,30 @@ class _PillSwitch extends StatelessWidget {
         height: 30,
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: value ? p.action : p.cardAlt,
+          color: value
+              ? p.action
+              : (p.isDark ? p.cardAlt : const Color(0xFFE2E4E8)),
           borderRadius: BorderRadius.circular(99),
-          border: Border.all(
-            color: value ? Colors.transparent : p.border,
-          ),
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutBack,
+          curve: Curves.easeOutCubic,
           alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          // A white knob on either track. It used to be accent-blue on an
+          // accent-blue track when ON, so the knob vanished.
           child: Container(
             width: 24,
             height: 24,
-            decoration: BoxDecoration(
-              color: value ? AppColors.accent : p.textTertiary,
+            decoration: const BoxDecoration(
+              color: Colors.white,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x26000000),
+                  blurRadius: 3,
+                  offset: Offset(0, 1),
+                ),
+              ],
             ),
           ),
         ),

@@ -2492,7 +2492,11 @@ class AppState extends ChangeNotifier
 
   /// "Member since" date — user joined when account was created.
   /// In mock data, treat 2024-03-12 as the member-since date.
-  DateTime get memberSince => DateTime(2024, 3, 12);
+  /// When this person first signed in on this device. It used to be a
+  /// hard-coded date shown to everyone; null now means "not known" (accounts
+  /// from before it was recorded), and the profile then leaves it out.
+  DateTime? _memberSince;
+  DateTime? get memberSince => _memberSince;
 
   // === Dual-key reviews ===
   // Shop reviews (cleanliness/vibe) belong to the LOCATION; barber reviews
@@ -2675,6 +2679,7 @@ class AppState extends ChangeNotifier
     // been using the app in its language, so don't stop them with the picker.
     _languageChosen =
         sp.getBool('langChosen') ?? _stage != AuthStage.anonymous;
+    _memberSince = DateTime.tryParse(sp.getString('memberSince') ?? '');
     _isDarkMode = sp.getBool('dark') ?? _isDarkMode;
     _workStart = sp.getInt('workStart') ?? _workStart;
     _workEnd = sp.getInt('workEnd') ?? _workEnd;
@@ -2896,6 +2901,10 @@ class AppState extends ChangeNotifier
     await sp.setString('role', _activeRole.name);
     await sp.setString('lang', _language.name);
     await sp.setBool('langChosen', _languageChosen);
+    final since = _memberSince;
+    since == null
+        ? await sp.remove('memberSince')
+        : await sp.setString('memberSince', since.toIso8601String());
     await sp.setBool('dark', _isDarkMode);
     await sp.setBool('schedSlots', _scheduleSlotsView);
     await sp.setInt('workStart', _workStart);
@@ -3219,6 +3228,7 @@ class AppState extends ChangeNotifier
     if (photo != null) _userPhoto = photo;
     _method = method;
     _activeRole = role;
+    _memberSince ??= DateTime.now();
     _stage = role == AppRole.barber ? AuthStage.identified : AuthStage.ready;
     notifyListeners();
   }
@@ -3250,6 +3260,7 @@ class AppState extends ChangeNotifier
     // accounts. Nobody is signed in, so the profile is nobody.
     _user = AppUser.empty;
     _userPhoto = null;
+    _memberSince = null;
     _activeRole = AppRole.client;
     _bookings.clear();
     _chats.clear();
