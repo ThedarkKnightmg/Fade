@@ -76,6 +76,18 @@ mixin CatalogueState on ChangeNotifier {
     notifyListeners();
   }
 
+  /// Use [shops] as the catalogue without fetching: for widget tests and the
+  /// local design preview, where the backend may be unreachable.
+  @visibleForTesting
+  void useCatalogueForPreview(List<Barbershop> shops) {
+    MockData.barbershops
+      ..clear()
+      ..addAll(shops);
+    _catalogueStatus =
+        shops.isEmpty ? CatalogueStatus.empty : CatalogueStatus.ready;
+    notifyListeners();
+  }
+
   /// What the "Try again" button on the browse surfaces calls.
   Future<void> retryCatalogue() {
     _catalogueStatus = CatalogueStatus.loading;

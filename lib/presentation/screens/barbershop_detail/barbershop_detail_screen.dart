@@ -308,7 +308,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                FadeSlideIn(child: _ShopHero(shop: shop)),
+                FadeSlideIn(child: _ShopHero(shop: shop, base: base)),
                 const SizedBox(height: 24),
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 60),
@@ -467,34 +467,57 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
   }
 }
 
-/// The one blue hero on this page — the shop's tagline over the trust band
-/// (rating · reviews · distance · price) as frosted-glass chips.
+/// The shop's own storefront (the same painted cover as its card in the list)
+/// with the tagline and the trust band (rating · reviews · distance · price)
+/// over a bottom scrim. It used to be a generic blue gradient block, so the
+/// shop lost its identity the moment you opened it.
 class _ShopHero extends StatelessWidget {
-  const _ShopHero({required this.shop});
+  const _ShopHero({required this.shop, required this.base});
 
   final Barbershop shop;
 
+  /// The shop's cover colour, as used by its list card and gallery.
+  final Color base;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF4AA3FF), Color(0xFF1E6FE0)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accent.withValues(alpha: 0.35),
-            blurRadius: 22,
-            spreadRadius: -6,
-            offset: const Offset(0, 12),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(
+              painter: ShopCoverPainter(base: base, premium: shop.isPremium),
+            ),
+          ),
+          // Bottom scrim so the white text stays readable on any cover.
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Color(0x33000000),
+                    Color(0xB3000000),
+                  ],
+                  stops: [0.0, 0.4, 1.0],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: _content(),
           ),
         ],
       ),
-      child: Column(
+    );
+  }
+
+  Widget _content() {
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (shop.isPremium) ...[
@@ -523,8 +546,9 @@ class _ShopHero extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
           ],
+          // Room for the storefront to show above the text.
+          SizedBox(height: shop.isPremium ? 64 : 92),
           Text(
             L.tr(shop.tagline),
             maxLines: 2,
@@ -561,8 +585,7 @@ class _ShopHero extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
+      );
   }
 }
 
