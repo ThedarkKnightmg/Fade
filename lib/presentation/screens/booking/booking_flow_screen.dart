@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/format/money.dart';
+import '../../../core/utils/slot_fit.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -110,6 +111,22 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     final blocked = s.blockedSlotsFor(
         shopId: widget.shop.id, barberId: _barberId, day: day);
     return {...mock, ...mine, ...blocked};
+  }
+
+  /// How long the chosen cut takes (30 min until something is picked).
+  int get _duration =>
+      _picked.isEmpty ? 30 : comboService(_picked).durationMinutes;
+
+  /// Start times that can't hold the whole cut (see [unfitStarts]).
+  Set<DateTime> get _unavailable {
+    final day = _days[_dateIndex];
+    final (_, endHour) = AppState.instance.shopHours(widget.shop.id);
+    return unfitStarts(
+      slots: _slots,
+      taken: _booked,
+      minutes: _duration,
+      closesAt: DateTime(day.year, day.month, day.day, endHour),
+    );
   }
 
   void _confirm() {
@@ -251,6 +268,10 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                     } else {
                       _selectedServices.add(id);
                     }
+                    // A longer cut may no longer fit the picked time.
+                    if (_time != null && _unavailable.contains(_time)) {
+                      _time = null;
+                    }
                   }),
                 ),
               ),
@@ -270,7 +291,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                       _barberId = id;
                       // Availability depends on the barber — drop a time that
                       // is now taken.
-                      if (_time != null && _booked.contains(_time)) {
+                      if (_time != null && _unavailable.contains(_time)) {
                         _time = null;
                       }
                     }),
@@ -292,7 +313,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                   ),
                   TimeGrid(
                     slots: _slots,
-                    booked: _booked,
+                    booked: _unavailable,
                     selected: _time,
                     onSelect: (t) => setState(() => _time = t),
                   ),

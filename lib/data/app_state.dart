@@ -974,9 +974,13 @@ class AppState extends ChangeNotifier
 
   void confirmBooking(String id) {
     final b = _bookingById(id);
+    // Only a request can be accepted. With two phones, the client can cancel
+    // while the barber's request sheet is still open; accepting then must not
+    // bring a cancelled booking back to life.
+    if (b == null || b.status != BookingStatus.requested) return;
     _setBookingStatus(id, BookingStatus.upcoming);
     // The promised "we'll ping you" — a real device notification.
-    if (_remindersOn && b != null) {
+    if (_remindersOn) {
       Notify.show(L.notifConfirmedTitle,
           L.notifConfirmedBody(_hhmm(b.dateTime), b.barbershop.name));
     }
@@ -984,8 +988,15 @@ class AppState extends ChangeNotifier
 
   void declineBooking(String id) {
     final b = _bookingById(id);
+    // Decline applies to a live booking only; a finished, cancelled or no-show
+    // booking keeps its outcome.
+    if (b == null ||
+        (b.status != BookingStatus.requested &&
+            b.status != BookingStatus.upcoming)) {
+      return;
+    }
     _setBookingStatus(id, BookingStatus.declined);
-    if (_remindersOn && b != null) {
+    if (_remindersOn) {
       Notify.show(
           L.notifDeclinedTitle, L.notifDeclinedBody(b.barbershop.name));
     }
@@ -1253,8 +1264,10 @@ class AppState extends ChangeNotifier
     final me = meBarber;
     final aligned = DateTime(dateTime.year, dateTime.month, dateTime.day,
         dateTime.hour, dateTime.minute >= 30 ? 30 : 0);
-    if (blockedSlotsFor(shopId: me.shop.id, barberId: me.barber.id, day: dateTime)
-        .contains(aligned)) {
+    if (!_spanFree(
+        blockedSlotsFor(shopId: me.shop.id, barberId: me.barber.id, day: dateTime),
+        aligned,
+        service.durationMinutes)) {
       return false;
     }
     _bookings.add(Booking(
@@ -1269,6 +1282,17 @@ class AppState extends ChangeNotifier
       note: (note == null || note.trim().isEmpty) ? null : note.trim(),
     ));
     notifyListeners();
+    return true;
+  }
+
+  /// Whether every half hour from [start] for [minutes] is free of [blocked].
+  /// Checking the start alone let a long cut (or walk-in) sit on top of the
+  /// next booking.
+  bool _spanFree(Set<DateTime> blocked, DateTime start, int minutes) {
+    final end = start.add(Duration(minutes: minutes <= 0 ? 30 : minutes));
+    for (var t = start; t.isBefore(end); t = t.add(const Duration(minutes: 30))) {
+      if (blocked.contains(t)) return false;
+    }
     return true;
   }
 
@@ -3392,7 +3416,9 @@ class AppState extends ChangeNotifier
       barberId: booking.barber.id,
       day: at,
     );
-    if (blocked.contains(slot)) return false; // slot just taken → reject
+    if (!_spanFree(blocked, slot, booking.service.durationMinutes)) {
+      return false; // slot just taken → reject
+    }
     _bookings.add(booking);
     // Booking unlocks messaging with this barber — drop in a welcome note so
     // the conversation is ready the moment they want to text.

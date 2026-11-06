@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/format/money.dart';
+import '../../../core/utils/slot_fit.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -94,7 +95,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
     if (!todayLeft) _dateIndex = 1;
     // Open booking-ready: pre-select the first free slot so the Book CTA is
     // immediately actionable — the single biggest conversion lever.
-    final booked = _bookedSlots;
+    final booked = _unavailable;
     for (final t in _slots) {
       if (!booked.contains(t)) {
         _time = t;
@@ -149,6 +150,18 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
     return {...mock, ...mine, ...blocked};
   }
 
+  /// Start times that can't hold the whole cut (see [unfitStarts]).
+  Set<DateTime> get _unavailable {
+    final day = _days[_dateIndex];
+    final (_, endHour) = AppState.instance.shopHours(widget.shop.id);
+    return unfitStarts(
+      slots: _slots,
+      taken: _bookedSlots,
+      minutes: _minutes,
+      closesAt: DateTime(day.year, day.month, day.day, endHour),
+    );
+  }
+
   void _pickTime() {
     final p = Paper.of(context);
     showModalBottomSheet(
@@ -190,7 +203,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
               child: SingleChildScrollView(
                 child: TimeGrid(
                   slots: _slots,
-                  booked: _bookedSlots,
+                  booked: _unavailable,
                   selected: _time,
                   onSelect: (t) {
                     setState(() => _time = t);
@@ -263,7 +276,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
     final shop = widget.shop;
     final idx = MockData.barbershops.indexWhere((s) => s.id == shop.id);
     final base = shopCoverColor(idx < 0 ? 0 : idx, premium: shop.isPremium);
-    final booked = _bookedSlots;
+    final booked = _unavailable;
     final freeCount = _slots.where((t) => !booked.contains(t)).length;
     final whenLabel = _time == null
         ? L.bkChooseATime
@@ -349,6 +362,10 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                       } else {
                         _selectedServices.add(id);
                       }
+                      // A longer cut may no longer fit the picked time.
+                      if (_time != null && _unavailable.contains(_time)) {
+                        _time = null;
+                      }
                     }),
                   ),
                   const SizedBox(height: 8),
@@ -395,7 +412,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                           // Availability is per-barber — drop a time that
                           // is now taken for the newly chosen barber.
                           if (_time != null &&
-                              _bookedSlots.contains(_time)) {
+                              _unavailable.contains(_time)) {
                             _time = null;
                           }
                         }),
