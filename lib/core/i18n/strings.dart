@@ -1853,6 +1853,72 @@ class L {
       "That code is for a different barber than your booking",
       'Этот код другого барбера, не из вашей записи',
       "Bu kod yozuvingizdagidan boshqa barberniki");
+  // ── Arrival check-in (client scans the barber's poster) ──
+  static String checkInOpensAt(String time) => _t(
+      'Too early: check-in opens at $time', 'Рано: отметка откроется в $time',
+      'Juda erta: belgilash $time da ochiladi');
+  static String get checkInTooLate => _t(
+      "This booking's check-in time has passed",
+      'Время отметки для этой записи прошло',
+      "Bu yozuv uchun belgilash vaqti o'tdi");
+  static String get checkInNoBooking => _t(
+      'You have no booking with this barber today',
+      'У вас нет записи к этому барберу на сегодня',
+      "Bugun bu barberga yozuvingiz yo'q");
+  static String get checkInAlready =>
+      _t("You're already checked in", 'Вы уже отметились', 'Siz allaqachon belgilangansiz');
+  static String checkedInAtTime(String time) =>
+      _t('Checked in at $time', 'Отметились в $time', '$time da belgilandi');
+  static String get checkInArrivedSub => _t(
+      'Your barber can see you are here.',
+      'Барбер видит, что вы пришли.',
+      "Barber kelganingizni ko'radi.");
+  static String get checkInScanPosterTitle =>
+      _t("I'm here", 'Я пришёл', 'Men keldim');
+  static String get checkInScanPosterSub => _t(
+      "Scan the Fade QR on your barber's window or desk.",
+      'Отсканируйте QR Fade на окне или столе барбера.',
+      "Barberning oynasi yoki stolidagi Fade QR kodini skanerlang.");
+  static String get checkInScanPosterCta =>
+      _t('Scan to check in', 'Сканировать', 'Skanerlash');
+  // ── The barber's poster ──
+  static String get posterTitle =>
+      _t('Check-in poster', 'QR для отметки', 'Kelish QR posteri');
+  static String get posterSub => _t(
+      'Print it and stick it on your window or desk. Clients scan it with Fade when they arrive, so you never have to scan anyone.',
+      'Распечатайте и приклейте на окно или стол. Клиенты сканируют его в Fade, когда приходят, — вам никого сканировать не нужно.',
+      "Chop eting va oyna yoki stolga yopishtiring. Mijozlar kelganda uni Fade bilan skanerlaydi — siz hech kimni skanerlamaysiz.");
+  static String get posterShare =>
+      _t('Share or print', 'Поделиться или распечатать', 'Ulashish yoki chop etish');
+  // ── Close the day ──
+  static String get dayTitle => _t("Today's visits", 'Визиты сегодня', 'Bugungi tashriflar');
+  static String get dayHint => _t(
+      'Mark who came. We compare it with the clients\' check-ins.',
+      'Отметьте, кто пришёл. Мы сверим это с отметками клиентов.',
+      "Kim kelganini belgilang. Biz uni mijozlar belgilari bilan solishtiramiz.");
+  static String get dayCame => _t('Came', 'Пришёл', 'Keldi');
+  static String get dayDidntCome => _t("Didn't come", 'Не пришёл', 'Kelmadi');
+  static String dayScannedAt(String time) =>
+      _t('Checked in $time', 'Отметился в $time', '$time da belgilangan');
+  static String get dayScannedFar =>
+      _t('Checked in away from the shop', 'Отметился не у салона', "Salondan uzoqda belgilangan");
+  static String get dayNoScan => _t('No check-in', 'Без отметки', 'Belgilanmagan');
+  static String get dayDone => _t('Done', 'Готово', 'Tayyor');
+  static String get dayLater => _t('Later today', 'Позже сегодня', 'Bugun keyinroq');
+  static String get dayClose => _t('Close the day', 'Закрыть день', 'Kunni yopish');
+  static String get dayNothing =>
+      _t('No visits to close today', 'Сегодня нечего закрывать', "Bugun yopiladigan tashrif yo'q");
+  static String get dayClosedTitle => _t('Day closed', 'День закрыт', 'Kun yopildi');
+  static String get dayVerified => _t('Verified', 'Подтверждено', 'Tasdiqlangan');
+  static String get dayUnverified =>
+      _t('Came, no check-in', 'Пришёл без отметки', 'Belgisiz keldi');
+  static String get dayDisputed =>
+      _t('Disputed (client checked in)', 'Спор (клиент отметился)', 'Bahsli (mijoz belgilangan)');
+  static String get dayNoShow => _t('No-show', 'Неявка', 'Kelmadi');
+  static String get dayMarkAll => _t(
+      'Mark everyone who was due before closing',
+      'Отметьте всех, кто был записан до закрытия',
+      "Yopishdan oldin barchani belgilang");
   static String get checkedInOk =>
       _t('Checked in — enjoy your cut! ✂️', 'Визит отмечен! ✂️', 'Belgilandi! ✂️');
   static String get checkInTryLater => _t(

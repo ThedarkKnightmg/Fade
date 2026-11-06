@@ -26,6 +26,7 @@ import 'barber_history_screen.dart';
 import 'shop_location_picker_screen.dart';
 import 'wallet_screen.dart';
 import 'boost_screen.dart';
+import 'checkin_poster_screen.dart';
 import 'vip_explainer_screen.dart';
 import '../settings/settings_screen.dart';
 import '../settings/support_sheet.dart';
@@ -153,6 +154,11 @@ class BarberProfileScreen extends StatelessWidget {
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 170),
                   child: const _GrowBookingsCard(),
+                ),
+                const SizedBox(height: 12),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 180),
+                  child: const _PosterCard(),
                 ),
                 const SizedBox(height: 12),
 
@@ -452,6 +458,53 @@ class _BoostSellCard extends StatelessWidget {
             const SizedBox(width: 4),
             Icon(Icons.chevron_right_rounded,
                 size: 20, color: p.textTertiary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The check-in poster: the QR clients scan when they arrive.
+class _PosterCard extends StatelessWidget {
+  const _PosterCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    return PressableScale(
+      onTap: () => Navigator.of(context)
+          .push(FadeThroughPageRoute(child: const CheckinPosterScreen())),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: clayDecoration(p, radius: 20),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: p.tint,
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(Icons.qr_code_2_rounded,
+                  size: 26, color: AppColors.accent),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(L.posterTitle, style: AppTypography.h4(context)),
+                  const SizedBox(height: 2),
+                  Text(L.checkInScanPosterSub,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySmall(context)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, size: 20, color: p.textTertiary),
           ],
         ),
       ),

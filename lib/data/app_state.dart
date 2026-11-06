@@ -168,6 +168,12 @@ class BarberRef {
 
 /// A "Barber Fuel" micro-transaction pack — a bundle of Boosts ("Ups") sold at
 /// a decreasing per-boost price, kept in the wallet and spent on dead hours.
+/// What happened when the client scanned a barber's poster.
+enum CheckInResult { ok, alreadyIn, notFadeCode, noBookingHere, tooEarly, tooLate }
+
+/// How a booking ends when the barber closes the day (see AppState.closeDay).
+enum DayOutcome { verified, unverified, disputed, noShow }
+
 class BoostPack {
   const BoostPack(this.id, this.priceSom, this.count);
   final String id;
@@ -1918,7 +1924,9 @@ class AppState extends ChangeNotifier
     if (_walletSom < commissionSomFor(b)) return 'credit';
     _bookings[i] = b.copyWith(verifiedAt: DateTime.now());
     final name = _bookings[i].clientName;
-    if (name != null && !_bookings[i].isWalkIn) {
+    // Only a visit the CLIENT checked in to counts toward their VIP streak: a
+    // barber's tap proves nothing about who was in the chair.
+    if (name != null && !_bookings[i].isWalkIn && b.hasArrived) {
       _verifiedScanStreak[name] = (_verifiedScanStreak[name] ?? 0) + 1;
     }
     completeBooking(id); // → completed + _chargeCommission, exactly once
@@ -1948,10 +1956,162 @@ class AppState extends ChangeNotifier
     return null;
   }
 
-  /// The payload the BARBER's check-in QR encodes. The client scans it, and the
-  /// app confirms it matches the barber on their booking before checking in.
-  /// (Flipped model: the barber shows a QR, the client scans — not the reverse.)
-  String get barberCheckInPayload => 'fade:barber:${meBarber.barber.id}';
+  // ═══════════ Arrival check-in: the client scans the barber's poster ═══════════
+  //
+  // Each barber prints one QR (Profile → Check-in poster) and sticks it on the
+  // window or desk. A client scans it with Fade on arrival: that marks THEIR
+  // booking as arrived, with the time and whether the phone was near the
+  // shop. The barber never scans anyone. At the end of the day the barber
+  // marks who came, and the two accounts are compared (see [closeDay]).
+  //
+  // SECURITY: the code is checked on the phone today. When bookings move fully
+  // to Supabase, the check-in becomes an RPC that verifies the code and the
+  // distance server-side.
+
+  /// A short code in the poster's QR, so knowing a barber's id isn't enough
+  /// to "check in" from home.
+  String _checkinCode = '';
+  String get checkinCode {
+    if (_checkinCode.isEmpty) {
+      const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      final r = Random.secure();
+      _checkinCode = List.generate(6, (_) => abc[r.nextInt(abc.length)]).join();
+    }
+    return _checkinCode;
+  }
+
+  /// What the barber's poster QR encodes.
+  String get barberCheckInPayload =>
+      'fade:barber:${meBarber.barber.id}:$checkinCode';
+
+  /// Check-in opens this long before the appointment...
+  static const Duration checkInOpensBefore = Duration(minutes: 45);
+
+  /// ...and closes this long after its scheduled end.
+  static const Duration checkInClosesAfter = Duration(minutes: 30);
+
+  /// A scan farther than this from the shop is flagged.
+  static const double checkInNearMeters = 300;
+
+  /// The client scanned [raw] (a barber's poster). Marks their booking with
+  /// that barber as arrived when it's within the check-in window.
+  CheckInResult clientCheckIn(String raw, {bool? nearShop, DateTime? now}) {
+    final parts = raw.trim().split(':');
+    if (parts.length < 4 || parts[0] != 'fade' || parts[1] != 'barber') {
+      return CheckInResult.notFadeCode;
+    }
+    final barberId = parts[2];
+    final code = parts[3];
+    // On a device that IS this barber (the demo), the code can be checked here.
+    if (barberId == meBarber.barber.id && code != checkinCode) {
+      return CheckInResult.notFadeCode;
+    }
+    final t = now ?? DateTime.now();
+    final mine = _bookings
+        .where((b) =>
+            b.clientName == null &&
+            b.barber.id == barberId &&
+            (b.status == BookingStatus.requested ||
+                b.status == BookingStatus.upcoming) &&
+            _sameDay(b.dateTime, t))
+        .toList()
+      ..sort((a, b) => (a.dateTime.difference(t).abs())
+          .compareTo(b.dateTime.difference(t).abs()));
+    if (mine.isEmpty) return CheckInResult.noBookingHere;
+    final b = mine.first;
+    if (b.hasArrived) return CheckInResult.alreadyIn;
+    final opens = b.dateTime.subtract(checkInOpensBefore);
+    final closes = b.dateTime
+        .add(Duration(minutes: b.service.durationMinutes))
+        .add(checkInClosesAfter);
+    if (t.isBefore(opens)) return CheckInResult.tooEarly;
+    if (t.isAfter(closes)) return CheckInResult.tooLate;
+    final i = _bookings.indexWhere((x) => x.id == b.id);
+    _bookings[i] = b.copyWith(arrivedAt: t, arrivedNearShop: nearShop);
+    notifyListeners();
+    return CheckInResult.ok;
+  }
+
+  /// The client's booking that a poster scan would check in, if any (for the
+  /// "check-in opens at HH:mm" message).
+  Booking? checkInCandidate(String barberId, {DateTime? now}) {
+    final t = now ?? DateTime.now();
+    for (final b in _bookings) {
+      if (b.clientName == null &&
+          b.barber.id == barberId &&
+          _sameDay(b.dateTime, t) &&
+          (b.status == BookingStatus.requested ||
+              b.status == BookingStatus.upcoming)) {
+        return b;
+      }
+    }
+    return null;
+  }
+
+  /// Straight-line distance in metres (haversine).
+  static double distanceMeters(double lat1, double lng1, double lat2, double lng2) {
+    const r = 6371000.0;
+    double rad(double d) => d * pi / 180;
+    final dLat = rad(lat2 - lat1), dLng = rad(lng2 - lng1);
+    final a = pow(sin(dLat / 2), 2) +
+        cos(rad(lat1)) * cos(rad(lat2)) * pow(sin(dLng / 2), 2);
+    return 2 * r * asin(sqrt(a));
+  }
+
+  /// Today's bookings the barber settles at closing time: everything that was
+  /// due today (not walk-ins, which they logged themselves), earliest first.
+  List<Booking> bookingsToClose(DateTime day) => _mine()
+      .where((b) =>
+          _sameDay(b.dateTime, day) &&
+          !b.isWalkIn &&
+          (b.status == BookingStatus.requested ||
+              b.status == BookingStatus.upcoming ||
+              b.status == BookingStatus.completed))
+      .toList()
+    ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+  /// How a booking ends up when the barber says [came], given whether the
+  /// client scanned in. The whole comparison in one place.
+  static DayOutcome dayOutcome({required bool scanned, required bool came}) =>
+      came
+          ? (scanned ? DayOutcome.verified : DayOutcome.unverified)
+          : (scanned ? DayOutcome.disputed : DayOutcome.noShow);
+
+  /// Settle the day from the barber's account ([came] by booking id) against
+  /// the clients' scans:
+  ///  * came + scanned     → verified visit (fee, VIP streak)
+  ///  * came, no scan      → visit counts and the fee applies, no VIP streak
+  ///  * didn't come, scan  → disputed: no no-show fee, flagged
+  ///  * didn't come        → no-show, the usual rules
+  Map<DayOutcome, int> closeDay(Map<String, bool> came) {
+    final counts = {for (final o in DayOutcome.values) o: 0};
+    for (final entry in came.entries) {
+      final i = _bookings.indexWhere((b) => b.id == entry.key);
+      if (i == -1) continue;
+      final b = _bookings[i];
+      final outcome = dayOutcome(scanned: b.hasArrived, came: entry.value);
+      counts[outcome] = counts[outcome]! + 1;
+      if (b.status == BookingStatus.completed) continue; // already settled
+      switch (outcome) {
+        case DayOutcome.verified:
+          _bookings[i] = b.copyWith(verifiedAt: b.arrivedAt);
+          final name = b.clientName;
+          if (name != null) {
+            _verifiedScanStreak[name] = (_verifiedScanStreak[name] ?? 0) + 1;
+          }
+          completeBooking(b.id);
+        case DayOutcome.unverified:
+          completeBooking(b.id);
+        case DayOutcome.disputed:
+          _bookings[i] = b.copyWith(
+              status: BookingStatus.cancelled, disputed: true);
+        case DayOutcome.noShow:
+          markNoShowWithCharge(b.id);
+      }
+    }
+    notifyListeners();
+    return counts;
+  }
 
   /// Parse a scanned barber QR (`fade:barber:<id>`) to the barber id, or null.
   static String? barberIdFromQr(String raw) {
@@ -2144,26 +2304,34 @@ class AppState extends ChangeNotifier
     }
 
     void seedB(String id, String client, int svc, int days, int hour,
-        BookingStatus st) {
+        BookingStatus st, {bool scanned = false}) {
+      final when = at(days, hour);
+      // Demo clients who scanned the poster a few minutes before their slot
+      // (only once that moment has actually passed).
+      final arrived = when.subtract(const Duration(minutes: 4));
       _bookings.add(Booking(
         id: id,
         barbershop: shop,
         barber: barber,
         service: shop.services[svc % shop.services.length],
-        dateTime: at(days, hour),
+        dateTime: when,
         status: st,
         clientName: client,
+        arrivedAt: scanned && arrived.isBefore(now) ? arrived : null,
+        arrivedNearShop: scanned && arrived.isBefore(now) ? true : null,
       ));
     }
 
     seedB('req_0', 'Aziz Karimov', 0, 0, 15, BookingStatus.requested);
     seedB('req_1', 'Bobur Aliyev', 2, 0, 17, BookingStatus.requested);
     seedB('req_2', 'Jasur Tursunov', 1, 1, 11, BookingStatus.requested);
-    seedB('conf_0', 'Davron Saidov', 0, 0, 13, BookingStatus.upcoming);
+    seedB('conf_0', 'Davron Saidov', 0, 0, 13, BookingStatus.upcoming,
+        scanned: true);
     seedB('conf_1', 'Sardor Mirzaev', 3, 1, 16, BookingStatus.upcoming);
 
     // Completed history — drives the history screen, 7-day chart & earnings.
-    seedB('done_0', 'Lisa T.', 0, 0, 14, BookingStatus.completed);
+    seedB('done_0', 'Lisa T.', 0, 0, 14, BookingStatus.completed,
+        scanned: true);
     seedB('done_1', 'Marcus K.', 1, 0, 12, BookingStatus.completed);
     seedB('done_2', 'Jennifer L.', 2, -1, 16, BookingStatus.completed);
     seedB('done_3', 'Aziz R.', 4, -1, 10, BookingStatus.completed);
@@ -3015,6 +3183,7 @@ class AppState extends ChangeNotifier
     if (ds != null) _desiredStyleId = ds.isEmpty ? null : ds;
     _vipSince = _readEpoch(sp, 'vipSince');
     _vipTrialUsed = sp.getBool('vipTrialUsed') ?? false;
+    _checkinCode = sp.getString('checkinCode') ?? '';
     _vipOnTrial = sp.getBool('vipOnTrial') ?? false;
     _loaded = true;
     notifyListeners();
@@ -3160,6 +3329,7 @@ class AppState extends ChangeNotifier
     await sp.setString('desiredStyle', _desiredStyleId ?? '');
     await _putEpoch(sp, 'vipSince', _vipSince);
     await sp.setBool('vipTrialUsed', _vipTrialUsed);
+    if (_checkinCode.isNotEmpty) await sp.setString('checkinCode', _checkinCode);
     await sp.setBool('vipOnTrial', _vipOnTrial);
   }
 
@@ -3275,6 +3445,9 @@ class AppState extends ChangeNotifier
         'st': b.status.index,
         'note': b.note,
         'ca': b.completedAt?.millisecondsSinceEpoch,
+        'arr': b.arrivedAt?.millisecondsSinceEpoch,
+        'near': b.arrivedNearShop,
+        'disp': b.disputed,
       };
 
   /// Rehydrate a stored booking, resolving the shop/barber from mock data by id.
@@ -3310,6 +3483,11 @@ class AppState extends ChangeNotifier
         completedAt: m['ca'] == null
             ? null
             : DateTime.fromMillisecondsSinceEpoch((m['ca'] as num).toInt()),
+        arrivedAt: m['arr'] == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch((m['arr'] as num).toInt()),
+        arrivedNearShop: m['near'] as bool?,
+        disputed: (m['disp'] as bool?) ?? false,
       );
     } catch (_) {
       return null;

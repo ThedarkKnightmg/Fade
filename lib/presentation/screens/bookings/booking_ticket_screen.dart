@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
+import '../../../core/location/geo_position.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/calendar_link.dart';
@@ -24,8 +24,9 @@ class BookingTicketScreen extends StatelessWidget {
   const BookingTicketScreen({super.key, required this.booking});
   final Booking booking;
 
-  /// Open the camera, scan the barber's QR, and — if it's the barber on THIS
-  /// booking — run the check-in handshake.
+  /// "I'm here": scan the barber's poster. This marks ARRIVAL only; the visit
+  /// is settled when the barber closes the day (AppState.closeDay). The phone's
+  /// position is recorded alongside, so a scan from far away is flagged.
   Future<void> _checkIn(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
     final raw = await Navigator.of(context).push<String>(
@@ -43,20 +44,36 @@ class BookingTicketScreen extends StatelessWidget {
       _toast(messenger, L.checkInWrongBarber);
       return;
     }
-    HapticFeedback.mediumImpact();
-    final blocked = AppState.instance.verifyAndComplete(booking.id);
+    // Where is the phone? Quick and best-effort: no position = unknown.
+    bool? near;
+    try {
+      final pos = await createLocator()
+          .position()
+          .timeout(const Duration(seconds: 6));
+      if (pos != null) {
+        near = AppState.distanceMeters(pos.lat, pos.lng,
+                booking.barbershop.lat, booking.barbershop.lng) <=
+            AppState.checkInNearMeters;
+      }
+    } catch (_) {}
+    final s = AppState.instance;
+    final result = s.clientCheckIn(raw, nearShop: near);
     if (!context.mounted) return;
-    if (blocked == null) {
-      _toast(messenger, L.checkedInOk);
-      Navigator.of(context).maybePop();
-    } else {
-      _toast(
-          messenger,
-          blocked == 'early'
-              ? L.scanTooEarly
-              : blocked == 'credit'
-                  ? L.checkInTryLater
-                  : L.scanAlreadyDone);
+    switch (result) {
+      case CheckInResult.ok:
+        HapticFeedback.heavyImpact();
+        _toast(messenger, L.checkedInOk);
+      case CheckInResult.alreadyIn:
+        _toast(messenger, L.checkInAlready);
+      case CheckInResult.notFadeCode:
+        _toast(messenger, L.checkInNotBarberQr);
+      case CheckInResult.noBookingHere:
+        _toast(messenger, L.checkInNoBooking);
+      case CheckInResult.tooEarly:
+        final opens = booking.dateTime.subtract(AppState.checkInOpensBefore);
+        _toast(messenger, L.checkInOpensAt(DateFormat('HH:mm').format(opens)));
+      case CheckInResult.tooLate:
+        _toast(messenger, L.checkInTooLate);
     }
   }
 
@@ -76,6 +93,8 @@ class BookingTicketScreen extends StatelessWidget {
         animation: AppState.instance,
         builder: (context, _) {
           final s = AppState.instance;
+          final live = s.bookings.firstWhere((b) => b.id == booking.id,
+              orElse: () => booking);
           final visits = s.fadePoints; // THE Fade-points number, shown app-wide
           final atVip = visits >= AppState.fadePointsGoal;
           final progress = (visits / AppState.fadePointsGoal).clamp(0.0, 1.0);
@@ -100,50 +119,13 @@ class BookingTicketScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 18),
-                // The client SHOWS this QR; the barber scans it to complete the
-                // visit server-side (minting points). A "checked in" state once
-                // done. The scan-the-barber's-code path stays as a fallback.
-                if (booking.verifiedAt == null &&
-                    booking.status != BookingStatus.completed)
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(26),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.accent.withValues(alpha: 0.16),
-                            blurRadius: 24,
-                            offset: const Offset(0, 12),
-                          ),
-                        ],
-                      ),
-                      child: QrImageView(
-                        data: s.bookingQrPayload(booking),
-                        size: 200,
-                        backgroundColor: Colors.white,
-                        eyeStyle: const QrEyeStyle(
-                          eyeShape: QrEyeShape.circle,
-                          color: AppColors.accentDeep,
-                        ),
-                        dataModuleStyle: const QrDataModuleStyle(
-                          dataModuleShape: QrDataModuleShape.circle,
-                          color: Color(0xFF16213A),
-                        ),
-                      ),
-                    ),
-                  ),
                 const SizedBox(height: 14),
                 _CheckInCard(
-                  checkedIn: booking.verifiedAt != null ||
-                      booking.status == BookingStatus.completed,
+                  arrivedAt: live.arrivedAt ??
+                      (live.status == BookingStatus.completed
+                          ? (live.verifiedAt ?? live.completedAt)
+                          : null),
                   onScan: () => _checkIn(context),
-                ),
-                const SizedBox(height: 14),
-                Center(
-                  child: Text(L.showAtCounter,
-                      style: AppTypography.bodySmall(context)),
                 ),
                 const SizedBox(height: 18),
                 // Booking details.
@@ -284,14 +266,16 @@ class _Row extends StatelessWidget {
 /// The check-in card: a prompt to scan the barber's QR, or a "checked in"
 /// confirmation once the visit is verified.
 class _CheckInCard extends StatelessWidget {
-  const _CheckInCard({required this.checkedIn, required this.onScan});
-  final bool checkedIn;
+  const _CheckInCard({required this.arrivedAt, required this.onScan});
+
+  /// When the client checked in (null: not yet).
+  final DateTime? arrivedAt;
   final VoidCallback onScan;
 
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    if (checkedIn) {
+    if (arrivedAt != null) {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -308,9 +292,10 @@ class _CheckInCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(L.checkedInTitle, style: AppTypography.h3(context)),
+                  Text(L.checkedInAtTime(DateFormat('HH:mm').format(arrivedAt!)),
+                      style: AppTypography.h3(context)),
                   const SizedBox(height: 2),
-                  Text(L.checkedInSub,
+                  Text(L.checkInArrivedSub,
                       style: AppTypography.bodySmall(context)),
                 ],
               ),
@@ -339,15 +324,15 @@ class _CheckInCard extends StatelessWidget {
                 size: 32, color: AppColors.accent),
           ),
           const SizedBox(height: 14),
-          Text(L.checkInPromptTitle,
+          Text(L.checkInScanPosterTitle,
               textAlign: TextAlign.center, style: AppTypography.h3(context)),
           const SizedBox(height: 4),
-          Text(L.checkInPromptSub,
+          Text(L.checkInScanPosterSub,
               textAlign: TextAlign.center,
               style: AppTypography.bodySmall(context)),
           const SizedBox(height: 16),
           PrimaryButton(
-            label: L.checkInScanCta,
+            label: L.checkInScanPosterCta,
             icon: Icons.qr_code_scanner_rounded,
             height: 54,
             onPressed: onScan,

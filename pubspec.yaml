@@ -44,6 +44,7 @@ dependencies:
   # Used at runtime to downscale AI-studio selfies before upload (and by tools).
   image: ^4.3.0
   in_app_purchase: ^3.3.1
+  share_plus: ^13.3.1
 
 dev_dependencies:
   flutter_test:

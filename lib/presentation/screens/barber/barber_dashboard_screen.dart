@@ -18,7 +18,7 @@ import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import 'barber_avatar.dart';
 import 'barber_history_screen.dart';
-import 'scan_client_sheet.dart';
+import 'barber_day_screen.dart';
 import 'vip_explainer_screen.dart';
 
 /// Barber "Today" — a calm, flat home: who you are, whether you're online,
@@ -778,10 +778,13 @@ class _NextBookingCardState extends State<_NextBookingCard> {
           children: [
             Expanded(
               child: _FrostButton(
-                // Barber now SHOWS a QR the client scans (not a scanner).
+                // Clients check themselves in on the barber's poster; this
+                // opens today's check-ins and closing the day.
                 icon: Icons.qr_code_2_rounded,
                 label: L.checkInTitle,
-                onTap: () => showCheckInSheet(context),
+                onTap: () => Navigator.of(context).push(
+                  FadeThroughPageRoute(child: const BarberDayScreen()),
+                ),
               ),
             ),
             const SizedBox(width: 10),

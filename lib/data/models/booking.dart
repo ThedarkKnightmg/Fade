@@ -23,6 +23,9 @@ class Booking {
     this.isWalkIn = false,
     this.verifiedAt,
     this.completedAt,
+    this.arrivedAt,
+    this.arrivedNearShop,
+    this.disputed = false,
   });
 
   final String id;
@@ -56,6 +59,21 @@ class Booking {
   /// by the DAY OF COMPLETION rather than the appointment date. Null until done.
   final DateTime? completedAt;
 
+  /// When the CLIENT scanned the barber's check-in poster on arrival. This is
+  /// the proof of presence: the barber doesn't scan anyone.
+  final DateTime? arrivedAt;
+
+  /// Whether the phone was near the shop when it scanned (null: location
+  /// unavailable). A scan far from the shop is flagged, since a photo of the
+  /// poster could be scanned from anywhere.
+  final bool? arrivedNearShop;
+
+  /// The client scanned in, but the barber closed the day saying they didn't
+  /// come. Neither side is penalised; it's flagged for review.
+  final bool disputed;
+
+  bool get hasArrived => arrivedAt != null;
+
   bool get isVerified => verifiedAt != null;
 
   /// Overdue: an upcoming, unverified real booking whose slot passed 15+ min ago
@@ -73,6 +91,9 @@ class Booking {
     bool? isWalkIn,
     DateTime? verifiedAt,
     DateTime? completedAt,
+    DateTime? arrivedAt,
+    bool? arrivedNearShop,
+    bool? disputed,
   }) =>
       Booking(
         id: id,
@@ -88,5 +109,8 @@ class Booking {
         isWalkIn: isWalkIn ?? this.isWalkIn,
         verifiedAt: verifiedAt ?? this.verifiedAt,
         completedAt: completedAt ?? this.completedAt,
+        arrivedAt: arrivedAt ?? this.arrivedAt,
+        arrivedNearShop: arrivedNearShop ?? this.arrivedNearShop,
+        disputed: disputed ?? this.disputed,
       );
 }
