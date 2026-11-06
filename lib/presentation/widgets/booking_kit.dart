@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/animations/app_animations.dart';
 import '../../core/i18n/strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
@@ -328,16 +329,36 @@ class TimeGrid extends StatelessWidget {
           children: slots.map((t) {
             final isBooked = booked.contains(t);
             final active = selected == t && !isBooked;
+            // Picking a time "snips" it: the accent fills the chip left to
+            // right like a clipper pass, the app's signature move, instead
+            // of a flat colour fade. Un-picking drains it the same way.
             return GestureDetector(
               onTap: isBooked ? null : () => onSelect(t),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(end: active ? 1.0 : 0.0),
+                duration: Duration(
+                    milliseconds: (MediaQuery.maybeOf(context)
+                                ?.disableAnimations ??
+                            false)
+                        ? 0
+                        : (active ? 260 : 160)),
+                curve: AppCurves.easeOutQuart,
+                builder: (context, fill, child) => Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
-                  color: isBooked
-                      ? p.cardAlt.withValues(alpha: 0.6)
-                      : (active ? AppColors.accent : p.cardAlt),
+                  color: isBooked ? p.cardAlt.withValues(alpha: 0.6) : null,
+                  gradient: isBooked
+                      ? null
+                      : LinearGradient(
+                          colors: [
+                            AppColors.accent,
+                            AppColors.accent,
+                            p.cardAlt,
+                            p.cardAlt,
+                          ],
+                          stops: [0, fill, fill, 1],
+                        ),
                   borderRadius: BorderRadius.circular(12),
                   border: isBooked
                       ? Border.all(
@@ -354,7 +375,8 @@ class TimeGrid extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                         color: isBooked
                             ? p.textTertiary
-                            : (active ? Colors.white : p.text),
+                            : Color.lerp(p.text, Colors.white,
+                                ((fill - 0.35) / 0.3).clamp(0.0, 1.0)),
                         decoration:
                             isBooked ? TextDecoration.lineThrough : null,
                         decorationColor: p.textTertiary,
@@ -367,6 +389,7 @@ class TimeGrid extends StatelessWidget {
                     ],
                   ],
                 ),
+              ),
               ),
             );
           }).toList(),

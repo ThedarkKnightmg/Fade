@@ -178,10 +178,18 @@ class _WalletPocketState extends State<_WalletPocket>
     with TickerProviderStateMixin {
   bool _hidden = false;
 
-  late final AnimationController _sheen = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  );
+  // Created in initState, not lazily: with reduced motion the sheen is never
+  // touched, and a lazy controller would first be created inside dispose().
+  late final AnimationController _sheen;
+
+  @override
+  void initState() {
+    super.initState();
+    _sheen = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    );
+  }
 
   /// The last balance seen, to tell money in from money out.
   int? _last;

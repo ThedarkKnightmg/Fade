@@ -327,14 +327,19 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Center(
-                        child: Text(
-                          _total == 0
+                        // The price on the button rolls to each new total.
+                        child: AnimatedCount(
+                          value: Money.toSom(_total).toDouble(),
+                          duration: const Duration(milliseconds: 520),
+                          builder: (context, v) => Text(
+                          v.round() == 0
                               ? L.confirmBooking
-                              : L.confirmPrice(Money.som(_total)),
+                              : L.confirmPrice(Money.somValue(v.round())),
                           style: GoogleFonts.nunito(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
                             color: AppColors.ink,
+                          ),
                           ),
                         ),
                       ),

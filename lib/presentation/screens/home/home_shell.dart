@@ -211,7 +211,9 @@ class _HomiesNav extends StatelessWidget {
                 ),
               ],
             ),
-            child: Row(
+            child: Stack(
+              children: [
+                Row(
               children: [
                 _NavItem(
                   icon: Icons.home_outlined,
@@ -244,7 +246,77 @@ class _HomiesNav extends StatelessWidget {
                 ),
               ],
             ),
+                _TravellingIndicator(slot: _slotOf(index)),
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Which of the five positions a tab index sits in (AI is the middle one).
+  static int? _slotOf(int index) => switch (index) {
+        0 => 0,
+        4 => 1,
+        2 => 3,
+        3 => 4,
+        _ => null,
+      };
+}
+
+/// One indicator for the whole bar that TRAVELS to the new tab.
+///
+/// It used to be a separate bar per tab, shrinking under one and growing
+/// under the other, so a tab change had no direction. Now the single bar
+/// slides across and stretches while it moves (widest halfway, back to its
+/// size on arrival), like a drop of ink pulled along: you see where you came
+/// from and where you went. Reduced motion: it simply jumps.
+class _TravellingIndicator extends StatelessWidget {
+  const _TravellingIndicator({required this.slot});
+
+  final int? slot;
+
+  static const double _w = 26;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = slot;
+    if (s == null) return const SizedBox.shrink();
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final slotW = box.maxWidth / 5;
+            return TweenAnimationBuilder<double>(
+              tween: Tween(end: s.toDouble()),
+              duration: Duration(milliseconds: reduce ? 0 : 420),
+              curve: AppCurves.easeOutQuart,
+              builder: (context, pos, _) {
+                // 0 at a tab, 0.5 halfway between two: the stretch.
+                final between = (pos - pos.round()).abs();
+                final w = _w + between * 2 * slotW * 0.55;
+                final centre = slotW * (pos + 0.5);
+                return Stack(
+                  children: [
+                    Positioned(
+                      left: centre - w / 2,
+                      bottom: 0,
+                      width: w,
+                      height: 3.5,
+                      child: const DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.all(Radius.circular(99)),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
         ),
       ),
     );
@@ -282,13 +354,18 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                active ? activeIcon : icon,
-                key: ValueKey(active),
-                size: 23,
-                color: active ? AppColors.accent : p.textTertiary,
+            AnimatedSlide(
+              duration: const Duration(milliseconds: 260),
+              curve: AppCurves.easeOutQuart,
+              offset: active ? const Offset(0, -0.08) : Offset.zero,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  active ? activeIcon : icon,
+                  key: ValueKey(active),
+                  size: 23,
+                  color: active ? AppColors.accent : p.textTertiary,
+                ),
               ),
             ),
             const SizedBox(height: 3),
@@ -303,17 +380,9 @@ class _NavItem extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 5),
-            // The short accent bar under the active tab (reference style).
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 260),
-              curve: Curves.easeOutCubic,
-              width: active ? 26 : 0,
-              height: 3.5,
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
+            // Room for the bar's single travelling indicator (drawn by
+            // _TravellingIndicator across the whole bar).
+            const SizedBox(height: 3.5),
           ],
         ),
       ),

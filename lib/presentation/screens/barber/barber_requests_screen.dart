@@ -103,9 +103,58 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _RequestCard extends StatelessWidget {
+/// A request in the barber's queue.
+///
+/// Swiping already showed where the card goes (green right = accept, red left
+/// = decline); tapping the buttons used to make it vanish. Now a tap plays
+/// the same exit as the swipe: the card slides off revealing the coloured
+/// lane, then its space closes up, and only then is the request answered.
+class _RequestCard extends StatefulWidget {
   const _RequestCard({required this.booking});
   final Booking booking;
+
+  @override
+  State<_RequestCard> createState() => _RequestCardState();
+}
+
+class _RequestCardState extends State<_RequestCard>
+    with SingleTickerProviderStateMixin {
+  Booking get booking => widget.booking;
+
+  // Created up front, not lazily: a card answered by swipe never animates,
+  // and a lazy controller would then be created inside dispose(), which
+  // Flutter rejects.
+  late final AnimationController _exit;
+
+  @override
+  void initState() {
+    super.initState();
+    _exit = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    );
+  }
+
+  /// +1 slides right (accept), -1 left (decline), 0 while idle.
+  int _dir = 0;
+
+  @override
+  void dispose() {
+    _exit.dispose();
+    super.dispose();
+  }
+
+  Future<void> _leave(int dir, VoidCallback answer) async {
+    if (_dir != 0) return; // already leaving
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduce) {
+      answer();
+      return;
+    }
+    setState(() => _dir = dir);
+    await _exit.forward();
+    if (mounted) answer();
+  }
 
   String _whenLabel(DateTime dt) {
     final now = DateTime.now();
@@ -143,7 +192,7 @@ class _RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final b = booking;
-    return Dismissible(
+    final card = Dismissible(
       key: ValueKey(b.id),
       background: _SwipeBg(
         color: AppColors.green,
@@ -169,8 +218,41 @@ class _RequestCard extends StatelessWidget {
       child: _CardBody(
         booking: b,
         whenLabel: _whenLabel(b.dateTime),
-        onConfirm: () => _confirm(context),
-        onDecline: () => _decline(context),
+        onConfirm: () => _leave(1, () => _confirm(context)),
+        onDecline: () => _leave(-1, () => _decline(context)),
+      ),
+    );
+    if (_dir == 0) return card;
+
+    // Slide off (first 70%), then close the gap (last 30%).
+    final slide = CurvedAnimation(
+        parent: _exit,
+        curve: const Interval(0, 0.7, curve: Curves.easeInCubic));
+    final close = CurvedAnimation(
+        parent: _exit,
+        curve: const Interval(0.62, 1, curve: Curves.easeInOutCubic));
+    final accept = _dir > 0;
+    return SizeTransition(
+      sizeFactor: ReverseAnimation(close),
+      axisAlignment: -1,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: _SwipeBg(
+              color: accept ? AppColors.green : AppColors.red,
+              icon: accept ? Icons.check_rounded : Icons.close_rounded,
+              label: accept ? L.confirmWord : L.decline,
+              alignLeft: accept,
+            ),
+          ),
+          SlideTransition(
+            position: Tween(
+              begin: Offset.zero,
+              end: Offset(_dir * 1.1, 0),
+            ).animate(slide),
+            child: IgnorePointer(child: card),
+          ),
+        ],
       ),
     );
   }

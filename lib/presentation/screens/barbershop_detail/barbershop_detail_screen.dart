@@ -18,6 +18,7 @@ import '../../../data/models/service.dart';
 import '../../widgets/booking_kit.dart';
 import '../../widgets/directions_sheet.dart';
 import '../../widgets/dual_rating_row.dart';
+import '../../widgets/heart_burst.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/shop_art.dart';
@@ -309,12 +310,8 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    CircleBtn(
-                      icon: fav
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_outline_rounded,
-                      size: 42,
-                      iconColor: fav ? AppColors.red : p.text,
+                    HeartBurstButton(
+                      saved: fav,
                       onTap: () =>
                           AppState.instance.toggleFavourite(shop.id),
                     ),
@@ -823,14 +820,31 @@ class _StickyBookBar extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 1),
-              Text(
-                total == 0 ? L.bkPickAService : Money.som(total),
-                style: GoogleFonts.nunito(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: p.text,
+              // The price rolls to its new total as services are ticked, so
+              // each tick visibly adds to the bill instead of jumping.
+              if (total == 0)
+                Text(
+                  L.bkPickAService,
+                  style: GoogleFonts.nunito(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: p.text,
+                  ),
+                )
+              else
+                AnimatedCount(
+                  value: Money.toSom(total).toDouble(),
+                  duration: const Duration(milliseconds: 520),
+                  builder: (context, v) => Text(
+                    Money.somValue(v.round()),
+                    style: GoogleFonts.nunito(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: p.text,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(width: 14),
