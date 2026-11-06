@@ -644,8 +644,10 @@ class _VipSellCardState extends State<_VipSellCard>
                           Expanded(
                             child: Text(
                               vip && until != null
-                                  ? '${L.vipActiveChip} · ${DateFormat('d MMM').format(until)}'
-                                  : "${Money.group(AppState.vipMonthlySom)} so'm / ${L.perMonthShort}",
+                                  ? '${s.vipOnTrial ? L.vipTrialBadge : L.vipActiveChip} · ${DateFormat('d MMM').format(until)}'
+                                  : (s.vipTrialAvailable
+                                      ? L.vipTryFree
+                                      : "${Money.group(AppState.vipMonthlySom)} so'm / ${L.perMonthShort}"),
                               style: GoogleFonts.nunito(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w900,

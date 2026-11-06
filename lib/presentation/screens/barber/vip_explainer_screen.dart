@@ -37,6 +37,18 @@ class VipExplainerScreen extends StatelessWidget {
 
   static String _som(int v) => "${Money.group(v)} so'm";
 
+  /// The free week: no payment, once per account.
+  void _startTrial(BuildContext context) {
+    if (!AppState.instance.startVipTrial()) return;
+    HapticFeedback.heavyImpact();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(L.vipTrialStarted),
+        behavior: SnackBarBehavior.floating,
+      ));
+  }
+
   /// VIP is a subscription to a digital feature: Google Play Billing
   /// (server-verified), with the old sheet standing in where Play can't sell.
   Future<void> _activate(BuildContext context) async {
@@ -195,11 +207,15 @@ class VipExplainerScreen extends StatelessWidget {
                         until: s.vipUntil == null
                             ? ''
                             : DateFormat('d MMM yyyy').format(s.vipUntil!),
+                        trial: s.vipOnTrial,
                         savedSom: s.vipCommissionSavedSom,
                       )
                     : _CtaBar(
                         price: L.vipPerMonth(_som(AppState.vipMonthlySom)),
                         onActivate: () => _activate(context),
+                        onTrial: s.vipTrialAvailable
+                            ? () => _startTrial(context)
+                            : null,
                       ),
               ],
             ),
@@ -869,9 +885,12 @@ class _PerkRow extends StatelessWidget {
 
 // ── Sticky activate bar ─────────────────────────────────────────────────
 class _CtaBar extends StatelessWidget {
-  const _CtaBar({required this.price, required this.onActivate});
+  const _CtaBar({required this.price, required this.onActivate, this.onTrial});
   final String price;
   final VoidCallback onActivate;
+
+  /// Set while the free week is still available: it becomes the main button.
+  final VoidCallback? onTrial;
 
   @override
   Widget build(BuildContext context) {
@@ -918,13 +937,33 @@ class _CtaBar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          PrimaryButton(
-            label: L.vipActivate,
-            icon: Icons.rocket_launch_rounded,
-            style: PrimaryButtonStyle.lime,
-            height: 56,
-            onPressed: onActivate,
-          ),
+          if (onTrial != null) ...[
+            PrimaryButton(
+              label: L.vipTryFree,
+              icon: Icons.workspace_premium_rounded,
+              style: PrimaryButtonStyle.lime,
+              height: 56,
+              onPressed: onTrial,
+            ),
+            const SizedBox(height: 6),
+            Text(L.vipTrialNote,
+                textAlign: TextAlign.center,
+                style: AppTypography.caption(context)),
+            const SizedBox(height: 8),
+            PrimaryButton(
+              label: L.vipPayInstead,
+              style: PrimaryButtonStyle.ghost,
+              height: 48,
+              onPressed: onActivate,
+            ),
+          ] else
+            PrimaryButton(
+              label: L.vipActivate,
+              icon: Icons.rocket_launch_rounded,
+              style: PrimaryButtonStyle.lime,
+              height: 56,
+              onPressed: onActivate,
+            ),
         ],
       ),
     );
@@ -933,9 +972,10 @@ class _CtaBar extends StatelessWidget {
 
 // ── Sticky "already VIP" bar ────────────────────────────────────────────
 class _ActiveBar extends StatelessWidget {
-  const _ActiveBar({required this.until, this.savedSom = 0});
+  const _ActiveBar({required this.until, this.savedSom = 0, this.trial = false});
   final String until;
   final int savedSom;
+  final bool trial;
 
   @override
   Widget build(BuildContext context) {
@@ -992,7 +1032,7 @@ class _ActiveBar extends StatelessWidget {
                         color: _goldDeep,
                       ))
                 else if (until.isNotEmpty)
-                  Text(L.vipActiveUntil(until),
+                  Text(trial ? L.vipTrialUntil(until) : L.vipActiveUntil(until),
                       style: AppTypography.caption(context)),
               ],
             ),

@@ -1914,6 +1914,21 @@ class L {
       'Вы видели, что даёт Fade. VIP ставит вас впереди всех барберов района.',
       "Fade nima berishini ko'rdingiz. VIP sizni hududdagi barcha barberlardan oldinga qo'yadi.");
   static String get vipGetIt => _t('Get VIP', 'Подключить', 'Ulash');
+  static String get vipTryFree =>
+      _t('Try 7 days free', '7 дней бесплатно', '7 kun bepul');
+  static String get vipTrialStarted => _t(
+      'VIP is on: 7 days free 🎉', 'VIP включён: 7 дней бесплатно 🎉',
+      'VIP yoqildi: 7 kun bepul 🎉');
+  static String get vipTrialBadge =>
+      _t('Free trial', 'Пробный период', 'Sinov davri');
+  static String vipTrialUntil(String date) => _t('Free trial · until $date',
+      'Пробный период · до $date', 'Sinov davri · $date gacha');
+  static String get vipTrialNote => _t(
+      'No payment, nothing to cancel. Once per account.',
+      'Без оплаты, ничего не нужно отменять. Один раз на аккаунт.',
+      "To'lovsiz, bekor qilish shart emas. Har bir hisobga bir marta.");
+  static String get vipPayInstead =>
+      _t('Or pay for a month', 'Или оплатить месяц', 'Yoki bir oyga to\'lash');
   static String get vipManage => _t('Manage', 'Управлять', 'Boshqarish');
   static String get perMonthShort => _t('mo', 'мес', 'oy');
   static String get vipPerkGoldPin => _t('Gold pin on the map',

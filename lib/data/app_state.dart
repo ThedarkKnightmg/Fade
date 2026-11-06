@@ -1544,6 +1544,34 @@ class AppState extends ChangeNotifier
       _vipUntil != null && _vipUntil!.isAfter(DateTime.now());
   DateTime? get vipUntil => _vipUntil;
 
+  // ── Free trial ──────────────────────────────────────────────────────
+  // VIP can be tried for a week, once per account, with no payment: the
+  // way in while card payments aren't live, and the strongest reason to pay
+  // once they are (you already know what VIP does for your chair).
+  static const int vipTrialDays = 7;
+  static const int vipTrialBoosts = 2;
+  bool _vipTrialUsed = false;
+  bool _vipOnTrial = false;
+
+  /// The trial hasn't been used and VIP isn't already on.
+  bool get vipTrialAvailable => !_vipTrialUsed && !barberVip;
+
+  /// VIP is on because of the trial (not a paid month).
+  bool get vipOnTrial => barberVip && _vipOnTrial;
+
+  /// Start the free week. Returns false when it isn't available.
+  bool startVipTrial() {
+    if (!vipTrialAvailable) return false;
+    final now = DateTime.now();
+    _vipTrialUsed = true;
+    _vipOnTrial = true;
+    _vipUntil = now.add(const Duration(days: vipTrialDays));
+    _vipSince = now;
+    _boosts += vipTrialBoosts;
+    notifyListeners();
+    return true;
+  }
+
   /// The day a booking counts toward "this month" metrics — its completion day,
   /// falling back to the appointment date for older records with no completedAt.
   DateTime _completionDate(Booking b) => b.completedAt ?? b.dateTime;
@@ -1627,6 +1655,7 @@ class AppState extends ChangeNotifier
     final wasVip = barberVip;
     final base = wasVip ? _vipUntil! : DateTime.now();
     _vipUntil = base.add(const Duration(days: 30));
+    _vipOnTrial = false;
     // Mark the start of a fresh subscription period (renewing while still VIP
     // keeps the original start, so the savings window doesn't reset).
     if (!wasVip) _vipSince = DateTime.now();
@@ -2985,6 +3014,8 @@ class AppState extends ChangeNotifier
     final ds = sp.getString('desiredStyle');
     if (ds != null) _desiredStyleId = ds.isEmpty ? null : ds;
     _vipSince = _readEpoch(sp, 'vipSince');
+    _vipTrialUsed = sp.getBool('vipTrialUsed') ?? false;
+    _vipOnTrial = sp.getBool('vipOnTrial') ?? false;
     _loaded = true;
     notifyListeners();
   }
@@ -3128,6 +3159,8 @@ class AppState extends ChangeNotifier
     await sp.setBool('locPrompt', _locationPromptShown);
     await sp.setString('desiredStyle', _desiredStyleId ?? '');
     await _putEpoch(sp, 'vipSince', _vipSince);
+    await sp.setBool('vipTrialUsed', _vipTrialUsed);
+    await sp.setBool('vipOnTrial', _vipOnTrial);
   }
 
   static void _readReviewMap(Map<String, List<Review>> target, String? raw) {
@@ -3379,6 +3412,8 @@ class AppState extends ChangeNotifier
     _boosts = 2;
     _vipUntil = null;
     _vipSince = null;
+    _vipTrialUsed = false;
+    _vipOnTrial = false;
     _vipCommissionSavedSom = 0;
     _boostActiveUntil = null;
     _ledger.clear();
