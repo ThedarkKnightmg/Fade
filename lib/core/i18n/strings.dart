@@ -2252,6 +2252,40 @@ class L {
   static String get payDefault => _t('Default', 'По умолчанию', 'Asosiy');
   static String get payTopUpAmount =>
       _t('Top-up amount', 'Сумма пополнения', "To'ldirish summasi");
+  static String payFinishIn(String provider) => _t(
+      'Finish paying in $provider', 'Завершите оплату в $provider',
+      "$provider orqali to'lovni yakunlang");
+  static String payOpenAgain(String provider) =>
+      _t('Open $provider again', 'Открыть $provider снова', '$provider ni qayta ochish');
+  static String get payWaitingNote => _t(
+      "We'll update the moment the payment is confirmed. You can come back to this screen any time.",
+      'Обновим, как только платёж подтвердится. Можно вернуться сюда в любой момент.',
+      "To'lov tasdiqlanishi bilan yangilaymiz. Bu ekranga istalgan vaqtda qaytishingiz mumkin.");
+  static String get payFailedTitle =>
+      _t("Payment didn't go through", 'Оплата не прошла', "To'lov amalga oshmadi");
+  static String get payFailedSub => _t(
+      'Nothing was charged. You can try again.',
+      'Деньги не списаны. Можно попробовать ещё раз.',
+      "Pul yechilmadi. Qayta urinib ko'rishingiz mumkin.");
+  static String get paySignInFirst => _t(
+      'Sign in to pay, so the payment is saved to your account.',
+      'Войдите, чтобы оплата сохранилась в вашем аккаунте.',
+      "To'lov hisobingizga saqlanishi uchun tizimga kiring.");
+  static String get payCardsInside =>
+      _t('UzCard · Humo · Visa', 'UzCard · Humo · Visa', 'UzCard · Humo · Visa');
+  static String get payLiveNote => _t(
+      "You'll finish in the Payme or Click app. Fade never sees your card.",
+      'Оплата завершается в приложении Payme или Click. Fade не видит вашу карту.',
+      "To'lov Payme yoki Click ilovasida yakunlanadi. Fade kartangizni ko'rmaydi.");
+  static String get payTryAgain =>
+      _t('Try again', 'Попробовать снова', 'Qayta urinish');
+  static String get payNowTitle =>
+      _t('Pay now', 'Оплатить сейчас', "Hozir to'lash");
+  static String get payNowSub => _t(
+      'Optional: pay ahead with Payme or Click and just walk in.',
+      'По желанию: оплатите заранее через Payme или Click и просто приходите.',
+      "Ixtiyoriy: Payme yoki Click orqali oldindan to'lang va shunchaki keling.");
+  static String get paidBadge => _t('Paid', 'Оплачено', "To'langan");
   static String get payStubNote => _t(
       'Demo — no real charge. Connects to the provider in production.',
       'Демо — без реального списания. В продакшене — переход к провайдеру.',

@@ -4,7 +4,9 @@ import 'package:intl/intl.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/animations/motion.dart';
+import '../../../core/format/money.dart';
 import '../../../core/i18n/strings.dart';
+import '../../../core/payments/payments_api.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/calendar_link.dart';
@@ -15,6 +17,7 @@ import '../../../data/models/hairstyle.dart';
 import '../../widgets/paper_kit.dart';
 import '../../widgets/primary_button.dart';
 import '../game/games_sheet.dart';
+import '../payment/payment_sheet.dart';
 
 /// The peak-end moment: a stamp + confetti, a *variable* surprise reward
 /// (the slot-machine dopamine hit), and the loyalty punch-card advancing —
@@ -190,6 +193,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
+                  // --- Pay ahead (only when real payments are switched on) ---
+                  _PayAheadCard(booking: b),
                   // --- Loyalty advance (goal gradient at the peak) ---
                   FadeSlideIn(
                     delay: const Duration(milliseconds: 520),
@@ -337,6 +342,100 @@ class _RewardReveal extends StatelessWidget {
 
 /// Compact goal-gradient punch card — reinforces "you're almost to your next
 /// perk" at the exact moment satisfaction peaks.
+/// "Pay now" for a just-made booking, through Payme or Click.
+///
+/// Shown only when the server has merchant keys (PaymentsApi.isLive), so
+/// nobody is offered a payment that can't happen. The server prices the
+/// booking from its own row; the card just names which booking. After the
+/// provider confirms, it turns into a "Paid" receipt line.
+class _PayAheadCard extends StatefulWidget {
+  const _PayAheadCard({required this.booking});
+  final Booking booking;
+
+  @override
+  State<_PayAheadCard> createState() => _PayAheadCardState();
+}
+
+class _PayAheadCardState extends State<_PayAheadCard> {
+  bool _live = false;
+  bool _paid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    PaymentsApi.instance.isLive().then((v) {
+      if (mounted && v) setState(() => _live = true);
+    });
+  }
+
+  void _pay() {
+    final serverId = AppState.instance.serverBookingId(widget.booking.id);
+    if (serverId == null) {
+      // The booking is still syncing (or was made offline).
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(L.paySignInFirst)),
+      );
+      return;
+    }
+    showPaymentSheet(
+      context,
+      title: L.payNowTitle,
+      amountSom: Money.toSom(widget.booking.service.price),
+      purpose: PaymentPurpose.booking,
+      bookingId: serverId,
+      onPaid: (_) {
+        if (mounted) setState(() => _paid = true);
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_live) return const SizedBox.shrink();
+    final p = Paper.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: FadeSlideIn(
+        child: GestureDetector(
+          onTap: _paid ? null : _pay,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: clayDecoration(p, radius: 20),
+            child: Row(
+              children: [
+                Icon(
+                  _paid ? Icons.verified_rounded : Icons.payments_rounded,
+                  color: _paid ? AppColors.green : AppColors.accent,
+                  size: 26,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(_paid ? L.paidBadge : L.payNowTitle,
+                          style: AppTypography.h4(context)),
+                      if (!_paid) ...[
+                        const SizedBox(height: 2),
+                        Text(L.payNowSub,
+                            style: AppTypography.bodySmall(context)),
+                      ],
+                    ],
+                  ),
+                ),
+                if (!_paid)
+                  Text(Money.som(widget.booking.service.price),
+                      style: AppTypography.price(context)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _LoyaltyMini extends StatelessWidget {
   const _LoyaltyMini();
 

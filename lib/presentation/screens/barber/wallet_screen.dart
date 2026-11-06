@@ -7,6 +7,7 @@ import '../../../core/animations/app_animations.dart';
 import '../../../core/animations/motion.dart';
 import '../../../core/format/money.dart';
 import '../../../core/i18n/strings.dart';
+import '../../../core/payments/payments_api.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
@@ -241,6 +242,7 @@ class _WalletPocketState extends State<_WalletPocket>
       context,
       title: L.actTopUp,
       amountOptions: const [50000, 100000, 200000, 500000],
+      purpose: PaymentPurpose.walletTopup,
       onPaid: (som) {
         s.topUpWallet(som);
         HapticFeedback.mediumImpact();

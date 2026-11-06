@@ -2380,6 +2380,11 @@ class AppState extends ChangeNotifier
   /// reach the server row. Persisted alongside bookings so it survives relaunch.
   final Map<String, String> _remoteBookings = {};
 
+  /// The server's id for a local booking, once it has synced (null before,
+  /// or for demo/offline bookings). Real payments need it: the server prices
+  /// a booking from its own row, never from the app.
+  String? serverBookingId(String localId) => _remoteBookings[localId];
+
   List<Booking> bookingsByStatus(BookingStatus status) =>
       _bookings
           .where((b) => b.status == status && b.clientName == null)
