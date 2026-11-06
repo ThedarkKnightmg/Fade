@@ -56,11 +56,16 @@ class _Obj {
     required this.vrot,
     required this.size,
     this.isHalf = false,
+    this.hairColor,
   });
 
   final _Kind kind;
   double x, y, vx, vy, rot, vrot;
   final double size;
+
+  /// A real hair colour for a hair tuft (black, browns, blonde), so the field
+  /// reads as a barber's floor rather than ink blots. Null for everything else.
+  final Color? hairColor;
 
   /// Halves are the debris of a cut object: they still fall, but they can't be
   /// cut again and they never charge a miss.
@@ -122,6 +127,24 @@ class _ScissorMasterGameState extends State<ScissorMasterGame>
   int _streak = 0;
   static const _heatAt = 8;
   bool get _hot => _streak >= _heatAt;
+
+  /// The opening seconds, when a missed tuft costs nothing.
+  ///
+  /// Played cold, the first throw landed ~1.8s in and every miss cost a life,
+  /// so a newcomer was out in about five seconds, before learning that the
+  /// game is a swipe. The warm-up gives the hands time to find the rhythm;
+  /// the real round starts once it ends, with the full ramp still ahead.
+  static const double _warmup = 8;
+  bool get _warming => _elapsed < _warmup;
+
+  /// Natural hair colours a tuft can be.
+  static const _hairColors = [
+    Color(0xFF1C1814), // black
+    Color(0xFF3B2618), // dark brown
+    Color(0xFF6B4226), // chestnut
+    Color(0xFF8C6239), // light brown
+    Color(0xFFB98A4E), // dark blonde
+  ];
 
   String? _flash;
   double _flashFor = 0;
@@ -189,7 +212,9 @@ class _ScissorMasterGameState extends State<ScissorMasterGame>
       _awarded = 0;
       _streak = 0;
       _elapsed = 0;
-      _spawnIn = 0.4;
+      // The first tuft comes a beat later, alone and high, so the very first
+      // thing the player sees is one clear target.
+      _spawnIn = 0.9;
       _flash = null;
       _shake = 0;
       _damageFlash = 0;
@@ -229,19 +254,25 @@ class _ScissorMasterGameState extends State<ScissorMasterGame>
             ? _Kind.token
             : (roll > 0.96 ? _Kind.gold : _Kind.hair));
 
-    final x = w * (0.10 + _rng.nextDouble() * 0.80);
+    final first = _objects.isEmpty && _elapsed < 1.5;
+    final x = first ? w / 2 : w * (0.10 + _rng.nextDouble() * 0.80);
 
     // Two throw types. A lob hangs high and reads easily; a FLAT one is thrown
     // lower and much faster across the screen, so it is on and off before a
     // lazy swipe can reach it. Flat throws only appear as the ramp climbs —
     // they are the difference between "wait for it" and "react now".
-    final flat = _rng.nextDouble() < 0.34 * _rampT;
+    final flat = !_warming && _rng.nextDouble() < 0.34 * _rampT;
+    // Warm-up lobs hang higher: more time in the air to find the swipe.
     final peak = flat
         ? _field.height * (0.30 + _rng.nextDouble() * 0.14)
-        : _field.height * (0.52 + _rng.nextDouble() * 0.24);
+        : _field.height *
+            (_warming
+                ? 0.66 + _rng.nextDouble() * 0.14
+                : 0.52 + _rng.nextDouble() * 0.24);
     final vy = -math.sqrt(2 * _gravity * peak);
     final spread = flat ? 1.5 : 0.6;
-    final drift = (w / 2 - x) * (0.5 + _rng.nextDouble() * spread);
+    final drift =
+        first ? 0.0 : (w / 2 - x) * (0.5 + _rng.nextDouble() * spread);
 
     // Late tufts run a little smaller, so a sloppy stroke that used to clip
     // everything nearby now has to be aimed.
@@ -259,6 +290,9 @@ class _ScissorMasterGameState extends State<ScissorMasterGame>
               ? 34
               : (kind == _Kind.gold ? 30 : (kind == _Kind.token ? 30 : 32))) *
           shrink,
+      hairColor: kind == _Kind.hair
+          ? _hairColors[_rng.nextInt(_hairColors.length)]
+          : null,
     ));
   }
 
@@ -316,7 +350,9 @@ class _ScissorMasterGameState extends State<ScissorMasterGame>
         // are debris and never charge anything.
         if (o.y > _field.height + 60 && !o.counted) {
           o.counted = true;
-          if (o.kind != _Kind.comb && !o.isHalf) _loseLife(L.gameMissedHair);
+          if (o.kind != _Kind.comb && !o.isHalf && !_warming) {
+            _loseLife(L.gameMissedHair);
+          }
         }
       }
       _objects.removeWhere(
@@ -436,7 +472,13 @@ class _ScissorMasterGameState extends State<ScissorMasterGame>
       _streak++;
       // Crossing into "on fire" is announced once, not every cut after it.
       if (_streak == _heatAt) {
-        _flash = L.gameOnFire;
+        // ...and wins back a lost life: a comeback you can see coming.
+        final healed = _livesLeft < _lives;
+        if (healed) {
+          _livesLeft++;
+          _popups.add(_Popup(o.x, o.y - 26, '+1 ✂', const Color(0xFFFF8A00)));
+        }
+        _flash = healed ? L.gameLifeBack : L.gameOnFire;
         _flashFor = 1.4;
         _shake = math.max(_shake, 10);
         HapticFeedback.heavyImpact();
@@ -468,7 +510,9 @@ class _ScissorMasterGameState extends State<ScissorMasterGame>
       _splitInTwo(o, seg);
       _burst(
         centre,
-        o.kind == _Kind.gold ? const Color(0xFFE0A106) : Paper.of(context).text,
+        o.kind == _Kind.gold
+            ? const Color(0xFFE0A106)
+            : (o.hairColor ?? Paper.of(context).text),
         o.kind == _Kind.gold ? 16 : 10,
       );
       _popups.add(_Popup(
@@ -499,6 +543,7 @@ class _ScissorMasterGameState extends State<ScissorMasterGame>
         vrot: o.vrot + sign * 6.5,
         size: o.size * 0.58,
         isHalf: true,
+        hairColor: o.hairColor,
       ));
     }
   }
@@ -639,7 +684,21 @@ class _ScissorMasterGameState extends State<ScissorMasterGame>
                               SizedBox(
                                 height: 22,
                                 child: _flash == null
-                                    ? null
+                                    ? (_phase == _Phase.running && _warming
+                                        ? Text(
+                                            AppState.instance.fadeGameIsNew &&
+                                                    _elapsed < 3
+                                                ? L.gameWarmupHint
+                                                : L.gameWarmup(
+                                                    (_warmup - _elapsed).ceil()),
+                                            style: AppTypography.bodySmall(
+                                                    context)
+                                                .copyWith(
+                                              color: p.textSecondary,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          )
+                                        : null)
                                     : Text(
                                         _flash!,
                                         style: AppTypography.bodySmall(context)
@@ -1053,7 +1112,8 @@ class _FieldPainter extends CustomPainter {
       final alpha = o.fade.clamp(0.0, 1.0);
       switch (o.kind) {
         case _Kind.hair:
-          _paintTuft(canvas, o.size, palette.text.withValues(alpha: alpha));
+          _paintTuft(canvas, o.size,
+              (o.hairColor ?? palette.text).withValues(alpha: alpha));
         case _Kind.gold:
           _paintTuft(
               canvas, o.size, const Color(0xFFE0A106).withValues(alpha: alpha));

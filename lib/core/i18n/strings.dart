@@ -83,6 +83,26 @@ class L {
   static String get gameLegend => _t('LEGEND!', 'ЛЕГЕНДА!', 'AFSONA!');
   static String get gameOops => _t('Oops!', 'Ой!', 'Voy!');
   static String get gameOnFire => _t('ON FIRE', 'В УДАРЕ', 'ALANGADA');
+  static String gamesCoinsLeft(int left, int total) => _t(
+      'Today: $left of $total coins left to win',
+      'Сегодня можно выиграть ещё $left из $total монет',
+      "Bugun yana $left/$total tanga yutish mumkin");
+  static String lineGameHandsLeft(int n) => _t(
+      n == 1 ? '1 steady hand left' : '$n steady hands left',
+      'Осталось твёрдых рук: $n',
+      'Qolgan mustahkam qo\'llar: $n');
+  static String get lineGameRetry =>
+      _t('Try this line again', 'Ещё раз эту линию', 'Bu chiziqni qayta');
+  static String get lineGameStartHere =>
+      _t('Start here', 'Начните здесь', 'Shu yerdan boshlang');
+  static String gameWarmup(int seconds) => _t(
+      'Warm-up · misses are free · $seconds',
+      'Разминка · промахи не считаются · $seconds',
+      "Qizish · xatolar hisoblanmaydi · $seconds");
+  static String get gameWarmupHint => _t(
+      'Swipe through the hair', 'Проведите по волосам', "Soch ustidan suring");
+  static String get gameLifeBack =>
+      _t('ON FIRE · +1 life', 'В УДАРЕ · +1 жизнь', "ALANGADA · +1 jon");
 
   // ── Second game: "Toza chiziq" (Clean Line) ───────────
   static String get gamesTitle => _t('Games', 'Игры', 'Oʻyinlar');

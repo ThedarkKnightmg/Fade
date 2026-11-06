@@ -31,10 +31,49 @@ class CleanLineGame extends StatefulWidget {
   State<CleanLineGame> createState() => _CleanLineGameState();
 }
 
-enum _Phase { idle, drawing, slipped, done }
+/// retry: a hand slipped but another is left, so the same line is tried again.
+enum _Phase { idle, drawing, retry, slipped, done }
 
-class _CleanLineGameState extends State<CleanLineGame> {
+class _CleanLineGameState extends State<CleanLineGame>
+    with SingleTickerProviderStateMixin {
   final _rng = math.Random();
+
+  /// Slips a run can survive. One slip used to end the whole run, so a single
+  /// twitch on level 1 sent you back to the menu before the game had started.
+  static const _handsPerRun = 2;
+  int _hands = _handsPerRun;
+
+  /// Where the hand slipped, shown as a mark so the miss can be learned from.
+  Offset? _slipAt;
+
+  /// Pulses the start marker until the trace begins.
+  late final AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  void _syncPulse() {
+    final want = _phase == _Phase.drawing &&
+        _progress == 0 &&
+        !(MediaQuery.maybeOf(context)?.disableAnimations ?? false);
+    if (want && !_pulse.isAnimating) {
+      _pulse.repeat();
+    } else if (!want && _pulse.isAnimating) {
+      _pulse.stop();
+    }
+  }
 
   _Phase _phase = _Phase.idle;
   Size _field = Size.zero;
@@ -64,6 +103,8 @@ class _CleanLineGameState extends State<CleanLineGame> {
       _level = 1;
       _score = 0;
       _awarded = 0;
+      _hands = _handsPerRun;
+      _slipAt = null;
       _buildGuide();
     });
   }
@@ -72,7 +113,18 @@ class _CleanLineGameState extends State<CleanLineGame> {
     setState(() {
       _level++;
       _phase = _Phase.drawing;
+      _slipAt = null;
       _buildGuide();
+    });
+  }
+
+  /// Same line, fresh attempt (after a slip with a hand to spare).
+  void _retryLine() {
+    setState(() {
+      _phase = _Phase.drawing;
+      _progress = 0;
+      _errors.clear();
+      _slipAt = null;
     });
   }
 
@@ -128,7 +180,10 @@ class _CleanLineGameState extends State<CleanLineGame> {
     if (bestI < 0) return;
 
     if (bestD > _tolerance) {
-      _slip();
+      // Before the trace has begun, a finger elsewhere isn't a slip; it just
+      // hasn't found the start yet. (It used to end the run on touch-down.)
+      if (_progress == 0) return;
+      _slip(at: p);
       return;
     }
 
@@ -139,9 +194,15 @@ class _CleanLineGameState extends State<CleanLineGame> {
     });
   }
 
-  void _slip() {
+  void _slip({Offset? at}) {
     if (_phase != _Phase.drawing) return;
     HapticFeedback.heavyImpact();
+    _slipAt = at ?? (_progress < _guide.length ? _guide[_progress] : null);
+    _hands--;
+    if (_hands > 0) {
+      setState(() => _phase = _Phase.retry);
+      return;
+    }
     _wasRecord = AppState.instance.recordLineGameScore(_score);
     setState(() => _phase = _Phase.slipped);
   }
@@ -188,9 +249,22 @@ class _CleanLineGameState extends State<CleanLineGame> {
                     onTap: () => Navigator.of(context).maybePop(),
                   ),
                   const Spacer(),
-                  if (_phase == _Phase.drawing)
-                    MiniPill('${L.lineGameLevel} $_level')
-                  else
+                  if (_phase == _Phase.drawing) ...[
+                    // Steady hands left this run.
+                    for (var i = 0; i < _handsPerRun; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Icon(
+                          Icons.back_hand_rounded,
+                          size: 18,
+                          color: i < _hands
+                              ? AppColors.accent
+                              : p.textTertiary.withValues(alpha: 0.35),
+                        ),
+                      ),
+                    const SizedBox(width: 6),
+                    MiniPill('${L.lineGameLevel} $_level'),
+                  ] else
                     FadePointsPill(
                       som: state.pointsBalanceSom,
                       scale: 0.82,
@@ -211,6 +285,7 @@ class _CleanLineGameState extends State<CleanLineGame> {
                       if (mounted) setState(_buildGuide);
                     });
                   }
+                  _syncPulse();
                   return GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onPanUpdate: (d) => _onDrag(d.localPosition),
@@ -229,6 +304,9 @@ class _CleanLineGameState extends State<CleanLineGame> {
                               palette: p,
                               tolerance: _tolerance,
                               live: _phase == _Phase.drawing,
+                              pulse: _pulse,
+                              slipAt: _slipAt,
+                              startLabel: L.lineGameStartHere,
                             ),
                           ),
                         ),
@@ -266,7 +344,7 @@ class _CleanLineGameState extends State<CleanLineGame> {
   Widget _overlay(BuildContext context, PaperPalette p) {
     final body = AppTypography.body(context).copyWith(color: p.textSecondary);
     return Container(
-      color: p.bg.withValues(alpha: 0.90),
+      color: p.bg.withValues(alpha: _phase == _Phase.retry ? 0.62 : 0.90),
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -286,6 +364,14 @@ class _CleanLineGameState extends State<CleanLineGame> {
             Text(L.lineGameTitle, style: AppTypography.h2(context)),
             const SizedBox(height: 8),
             Text(L.lineGameHowTo, textAlign: TextAlign.center, style: body),
+          ] else if (_phase == _Phase.retry) ...[
+            Text(
+              L.lineGameSlipped,
+              style: AppTypography.h2(context)
+                  .copyWith(color: const Color(0xFFE2554E)),
+            ),
+            const SizedBox(height: 8),
+            Text(L.lineGameHandsLeft(_hands), style: body),
           ] else if (_phase == _Phase.slipped) ...[
             Text(
               L.lineGameSlipped,
@@ -317,14 +403,23 @@ class _CleanLineGameState extends State<CleanLineGame> {
           SizedBox(
             width: 220,
             child: PrimaryButton(
-              label: _phase == _Phase.idle
-                  ? L.gamePlay
-                  : (_phase == _Phase.done ? L.continueWord : L.gameAgain),
+              label: switch (_phase) {
+                _Phase.idle => L.gamePlay,
+                _Phase.done => L.continueWord,
+                _Phase.retry => L.lineGameRetry,
+                _ => L.gameAgain,
+              },
               icon: _phase == _Phase.done
                   ? Icons.arrow_forward_rounded
-                  : Icons.play_arrow_rounded,
+                  : (_phase == _Phase.retry
+                      ? Icons.refresh_rounded
+                      : Icons.play_arrow_rounded),
               height: 52,
-              onPressed: _phase == _Phase.done ? _nextLevel : _start,
+              onPressed: switch (_phase) {
+                _Phase.done => _nextLevel,
+                _Phase.retry => _retryLine,
+                _ => _start,
+              },
             ),
           ),
         ],
@@ -355,23 +450,78 @@ class _RewardChip extends StatelessWidget {
 }
 
 class _LinePainter extends CustomPainter {
-  const _LinePainter({
+  _LinePainter({
     required this.guide,
     required this.progress,
     required this.palette,
     required this.tolerance,
     required this.live,
-  });
+    required this.pulse,
+    required this.startLabel,
+    this.slipAt,
+  }) : super(repaint: pulse);
 
   final List<Offset> guide;
   final int progress;
   final PaperPalette palette;
   final double tolerance;
   final bool live;
+  final Animation<double> pulse;
+  final String startLabel;
+  final Offset? slipAt;
+
+  /// The head the fade is cut on: a faint silhouette, with the hair side
+  /// (above the line) shaded, so the line reads as a fade on a real head
+  /// instead of a squiggle on grey.
+  void _paintHead(Canvas canvas, Size size) {
+    final head = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height * 0.50),
+      width: size.width * 0.94,
+      height: size.height * 0.78,
+    );
+    final shape = Path()..addOval(head);
+    canvas.drawPath(
+      shape,
+      Paint()..color = palette.textTertiary.withValues(alpha: 0.05),
+    );
+    // Hair above the line, inside the head.
+    final hair = Path()..moveTo(guide.first.dx - tolerance * 3, guide.first.dy);
+    for (final g in guide) {
+      hair.lineTo(g.dx, g.dy);
+    }
+    hair
+      ..lineTo(guide.last.dx + tolerance * 3, guide.last.dy)
+      ..lineTo(size.width, 0)
+      ..lineTo(0, 0)
+      ..close();
+    canvas.save();
+    canvas.clipPath(shape);
+    canvas.drawPath(
+      Path.combine(PathOperation.intersect, hair, shape),
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            palette.text.withValues(alpha: 0.10),
+            palette.text.withValues(alpha: 0.03),
+          ],
+        ).createShader(head),
+    );
+    canvas.restore();
+    canvas.drawPath(
+      shape,
+      Paint()
+        ..color = palette.textTertiary.withValues(alpha: 0.18)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4,
+    );
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     if (guide.isEmpty) return;
+    _paintHead(canvas, size);
 
     // The corridor, drawn at the real tolerance width. Showing it makes the
     // difficulty legible instead of something you only discover by failing.
@@ -409,6 +559,49 @@ class _LinePainter extends CustomPainter {
       // The leading edge — where the blade is right now.
       canvas.drawCircle(guide[progress], 9, Paint()..color = AppColors.accent);
       canvas.drawCircle(guide[progress], 4, Paint()..color = Colors.white);
+    }
+
+    // Where to begin: a pulsing ring on the line's first point, labelled,
+    // until the trace starts.
+    if (live && progress == 0) {
+      final s = guide.first;
+      final v = pulse.value;
+      canvas.drawCircle(
+        s,
+        12 + 16 * v,
+        Paint()
+          ..color = AppColors.accent.withValues(alpha: 0.35 * (1 - v))
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3,
+      );
+      canvas.drawCircle(s, 10, Paint()..color = AppColors.accent);
+      canvas.drawCircle(s, 4, Paint()..color = Colors.white);
+      final tp = TextPainter(
+        text: TextSpan(
+          text: startLabel,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            color: AppColors.accent,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(s.dx - 6, s.dy - 34));
+    }
+
+    // Where the hand slipped.
+    final at = slipAt;
+    if (at != null) {
+      final red = Paint()
+        ..color = const Color(0xFFE2554E)
+        ..strokeWidth = 3.2
+        ..strokeCap = StrokeCap.round;
+      const r = 9.0;
+      canvas.drawCircle(at, 16,
+          Paint()..color = const Color(0xFFE2554E).withValues(alpha: 0.16));
+      canvas.drawLine(at + const Offset(-r, -r), at + const Offset(r, r), red);
+      canvas.drawLine(at + const Offset(-r, r), at + const Offset(r, -r), red);
     }
   }
 

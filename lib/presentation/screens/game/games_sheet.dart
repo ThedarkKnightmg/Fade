@@ -155,6 +155,10 @@ void showGamesSheet(BuildContext context) {
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              // Today's coin allowance, shared by both games: what's left to
+              // win, as a bar, so there's a visible reason to play today.
+              const _CoinsToday(),
               const SizedBox(height: 16),
               _GameRow(
                 icon: Icons.content_cut_rounded,
@@ -207,9 +211,8 @@ class _GameRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
-    return GestureDetector(
+    return PressableScale(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -250,6 +253,52 @@ class _GameRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CoinsToday extends StatelessWidget {
+  const _CoinsToday();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Paper.of(context);
+    final left = AppState.instance.tokensLeftToday;
+    const total = MiniGameState.dailyTokenCap;
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          L.gamesCoinsLeft(left, total),
+          style: AppTypography.bodySmall(context)
+              .copyWith(fontWeight: FontWeight.w800, color: p.textSecondary),
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: SizedBox(
+            height: 6,
+            child: Stack(
+              children: [
+                Positioned.fill(child: ColoredBox(color: p.cardAlt)),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: left / total),
+                  duration: Duration(milliseconds: reduce ? 0 : 700),
+                  curve: AppCurves.easeOutQuart,
+                  builder: (context, v, _) => FractionallySizedBox(
+                    widthFactor: v,
+                    child: const DecoratedBox(
+                      decoration:
+                          BoxDecoration(gradient: FadePointsPill.gradient),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
