@@ -1913,6 +1913,10 @@ class L {
       _t('$som / month', '$som / месяц', '$som / oy');
   static String get buyVipNow =>
       _t('Activate VIP Boost', 'Активировать VIP', 'VIP faollashtirish');
+  static String get playPending => _t(
+      "Payment pending. It'll be added as soon as Google Play confirms it.",
+      'Платёж в обработке. Добавим, как только Google Play подтвердит.',
+      "To'lov kutilmoqda. Google Play tasdiqlashi bilan qo'shiladi.");
   static String get vipActivated => _t('VIP active — you\'re boosted 🚀',
       'VIP активен — вы в топе 🚀', 'VIP faol — siz tepadasiz 🚀');
   static String vipActiveUntil(String date) =>

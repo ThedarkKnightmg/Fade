@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/animations/app_animations.dart';
 import '../../../core/format/money.dart';
 import '../../../core/i18n/strings.dart';
+import '../../../core/payments/play_billing.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
@@ -42,7 +43,32 @@ class _BoostScreenState extends State<BoostScreen> {
     }
   }
 
-  void _buyPack(BoostPack pack) {
+  /// Boosts are a digital feature, so they're sold through Google Play
+  /// Billing (server-verified). Where Play can't sell (web, debug, products
+  /// not created yet) the old sheet stands in: a demo in debug, "launching
+  /// soon" in release.
+  Future<void> _buyPack(BoostPack pack) async {
+    final product =
+        await PlayBilling.instance.product(PlayBilling.boostProductId(pack.id));
+    if (!mounted) return;
+    if (product != null) {
+      final r = await PlayBilling.instance.buy(product);
+      if (!mounted) return;
+      switch (r.outcome) {
+        case PlayOutcome.granted:
+          // The grant itself arrives through PlayBilling.onGrant (main.dart).
+          HapticFeedback.heavyImpact();
+          _toast(L.upsAddedToast(pack.count));
+        case PlayOutcome.pending:
+          _toast(L.playPending);
+        case PlayOutcome.failed:
+        case PlayOutcome.unavailable:
+          _toast(L.payFailedSub);
+        case PlayOutcome.cancelled:
+          break;
+      }
+      return;
+    }
     showPaymentSheet(
       context,
       title: L.upsUnit(pack.count),

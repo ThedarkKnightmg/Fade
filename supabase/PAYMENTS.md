@@ -75,3 +75,29 @@ No new app build is needed.
 - The 5% booking commission is still deducted on the phone (see
   `wallet.dart`). The server wallet holds top-ups; moving commission
   deduction server-side is the next step before scale.
+
+## VIP and Boost: Google Play Billing
+
+Play requires in-app digital features to be sold through Play Billing, so VIP
+and Boost never go through Payme/Click. Built and tested (`node --test
+supabase/tests/play.test.ts`); it switches on once these exist:
+
+1. **Play Console → Monetize → Products**
+   - In-app products (consumable): `fade_boost_starter` (3 boosts),
+     `fade_boost_growth` (10), `fade_boost_pro` (25)
+   - Subscription: `fade_vip_monthly` (1 month)
+2. **Play Console → Setup → API access**: link a Google Cloud service account
+   and grant it "View financial data" and "Manage orders and subscriptions".
+   Download its JSON key.
+3. Deploy and set the secret:
+
+```bash
+supabase db push
+supabase functions deploy play-verify
+supabase secrets set GOOGLE_SERVICE_ACCOUNT_JSON="$(cat service-account.json)"
+```
+
+The app asks `play-verify`, which asks Google, before granting. Each purchase
+token grants once, to one account. Purchases that finish while the app is
+closed are picked up at the next launch. Until the products exist, the Boost
+and VIP buttons show "launching soon" in release builds.

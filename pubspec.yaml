@@ -43,6 +43,7 @@ dependencies:
   mobile_scanner: ^5.2.3
   # Used at runtime to downscale AI-studio selfies before upload (and by tools).
   image: ^4.3.0
+  in_app_purchase: ^3.3.1
 
 dev_dependencies:
   flutter_test:

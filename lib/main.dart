@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
 import 'core/notifications/notify.dart';
+import 'core/payments/play_billing.dart';
 import 'core/supabase/supabase_service.dart';
 import 'core/theme/app_theme.dart';
 import 'data/app_state.dart';
@@ -36,6 +37,17 @@ Future<void> main() async {
   // Pull bookings the server says are mine — as a client AND as a barber. This
   // is what makes a request booked on one phone show up on the other one.
   AppState.instance.syncBookings();
+  // Google Play Billing (VIP / Boost): mirror server-verified grants into the
+  // app, and pick up purchases that finished while the app was closed.
+  PlayBilling.instance.onGrant = (productId, _) {
+    final pack = PlayBilling.packIdOf(productId);
+    if (productId == PlayBilling.vipProductId) {
+      AppState.instance.activateVipBoost();
+    } else if (pack != null) {
+      AppState.instance.buyBoostPack(pack);
+    }
+  };
+  PlayBilling.instance.start();
   // Localize dates/times to the saved language — without this every DateFormat
   // (weekday/month names) renders in English even in RU/UZ.
   await initializeDateFormatting();

@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../core/animations/app_animations.dart';
 import '../../../core/format/money.dart';
 import '../../../core/i18n/strings.dart';
+import '../../../core/payments/play_billing.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
@@ -36,7 +37,35 @@ class VipExplainerScreen extends StatelessWidget {
 
   static String _som(int v) => "${Money.group(v)} so'm";
 
-  void _activate(BuildContext context) {
+  /// VIP is a subscription to a digital feature: Google Play Billing
+  /// (server-verified), with the old sheet standing in where Play can't sell.
+  Future<void> _activate(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+    void toast(String m) => messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+          SnackBar(content: Text(m), behavior: SnackBarBehavior.floating));
+    final product =
+        await PlayBilling.instance.product(PlayBilling.vipProductId);
+    if (product != null) {
+      final r = await PlayBilling.instance.buy(product);
+      switch (r.outcome) {
+        case PlayOutcome.granted:
+          HapticFeedback.heavyImpact();
+          toast(L.vipActivated);
+          nav.maybePop();
+        case PlayOutcome.pending:
+          toast(L.playPending);
+        case PlayOutcome.failed:
+        case PlayOutcome.unavailable:
+          toast(L.payFailedSub);
+        case PlayOutcome.cancelled:
+          break;
+      }
+      return;
+    }
+    if (!context.mounted) return;
     showPaymentSheet(
       context,
       title: L.tierVipTitle,
