@@ -35,7 +35,7 @@ const LinearGradient _goldGradient = LinearGradient(
 class VipExplainerScreen extends StatelessWidget {
   const VipExplainerScreen({super.key});
 
-  static String _som(int v) => "${Money.group(v)} so'm";
+  static String _som(int v) => "${Money.group(v)} so‘m";
 
   /// The free week: no payment, once per account.
   void _startTrial(BuildContext context) {
@@ -1025,7 +1025,7 @@ class _ActiveBar extends StatelessWidget {
                       color: p.text,
                     )),
                 if (savedSom > 0)
-                  Text(L.vipSavedSoFar("${Money.group(savedSom)} so'm"),
+                  Text(L.vipSavedSoFar("${Money.group(savedSom)} so‘m"),
                       style: GoogleFonts.nunito(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,

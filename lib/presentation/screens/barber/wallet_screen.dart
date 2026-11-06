@@ -387,7 +387,7 @@ class _WalletPocketState extends State<_WalletPocket>
                                   Padding(
                                     padding: const EdgeInsets.only(
                                         left: 6, bottom: 5),
-                                    child: Text("so'm",
+                                    child: Text("so‘m",
                                         style: GoogleFonts.nunito(
                                           fontSize: 17,
                                           fontWeight: FontWeight.w800,
@@ -569,7 +569,7 @@ class _Odometer extends StatelessWidget {
     var fromRight = chars.where(isDigit).length;
     // Read as one number, not as a dozen separate glyphs.
     return Semantics(
-      label: "$text so'm",
+      label: "$text so‘m",
       excludeSemantics: true,
       child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -1089,7 +1089,7 @@ class _LedgerRow extends StatelessWidget {
                       fontWeight: FontWeight.w900,
                       color: tx.credit ? AppColors.green : AppColors.red,
                     )),
-                Text("so'm", style: AppTypography.caption(context)),
+                Text("so‘m", style: AppTypography.caption(context)),
               ],
             ),
         ],

@@ -454,7 +454,7 @@ class _SummaryCard extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                         color: p.text)),
               ),
-              sub: "so'm",
+              sub: "so‘m",
               label: L.earnedCap,
             ),
           ),
@@ -626,7 +626,7 @@ class _ClientRow extends StatelessWidget {
                       fontSize: 15,
                       fontWeight: FontWeight.w900,
                       color: AppColors.green)),
-              Text("SO'M",
+              Text("SO‘M",
                   style: GoogleFonts.nunito(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w800,
@@ -700,7 +700,7 @@ class _HistoryRow extends StatelessWidget {
                       fontSize: 15,
                       fontWeight: FontWeight.w900,
                       color: AppColors.green)),
-              Text("SO'M",
+              Text("SO‘M",
                   style: GoogleFonts.nunito(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w800,

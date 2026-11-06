@@ -32,7 +32,7 @@ class Money {
   static String som(num usd) => somValue(toSom(usd));
 
   /// Full label from a so'm amount already in so'm.
-  static String somValue(int som) => "${group(som)}${_nbsp}so'm";
+  static String somValue(int som) => "${group(som)}${_nbsp}so‘m";
 
   /// Compact label for tight spots (map pins): "360k", "1.2 mln".
   static String compact(num usd) {

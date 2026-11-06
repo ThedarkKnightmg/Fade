@@ -705,7 +705,7 @@ class _PackCard extends StatelessWidget {
                     ],
                   ],
                 ),
-                Text(L.perBoostLabel("${Money.group(pack.perBoostSom)} so'm"),
+                Text(L.perBoostLabel("${Money.group(pack.perBoostSom)} so‘m"),
                     style: AppTypography.caption(context)),
               ],
             ),
@@ -721,7 +721,7 @@ class _PackCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
-                "${Money.group(pack.priceSom)} so'm",
+                "${Money.group(pack.priceSom)} so‘m",
                 style: GoogleFonts.nunito(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w900,

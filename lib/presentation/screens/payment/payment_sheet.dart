@@ -373,7 +373,7 @@ class _PaymentSheetState extends State<_PaymentSheet> {
                       border: Border.all(
                           color: _amount == a ? AppColors.accent : p.border),
                     ),
-                    child: Text("${Money.group(a)} so'm",
+                    child: Text("${Money.group(a)} so‘m",
                         style: GoogleFonts.nunito(
                           fontSize: 14,
                           fontWeight: FontWeight.w900,
@@ -464,7 +464,7 @@ class _PaymentSheetState extends State<_PaymentSheet> {
         Text(L.payFinishIn(_brand.name),
             textAlign: TextAlign.center, style: AppTypography.h3(context)),
         const SizedBox(height: 4),
-        Text("${Money.group(_start?.amountSom ?? _amount)} so'm",
+        Text("${Money.group(_start?.amountSom ?? _amount)} so‘m",
             style: AppTypography.bodySmall(context)),
         const SizedBox(height: 8),
         Text(L.payWaitingNote,
@@ -620,7 +620,7 @@ class _PaymentSheetState extends State<_PaymentSheet> {
         Text(done ? L.paySuccess : L.payVia(_brand.name),
             style: AppTypography.h3(context)),
         const SizedBox(height: 4),
-        Text("${Money.group(_amount)} so'm",
+        Text("${Money.group(_amount)} so‘m",
             style: AppTypography.bodySmall(context)),
         const SizedBox(height: 26),
       ],

@@ -2759,7 +2759,7 @@ class _MoneyChip extends StatelessWidget {
               ),
             ),
             Text(
-              "so'm",
+              "so‘m",
               style: GoogleFonts.nunito(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,

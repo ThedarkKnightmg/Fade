@@ -34,7 +34,7 @@ void main() {
 
   // The odometer's one-number label for screen readers.
   Finder balanceLabel(int som) => find.byWidgetPredicate((w) =>
-      w is Semantics && w.properties.label == "${Money.group(som)} so'm");
+      w is Semantics && w.properties.label == "${Money.group(som)} so‘m");
 
   void ignoreOverflow() {
     // The test font (Ahem) is wider than Nunito; layout overflow here is an

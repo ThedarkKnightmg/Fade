@@ -1125,7 +1125,7 @@ class _FilterBar extends StatelessWidget {
             ],
             _FilterChip(
               label: maxSom != null
-                  ? "≤ ${Money.group(maxSom!)} so'm"
+                  ? "≤ ${Money.group(maxSom!)} so‘m"
                   : L.mapFilterPrice,
               icon: Icons.savings_rounded,
               selected: maxSom != null,
@@ -1209,7 +1209,7 @@ class _PriceSheetState extends State<_PriceSheet> {
                   fontSize: 22, fontWeight: FontWeight.w900, color: p.text),
               decoration: InputDecoration(
                 hintText: '120 000',
-                suffixText: "so'm",
+                suffixText: "so‘m",
                 counterText: '',
               ),
             ),

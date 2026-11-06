@@ -504,7 +504,7 @@ class _GoalPage extends StatelessWidget {
                           color: p.text),
                     ),
                     TextSpan(
-                      text: "  so'm",
+                      text: "  so‘m",
                       style: GoogleFonts.nunito(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,

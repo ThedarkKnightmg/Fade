@@ -454,7 +454,7 @@ class _VipValueStrip extends StatelessWidget {
     if (isVip) {
       title = L.vipSavedTitle;
       sub = savedThisMonthSom > 0
-          ? L.vipSavedThisMonth("${Money.group(savedThisMonthSom)} so'm")
+          ? L.vipSavedThisMonth("${Money.group(savedThisMonthSom)} so‘m")
           : L.milestoneReachedSub;
     } else if (reached) {
       title = L.milestoneReachedTitle;

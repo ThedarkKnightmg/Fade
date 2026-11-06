@@ -149,7 +149,7 @@ class _TotalCard extends StatelessWidget {
                 AnimatedCount(
                   value: totalSom.toDouble(),
                   builder: (context, v) => Text(
-                    "${Money.group(v.round())} so'm",
+                    "${Money.group(v.round())} so‘m",
                     style: GoogleFonts.nunito(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
@@ -202,7 +202,7 @@ class _ServiceBar extends StatelessWidget {
                       color: p.text,
                     )),
               ),
-              Text("${Money.group(revenueSom)} so'm",
+              Text("${Money.group(revenueSom)} so‘m",
                   style: GoogleFonts.nunito(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w900,

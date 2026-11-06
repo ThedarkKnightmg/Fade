@@ -700,7 +700,7 @@ class _VipSellCardState extends State<_VipSellCard>
                                   ? '${s.vipOnTrial ? L.vipTrialBadge : L.vipActiveChip} · ${DateFormat('d MMM').format(until)}'
                                   : (s.vipTrialAvailable
                                       ? L.vipTryFree
-                                      : "${Money.group(AppState.vipMonthlySom)} so'm / ${L.perMonthShort}"),
+                                      : "${Money.group(AppState.vipMonthlySom)} so‘m / ${L.perMonthShort}"),
                               style: GoogleFonts.nunito(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w900,
@@ -1532,7 +1532,7 @@ class _WalletTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      "${Money.group(s.walletSom)} so'm",
+                      "${Money.group(s.walletSom)} so‘m",
                       style: GoogleFonts.nunito(
                         fontSize: 26,
                         fontWeight: FontWeight.w900,
