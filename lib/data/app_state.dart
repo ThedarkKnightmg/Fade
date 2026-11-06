@@ -2722,7 +2722,11 @@ class AppState extends ChangeNotifier
       _user = AppUser.empty;
     }
     _userPhoto = _decodePhoto(sp.getString('cl_photo'));
-    _aiEndpoint = sp.getString('aiEndpoint') ?? _aiEndpoint;
+    // A blank saved value (an old build, or a cleared field) would switch
+    // the free AI off for good with no way back for a normal user; keep the
+    // shipped worker instead.
+    final savedAi = sp.getString('aiEndpoint')?.trim() ?? '';
+    if (savedAi.isNotEmpty) _aiEndpoint = savedAi;
     _geminiKey = sp.getString('geminiKey') ?? _geminiKey;
     _aiConsent = sp.getBool('aiConsent') ?? _aiConsent;
     // Restore the user's own bookings, skipping any id already seeded.

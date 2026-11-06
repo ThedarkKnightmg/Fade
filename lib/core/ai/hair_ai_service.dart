@@ -35,7 +35,45 @@ class HairAiService {
 
   final http.Client _client;
 
+  /// How many times a blank render is retried before giving up.
+  static const int blankRetries = 2;
+
+  /// A real edit is hundreds of KB; the free model's failed frames are a
+  /// solid black PNG of about 1-2 KB, returned with HTTP 200.
+  static bool looksBlank(Uint8List image) => image.length < 12000;
+
+  /// Renders, and quietly tries again when the model hands back a blank
+  /// frame. Stable Diffusion on the free tier does that about one call in
+  /// three, as a valid black image with a 200 status, so without this the
+  /// app showed a black picture as the "result".
   Future<HairAiResult> generate({
+    required Uint8List photo,
+    required String hairstyle,
+    required String color,
+    required String prompt,
+    String? endpoint,
+    String? apiKey,
+    Uint8List? mask,
+  }) async {
+    HairAiResult last = const HairAiResult(HairAiStatus.failed);
+    for (var attempt = 0; attempt <= blankRetries; attempt++) {
+      last = await _generateOnce(
+        photo: photo,
+        hairstyle: hairstyle,
+        color: color,
+        prompt: prompt,
+        endpoint: endpoint,
+        apiKey: apiKey,
+        mask: mask,
+      );
+      if (!last.ok) return last; // a real failure: retrying blindly won't help
+      if (!looksBlank(last.image!)) return last;
+    }
+    return const HairAiResult(HairAiStatus.failed,
+        message: 'The AI returned a blank image.');
+  }
+
+  Future<HairAiResult> _generateOnce({
     required Uint8List photo,
     required String hairstyle,
     required String color,

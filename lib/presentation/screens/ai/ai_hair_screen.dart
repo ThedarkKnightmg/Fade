@@ -122,6 +122,14 @@ class _AiHairScreenState extends State<AiHairScreen> {
 
   bool _generating = false;
   HairAiResult? _result;
+
+  /// Bumped on every render request. A response only lands if it is still
+  /// the latest: tapping Buzz then quickly Pompadour must not end with the
+  /// buzz render showing under the Pompadour label.
+  int _renderToken = 0;
+
+  /// The person said "Not now" to sending the photo.
+  bool _declined = false;
   StyleAnalysis? _analysis; // real face read (shape + reason)
 
   @override
@@ -252,6 +260,8 @@ class _AiHairScreenState extends State<AiHairScreen> {
   }
 
   Future<void> _generate() async {
+    final token = ++_renderToken;
+    bool stale() => !mounted || token != _renderToken;
     final style = HairData.byId(_styleId);
     final color = HairColorName.from(_colorIndex);
     // THE DEMO FACE DOES NOT USE THE AI.
@@ -266,13 +276,18 @@ class _AiHairScreenState extends State<AiHairScreen> {
     // works while the remaining images are produced.
     if (_photo == null && DemoFaces.hasRender(_styleId)) {
       final bytes = await _renderedStyleBytes(_styleId);
+      if (stale()) return;
       if (bytes != null) {
-        setState(() => _result = HairAiResult(HairAiStatus.success, image: bytes));
+        setState(() {
+          _result = HairAiResult(HairAiStatus.success, image: bytes);
+          _generating = false;
+        });
         return;
       }
     }
 
     final photo = _photo ?? await _demoFaceBytes();
+    if (stale()) return;
     if (photo == null) {
       setState(() => _result = const HairAiResult(HairAiStatus.notConfigured));
       return;
@@ -285,9 +300,20 @@ class _AiHairScreenState extends State<AiHairScreen> {
         endpoint.trim().isNotEmpty || key.trim().isNotEmpty;
     if (willUpload && !AppState.instance.aiConsent) {
       final agreed = await _askAiConsent();
-      if (agreed != true) return; // declined — nothing is sent
+      if (!mounted) return;
+      if (agreed != true) {
+        // Declined: nothing is sent, and the screen says so instead of
+        // sitting there looking broken. Tapping the banner asks again.
+        setState(() {
+          _declined = true;
+          _result = null;
+          _generating = false;
+        });
+        return;
+      }
       AppState.instance.grantAiConsent();
     }
+    _declined = false;
     setState(() => _generating = true);
     final HairAiResult res;
     final desc = _aiHairDescription(style, color);
@@ -296,10 +322,10 @@ class _AiHairScreenState extends State<AiHairScreen> {
       // (1024 makes SD-1.5 inpainting output black), then mask the hair so
       // only it is repainted.
       final square = await preparePhotoSquare(photo);
+      if (stale()) return;
       if (square == null) {
         // Never fall back to the original: a full-size photo is exactly what
         // makes SD-1.5 return a black image.
-        if (!mounted) return;
         setState(() {
           _result = HairAiResult(HairAiStatus.failed,
               message: L.aiPhotoUnreadable);
@@ -337,7 +363,7 @@ class _AiHairScreenState extends State<AiHairScreen> {
         prompt: desc,
       );
     }
-    if (!mounted) return;
+    if (stale()) return;
     setState(() {
       _result = res;
       _generating = false;
@@ -460,7 +486,10 @@ class _AiHairScreenState extends State<AiHairScreen> {
   }
 
   void _retake() {
+    _renderToken++; // drop any render still in flight
     setState(() {
+      _generating = false;
+      _declined = false;
       _phase = _Phase.intro;
       _photo = null;
       _result = null;
@@ -511,6 +540,8 @@ class _AiHairScreenState extends State<AiHairScreen> {
                 },
                 onRetake: _retake,
                 onConnect: _enterKey,
+                onRetry: _generate,
+                declined: _declined,
                 onClose: () => Navigator.of(context).maybePop(),
               ),
           },
@@ -809,6 +840,8 @@ class _ResultView extends StatelessWidget {
     required this.analysis,
     required this.onPickStyle,
     required this.onPickColor,
+    required this.onRetry,
+    required this.declined,
     required this.onRetake,
     required this.onConnect,
     required this.onClose,
@@ -826,6 +859,12 @@ class _ResultView extends StatelessWidget {
   final StyleAnalysis? analysis;
   final ValueChanged<String> onPickStyle;
   final ValueChanged<int> onPickColor;
+
+  /// Runs the render again (after a failure, or after "Not now").
+  final VoidCallback onRetry;
+
+  /// The person declined sending the photo.
+  final bool declined;
   final VoidCallback onRetake;
   final VoidCallback onConnect;
   final VoidCallback onClose;
@@ -960,7 +999,10 @@ class _ResultView extends StatelessWidget {
                 ],
                 if (!realistic && !generating) ...[
                   _ConnectAiBanner(
-                      onConnect: onConnect, message: result?.message),
+                      onConnect: onConnect,
+                      onRetry: onRetry,
+                      declined: declined,
+                      result: result),
                   const SizedBox(height: 12),
                 ],
                 _StyleStrip(
@@ -1326,20 +1368,50 @@ class _FaceReadLine extends StatelessWidget {
 }
 
 class _ConnectAiBanner extends StatelessWidget {
-  const _ConnectAiBanner({required this.onConnect, this.message});
+  const _ConnectAiBanner({
+    required this.onConnect,
+    required this.onRetry,
+    required this.declined,
+    this.result,
+  });
 
   final VoidCallback onConnect;
-  final String? message;
+  final VoidCallback onRetry;
+  final bool declined;
+  final HairAiResult? result;
 
   @override
   Widget build(BuildContext context) {
     final p = Paper.of(context);
     final hasKey = AppState.instance.hasAiKey;
-    final title = hasKey ? L.aiRenderFailed : L.connectAiForHair;
-    final body =
-        message ?? (hasKey ? L.stTapCheckKey : L.stStylisedPreviewTapAddKey);
+    // With an engine connected (the free one ships connected), a miss is a
+    // busy or flaky moment: say so in plain words and retry on tap. The old
+    // banner showed "Service returned 502" and opened the developer dialog
+    // for a worker URL, which read as "the AI isn't set up".
+    final String title;
+    final String body;
+    final IconData icon;
+    if (declined) {
+      title = L.aiNotSentTitle;
+      body = L.aiNotSentBody;
+      icon = Icons.lock_outline_rounded;
+    } else if (hasKey) {
+      title = L.aiRenderFailed;
+      body = switch (result?.status) {
+        HairAiStatus.timeout => L.aiTimeoutBody,
+        // Unreadable photo: retrying won't help, but the message says what will.
+        _ when result?.message == L.aiPhotoUnreadable => L.aiPhotoUnreadable,
+        _ => L.aiRetryBody,
+      };
+      icon = Icons.refresh_rounded;
+    } else {
+      title = L.connectAiForHair;
+      body = L.stStylisedPreviewTapAddKey;
+      icon = Icons.bolt_rounded;
+    }
+    final retry = declined || hasKey;
     return GestureDetector(
-      onTap: onConnect,
+      onTap: retry ? onRetry : onConnect,
       behavior: HitTestBehavior.opaque,
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -1351,7 +1423,7 @@ class _ConnectAiBanner extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.bolt_rounded, color: AppColors.accent, size: 22),
+            Icon(icon, color: AppColors.accent, size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

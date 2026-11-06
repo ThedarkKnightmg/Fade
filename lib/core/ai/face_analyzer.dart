@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import '../../data/hair_data.dart';
 import '../../data/models/hairstyle.dart';
+import 'face_box.dart';
 
 /// Real, lightweight face analysis from a selfie's pixels — no ML model, but it
 /// genuinely *measures* the face instead of hashing bytes.
@@ -41,6 +42,8 @@ class FaceAnalyzer {
       img.dispose();
       if (bd == null || w < 8 || h < 8) return null;
       final px = bd.buffer.asUint8List();
+      final gate = SkinGate.calibrate(px, w, h);
+      bool isSkin(int r, int g, int b) => gate.isSkin(r, g, b);
 
       // Selfies are centred — ignore the outer columns / very bottom so we
       // don't pick up background or clothing that happens to be skin-coloured.
@@ -56,7 +59,7 @@ class FaceAnalyzer {
         for (var x = x0; x < x1; x++) {
           final i = (y * w + x) * 4;
           total++;
-          if (_isSkin(px[i], px[i + 1], px[i + 2])) {
+          if (isSkin(px[i], px[i + 1], px[i + 2])) {
             skin++;
             rows[y]++;
           }
@@ -68,7 +71,7 @@ class FaceAnalyzer {
       if (frac < 0.03) return const _Geo(FaceShape.oval, 0.66);
 
       // Face vertical extent: the band of rows that are meaningfully skin.
-      final rowThresh = math.max(2, ((x1 - x0) * 0.10).round());
+      final rowThresh = math.max(2, ((x1 - x0) * 0.18).round());
       var minY = -1;
       var maxY = -1;
       for (var y = y0; y < y1; y++) {
@@ -90,7 +93,7 @@ class FaceAnalyzer {
             y++) {
           for (var x = x0; x < x1; x++) {
             final i = (y * w + x) * 4;
-            if (_isSkin(px[i], px[i + 1], px[i + 2])) {
+            if (isSkin(px[i], px[i + 1], px[i + 2])) {
               if (x < lo) lo = x;
               if (x > hi) hi = x;
             }
@@ -130,7 +133,7 @@ class FaceAnalyzer {
       }
 
       // Hair colour, read from the band just above the forehead.
-      final colorIndex = _hairColor(px, w, minY, fh, cheekE);
+      final colorIndex = _hairColor(px, w, minY, fh, cheekE, gate);
 
       // More clean skin found → a clearer read. Kept in a believable band.
       final conf = (0.66 + frac * 1.2).clamp(0.68, 0.95);
@@ -144,7 +147,8 @@ class FaceAnalyzer {
   /// width. Returns null unless a confident, mostly-dark non-skin cluster
   /// (i.e. hair, not background) is found — so we never guess a wild colour.
   static int? _hairColor(
-      Uint8List px, int w, int minY, double fh, (int, int) cheekExtent) {
+      Uint8List px, int w, int minY, double fh, (int, int) cheekExtent,
+      SkinGate gate) {
     final lo = cheekExtent.$1;
     final hi = cheekExtent.$2;
     if (hi <= lo) return null;
@@ -159,7 +163,7 @@ class FaceAnalyzer {
       for (var x = xLo; x <= xHi; x++) {
         final i = (y * w + x) * 4;
         final r = px[i], g = px[i + 1], b = px[i + 2];
-        if (_isSkin(r, g, b)) continue;
+        if (gate.isSkin(r, g, b)) continue;
         n++;
         rs += r;
         gs += g;
@@ -194,24 +198,6 @@ class FaceAnalyzer {
       }
     }
     return best;
-  }
-
-  /// Skin test: RGB (Kovac) rule for even daylight OR a YCbCr range that
-  /// tolerates darker tones and uneven lighting. OR keeps recall high.
-  static bool _isSkin(int r, int g, int b) {
-    final maxc = math.max(r, math.max(g, b));
-    final minc = math.min(r, math.min(g, b));
-    final rgb = r > 95 &&
-        g > 40 &&
-        b > 20 &&
-        (maxc - minc) > 15 &&
-        (r - g).abs() > 15 &&
-        r > g &&
-        r > b;
-    final cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
-    final cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
-    final ycc = cb >= 77 && cb <= 127 && cr >= 133 && cr <= 173;
-    return rgb || ycc;
   }
 }
 

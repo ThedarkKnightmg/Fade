@@ -31,6 +31,9 @@ class AiConfig {
   /// True when both an endpoint and a key are present.
   static bool get isConfigured => endpoint.isNotEmpty && apiKey.isNotEmpty;
 
-  /// Seconds to wait for a generation before giving up.
-  static const int timeoutSeconds = 60;
+  /// Seconds to wait for a generation before giving up. The free worker
+  /// retries a flaky model up to five times before answering, which can pass
+  /// a minute on a bad spell; giving up at 60s threw away renders that were
+  /// about to arrive.
+  static const int timeoutSeconds = 100;
 }

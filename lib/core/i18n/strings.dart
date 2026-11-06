@@ -868,6 +868,20 @@ class L {
       "Bu suratni o'qib bo'lmadi. Boshqasini tanlang.");
   static String get aiRenderFailed => _t(
       "AI render didn't work", 'Не удалось сгенерировать', 'AI ishlamadi');
+  static String get aiRetryBody => _t(
+      'Tap to try again. The free AI is sometimes busy.',
+      'Нажмите, чтобы попробовать ещё раз. Бесплатный ИИ иногда занят.',
+      "Qayta urinish uchun bosing. Bepul AI ba'zan band bo'ladi.");
+  static String get aiTimeoutBody => _t(
+      'The AI took too long. Tap to try again.',
+      'ИИ отвечал слишком долго. Нажмите, чтобы повторить.',
+      'AI juda uzoq javob berdi. Qayta urinish uchun bosing.');
+  static String get aiNotSentTitle => _t(
+      "Your photo wasn't sent", 'Фото не отправлено', 'Rasm yuborilmadi');
+  static String get aiNotSentBody => _t(
+      'Tap to allow it and see the cut on your face.',
+      'Нажмите, чтобы разрешить и увидеть стрижку на себе.',
+      "Ruxsat berib, soch turmagini o'zingizda ko'rish uchun bosing.");
   static String get connectAiForHair => _t('Connect AI for photo-real hair',
       'Подключите AI для реалистичных причёсок', 'Realistik sochlar uchun AI ulang');
   static String get noPhotoSelected => _t(

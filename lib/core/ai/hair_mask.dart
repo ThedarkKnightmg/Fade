@@ -140,9 +140,19 @@ Future<Uint8List?> _buildHairMaskOnGpu(Uint8List photo,
       final chinY = hairlineY + faceH;
 
       // Hair is WIDER than the skin box: temples, ears and sideburns all live
-      // outside it.
-      final halfW = faceW * 1.02;
-      final topY = (hairlineY - faceH * up).clamp(-faceH * 0.30, hairlineY);
+      // outside it. This is a HALF width: 0.62 face-widths each side spans
+      // about 1.25x the face, ears included. It used to be 1.02, i.e. twice
+      // the face, which ran the repaint zone across the background on both
+      // sides of the head.
+      final halfW = faceW * 0.62;
+      // As high as the new style needs, AND at least over all the hair the
+      // person has now, so a shorter cut can actually remove it.
+      final styleTop = hairlineY - faceH * up;
+      final oldHairTop = face.hairTop * hd - faceH * 0.05;
+      final topY = math
+          .min(styleTop, oldHairTop)
+          .clamp(-faceH * 0.30, hairlineY)
+          .toDouble();
 
       // Sides run down past the ears so existing side hair is inside the
       // repaint zone and can actually be cut off. The 0.85 floor is the point:
