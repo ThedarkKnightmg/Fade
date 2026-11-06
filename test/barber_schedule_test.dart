@@ -33,10 +33,12 @@ void main() {
     };
     addTearDown(() => FlutterError.onError = previous);
 
-    SharedPreferences.setMockInitialValues({});
+    // This test is about the TIMELINE view's layout; slots is the default.
+    SharedPreferences.setMockInitialValues({'schedSlots2': false});
     await initializeDateFormatting();
     final s = AppState.instance;
     await s.load();
+    expect(s.scheduleSlotsView, isFalse);
     s.signInWithIdentity(
       id: 'b',
       fullName: 'Rustam Aliev',

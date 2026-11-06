@@ -113,11 +113,21 @@ class ChatBubble extends StatelessWidget {
     required this.mine,
     required this.at,
     this.showTail = true,
+    this.read = true,
+    this.quoteAuthor,
+    this.quoteText,
   });
 
   final String text;
   final bool mine;
   final DateTime at;
+
+  /// Mine only: one tick when sent, two once the other side has answered.
+  final bool read;
+
+  /// The message this one replies to, quoted above the text.
+  final String? quoteAuthor;
+  final String? quoteText;
 
   /// False for every message except the LAST of a same-sender run. Telegram
   /// only flicks a tail on the final bubble of a group and tucks the rest in
@@ -162,14 +172,63 @@ class ChatBubble extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(right: 46, bottom: 1),
-                    child: Text(
-                      text,
-                      style: GoogleFonts.nunito(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        height: 1.28,
-                        color: textColor,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (quoteText != null)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 5, top: 2),
+                            padding: const EdgeInsets.fromLTRB(8, 3, 8, 4),
+                            decoration: BoxDecoration(
+                              color: mine
+                                  ? Colors.white.withValues(alpha: 0.16)
+                                  : AppColors.accent.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border(
+                                left: BorderSide(
+                                  color:
+                                      mine ? Colors.white : AppColors.accent,
+                                  width: 3,
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  quoteAuthor ?? '',
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w900,
+                                    color:
+                                        mine ? Colors.white : AppColors.accent,
+                                  ),
+                                ),
+                                Text(
+                                  quoteText!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: textColor.withValues(alpha: 0.85),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        Text(
+                          text,
+                          style: GoogleFonts.nunito(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            height: 1.28,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Positioned(
@@ -188,9 +247,13 @@ class ChatBubble extends StatelessWidget {
                         ),
                         if (mine) ...[
                           const SizedBox(width: 3),
-                          // Double tick — "read".
-                          Icon(Icons.done_all_rounded,
-                              size: 15, color: metaColor),
+                          // One tick sent, two read (the other side answered).
+                          Icon(
+                              read
+                                  ? Icons.done_all_rounded
+                                  : Icons.done_rounded,
+                              size: 15,
+                              color: metaColor),
                         ],
                       ],
                     ),

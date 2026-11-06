@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
-import '../../../data/models/barber.dart';
-import '../../../data/models/barbershop.dart';
-import '../../../data/models/chat_message.dart';
 import '../../widgets/chat_kit.dart';
-import '../../widgets/paper_kit.dart';
+import '../../widgets/conversation_view.dart';
 import 'chat_screen.dart';
 
 /// The Messages tab — conversations with barbers you've **booked** with.
 /// Messaging is a post-booking feature: you reach a barber by booking at their
 /// shop first, then texting them from here (or from the shop page).
-class MessagesScreen extends StatelessWidget {
+class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
+
+  @override
+  State<MessagesScreen> createState() => _MessagesScreenState();
+}
+
+class _MessagesScreenState extends State<MessagesScreen> {
+  String _query = '';
 
   @override
   Widget build(BuildContext context) {
@@ -28,52 +30,94 @@ class MessagesScreen extends StatelessWidget {
       body: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Title + the Telegram plane mark on the right.
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(L.messages, style: AppTypography.h1(context)),
-                  ),
-                  const TelegramMark(size: 34),
-                ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child:
+                          Text(L.messages, style: AppTypography.h1(context)),
+                    ),
+                    const TelegramMark(size: 34),
+                  ],
+                ),
               ),
-              const SizedBox(height: 2),
-              Text(L.barbersYouBooked,
-                  style: AppTypography.bodySmall(context)),
-              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(L.barbersYouBooked,
+                    style: AppTypography.bodySmall(context)),
+              ),
+              const SizedBox(height: 12),
+              ChatSearchField(onChanged: (v) => setState(() => _query = v)),
+              const SizedBox(height: 12),
               Expanded(
                 child: AnimatedBuilder(
                   animation: AppState.instance,
                   builder: (context, _) {
-                    final convos = AppState.instance.bookedBarbers;
-                    if (convos.isEmpty) return const _EmptyMessages();
-                    return ListView.separated(
+                    final s = AppState.instance;
+                    if (s.bookedBarbers.isEmpty) return const _EmptyMessages();
+                    final q = _query.trim().toLowerCase();
+                    // Newest activity first: a conversation with a fresh
+                    // message rises to the top, like every messenger.
+                    final convos = s.bookedBarbers
+                        .where((r) => r.barber.name.toLowerCase().contains(q))
+                        .toList()
+                      ..sort((a, b) {
+                        DateTime at(BarberRef r) {
+                          final m = s.chatWith(r.barber.id);
+                          return m.isEmpty ? DateTime(2000) : m.last.at;
+                        }
+
+                        return at(b).compareTo(at(a));
+                      });
+                    if (convos.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 40),
+                        child: Text(L.chatNoResults,
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodySmall(context)),
+                      );
+                    }
+                    return ListView(
                       padding: const EdgeInsets.only(bottom: 120),
-                      itemCount: convos.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (_, i) {
-                        final ref = convos[i];
-                        final msgs = AppState.instance.chatWith(ref.barber.id);
-                        return FadeSlideIn(
-                          delay: Duration(milliseconds: 50 * i),
-                          child: _ConvoTile(
-                            shop: ref.shop,
-                            barber: ref.barber,
-                            index: i,
-                            last: msgs.isNotEmpty ? msgs.last : null,
-                            onTap: () => Navigator.of(context).push(
-                              FadeThroughPageRoute(
-                                child: ChatScreen(
-                                    shop: ref.shop, barber: ref.barber),
-                              ),
-                            ),
+                      children: [
+                        Container(
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(
+                            color: p.card,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: p.border),
                           ),
-                        );
-                      },
+                          child: Column(
+                            children: [
+                              for (var i = 0; i < convos.length; i++)
+                                Builder(builder: (context) {
+                                  final ref = convos[i];
+                                  final msgs = s.chatWith(ref.barber.id);
+                                  return ChatThreadTile(
+                                    name: ref.barber.name,
+                                    last: msgs.isEmpty ? null : msgs.last,
+                                    unread: unreadIn(msgs),
+                                    typing: s.isTyping(ref.barber.id),
+                                    fallback: ref.shop.name,
+                                    showDivider: i < convos.length - 1,
+                                    onTap: () => Navigator.of(context).push(
+                                      FadeThroughPageRoute(
+                                        child: ChatScreen(
+                                            shop: ref.shop, barber: ref.barber),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                            ],
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -121,92 +165,6 @@ class _EmptyMessages extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ConvoTile extends StatelessWidget {
-  const _ConvoTile({
-    required this.shop,
-    required this.barber,
-    required this.index,
-    required this.last,
-    required this.onTap,
-  });
-
-  final Barbershop shop;
-  final Barber barber;
-  final int index;
-  final ChatMessage? last;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Paper.of(context);
-    final msg = last;
-    final preview = msg == null ? L.tapToMessage : msg.text;
-    // Barber spoke last and you haven't replied — surface it as "unread".
-    final unread = msg != null && !msg.mine;
-    return PaperCard(
-      onTap: onTap,
-      radius: 20,
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          InitialAvatar(name: barber.name, size: 50, index: index),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(barber.name,
-                          style: AppTypography.h4(context)),
-                    ),
-                    if (msg != null)
-                      Text(
-                        DateFormat('HH:mm').format(msg.at),
-                        style: GoogleFonts.nunito(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: unread ? AppColors.accent : p.textTertiary,
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${shop.name} · $preview',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.bodySmall(context),
-                      ),
-                    ),
-                    if (unread) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 9,
-                        height: 9,
-                        decoration: const BoxDecoration(
-                          color: AppColors.accent,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-          Icon(Icons.chevron_right_rounded, color: p.textTertiary, size: 22),
-        ],
       ),
     );
   }

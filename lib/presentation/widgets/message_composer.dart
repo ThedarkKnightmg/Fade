@@ -116,6 +116,8 @@ class _MessageComposerState extends State<MessageComposer>
                         contentPadding:
                             const EdgeInsets.symmetric(vertical: 14),
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
                         filled: false,
                         hintText: widget.hintText,
                         hintStyle: GoogleFonts.nunito(
@@ -124,10 +126,9 @@ class _MessageComposerState extends State<MessageComposer>
                       ),
                     ),
                   ),
-                  _FieldGlyph(
-                    icon: Icons.attach_file_rounded,
-                    color: p.textTertiary,
-                  ),
+                  // (No attach glyph: there is nothing to attach yet, and a
+                  // button that does nothing is worse than none.)
+                  const SizedBox(width: 8),
                 ],
               ),
             ),

@@ -1913,6 +1913,9 @@ class L {
       "You've seen what Fade delivers. VIP puts you ahead of every barber in the neighborhood.",
       'Вы видели, что даёт Fade. VIP ставит вас впереди всех барберов района.',
       "Fade nima berishini ko'rdingiz. VIP sizni hududdagi barcha barberlardan oldinga qo'yadi.");
+  static String get vipGetIt => _t('Get VIP', 'Подключить', 'Ulash');
+  static String get vipManage => _t('Manage', 'Управлять', 'Boshqarish');
+  static String get perMonthShort => _t('mo', 'мес', 'oy');
   static String get vipPerkGoldPin => _t('Gold pin on the map',
       'Золотая метка на карте', 'Xaritada oltin belgi');
   static String get vipPerkGoldPinSub => _t('Your shop stands out instantly',
@@ -2392,6 +2395,38 @@ class L {
   static String sayHiTo(String name) => _t('Say hi 👋 — text $name',
       'Поздоровайтесь 👋 — напишите $name', "Salom 👋 — $name'ga yozing");
   static String get messageHint => _t('Message…', 'Сообщение…', 'Xabar…');
+  static String get chatTyping => _t('typing…', 'печатает…', 'yozmoqda…');
+  static String get chatOnline => _t('online', 'в сети', 'onlayn');
+  static String get chatReply => _t('Reply', 'Ответить', 'Javob berish');
+  static String get chatCopy => _t('Copy', 'Копировать', 'Nusxalash');
+  static String get chatDelete => _t('Delete', 'Удалить', "O'chirish");
+  static String get chatCopied =>
+      _t('Copied', 'Скопировано', 'Nusxalandi');
+  static String get chatYou => _t('You', 'Вы', 'Siz');
+  static String get chatSearch =>
+      _t('Search', 'Поиск', 'Qidirish');
+  static String get chatStartWith =>
+      _t('Start a chat', 'Начать чат', 'Suhbat boshlash');
+  static String get chatNoResults =>
+      _t('No one by that name', 'Никого не найдено', 'Hech kim topilmadi');
+  static String get chatPinned =>
+      _t('Next visit', 'Следующий визит', 'Keyingi tashrif');
+  static List<String> get chatQuickBarber => [
+        _t('Your slot is confirmed ✅', 'Ваше время подтверждено ✅',
+            'Vaqtingiz tasdiqlandi ✅'),
+        _t('Running 10 min late, sorry 🙏', 'Опаздываю на 10 минут, извините 🙏',
+            '10 daqiqa kechikyapman, uzr 🙏'),
+        _t('Can you come 15 min earlier?', 'Сможете прийти на 15 минут раньше?',
+            '15 daqiqa oldin kela olasizmi?'),
+        _t('See you soon ✂️', 'До скорой встречи ✂️', "Tez orada ko'rishamiz ✂️"),
+      ];
+  static List<String> get chatQuickClient => [
+        _t('On my way 🚶', 'Уже иду 🚶', "Yo'ldaman 🚶"),
+        _t('Running 10 min late 🙏', 'Опаздываю на 10 минут 🙏',
+            '10 daqiqa kechikaman 🙏'),
+        _t('Can I reschedule?', 'Можно перенести?', "Vaqtni o'zgartirsam bo'ladimi?"),
+        _t('Thanks! ✂️', 'Спасибо! ✂️', 'Rahmat! ✂️'),
+      ];
   static String get yourClients => _t('Your clients',
       'Ваши клиенты', 'Mijozlaringiz');
   static String get clientsMessageHere => _t(

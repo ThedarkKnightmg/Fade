@@ -239,16 +239,73 @@ class AppState extends ChangeNotifier
     }
   }
 
-  void sendChat(String barberId, String text, {bool isSticker = false}) {
+  /// Conversations where the other side is "typing" right now (the demo's
+  /// canned reply is on its way). Keys: barber ids and client names.
+  final Set<String> _typing = {};
+  bool isTyping(String threadKey) => _typing.contains(threadKey);
+
+  /// Remove one of MY messages from a thread (Telegram's "delete for me").
+  void deleteChatMessage(String barberId, String messageId) {
+    _chats[barberId]?.removeWhere((m) => m.id == messageId && m.mine);
+    notifyListeners();
+  }
+
+  void deleteBarberChatMessage(String client, String messageId) {
+    _barberChats[client]?.removeWhere((m) => m.id == messageId && m.mine);
+    notifyListeners();
+  }
+
+  /// The next live booking (requested or confirmed, not yet past) between the
+  /// user and this barber: pinned at the top of the chat.
+  Booking? nextVisitWithBarber(String barberId) {
+    final now = DateTime.now();
+    final live = _bookings
+        .where((b) =>
+            b.clientName == null &&
+            b.barber.id == barberId &&
+            (b.status == BookingStatus.requested ||
+                b.status == BookingStatus.upcoming) &&
+            b.dateTime.isAfter(now.subtract(const Duration(hours: 1))))
+        .toList()
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    return live.isEmpty ? null : live.first;
+  }
+
+  /// The barber's next live booking with this client.
+  Booking? nextVisitWithClient(String client) {
+    final now = DateTime.now();
+    final live = _mine()
+        .where((b) =>
+            b.clientName == client &&
+            (b.status == BookingStatus.requested ||
+                b.status == BookingStatus.upcoming) &&
+            b.dateTime.isAfter(now.subtract(const Duration(hours: 1))))
+        .toList()
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    return live.isEmpty ? null : live.first;
+  }
+
+  void sendChat(String barberId, String text,
+      {bool isSticker = false, ChatMessage? replyTo}) {
     final t = text.trim();
     if (t.isEmpty) return;
     final list = _chats.putIfAbsent(barberId, () => <ChatMessage>[]);
     list.add(ChatMessage(
-        text: t, mine: true, at: DateTime.now(), isSticker: isSticker));
+        text: t,
+        mine: true,
+        at: DateTime.now(),
+        isSticker: isSticker,
+        replyTo: replyTo));
+    // The barber "starts typing" shortly after, like a real reply would.
+    Future.delayed(const Duration(milliseconds: 250), () {
+      _typing.add(barberId);
+      notifyListeners();
+    });
     notifyListeners();
     // A short, friendly canned reply from the barber — a sticker gets a sticker
     // back, which is how these exchanges actually go.
-    Future.delayed(const Duration(milliseconds: 900), () {
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      _typing.remove(barberId);
       if (isSticker) {
         const back = ['👍', '🔥', '✂️', '💈'];
         list.add(ChatMessage(
@@ -311,15 +368,25 @@ class AppState extends ChangeNotifier
     return out;
   }
 
-  void sendBarberChat(String client, String text, {bool isSticker = false}) {
+  void sendBarberChat(String client, String text,
+      {bool isSticker = false, ChatMessage? replyTo}) {
     final t = text.trim();
     if (t.isEmpty) return;
     final list = _barberChats.putIfAbsent(client, () => <ChatMessage>[]);
     list.add(ChatMessage(
-        text: t, mine: true, at: DateTime.now(), isSticker: isSticker));
+        text: t,
+        mine: true,
+        at: DateTime.now(),
+        isSticker: isSticker,
+        replyTo: replyTo));
+    Future.delayed(const Duration(milliseconds: 250), () {
+      _typing.add(client);
+      notifyListeners();
+    });
     notifyListeners();
     // A short, friendly canned reply from the client (sticker for sticker).
-    Future.delayed(const Duration(milliseconds: 900), () {
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      _typing.remove(client);
       if (isSticker) {
         const back = ['🙏', '👍', '😍', '🔥'];
         list.add(ChatMessage(
@@ -2220,7 +2287,11 @@ class AppState extends ChangeNotifier
 
   // === Schedule view: timeline ⇄ booking-style slots (persisted — the
   // barber keeps whichever he likes) ===
-  bool _scheduleSlotsView = false;
+  // The slots grid (every half hour as a chip, bookings and breaks in place)
+  // is the default: it shows the whole day at a glance. The timeline is one
+  // tap away. Saved under a new key so phones that stored the old default
+  // (the timeline) open on the slots too.
+  bool _scheduleSlotsView = true;
   bool get scheduleSlotsView => _scheduleSlotsView;
   void setScheduleSlotsView(bool v) {
     if (_scheduleSlotsView == v) return;
@@ -2690,7 +2761,7 @@ class AppState extends ChangeNotifier
     _feedback
       ..clear()
       ..addAll(sp.getStringList('feedback') ?? const []);
-    _scheduleSlotsView = sp.getBool('schedSlots') ?? _scheduleSlotsView;
+    _scheduleSlotsView = sp.getBool('schedSlots2') ?? _scheduleSlotsView;
     _address = sp.getString('address');
     _remindersOn = sp.getBool('reminders') ?? _remindersOn;
     _perks
@@ -2939,7 +3010,7 @@ class AppState extends ChangeNotifier
         ? await sp.remove('memberSince')
         : await sp.setString('memberSince', since.toIso8601String());
     await sp.setBool('dark', _isDarkMode);
-    await sp.setBool('schedSlots', _scheduleSlotsView);
+    await sp.setBool('schedSlots2', _scheduleSlotsView);
     await sp.setInt('workStart', _workStart);
     await sp.setInt('workEnd', _workEnd);
     await sp.setInt('goal', _weeklyGoalSom);

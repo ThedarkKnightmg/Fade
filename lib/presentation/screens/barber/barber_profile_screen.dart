@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/animations/app_animations.dart';
@@ -458,90 +459,282 @@ class _BoostSellCard extends StatelessWidget {
   }
 }
 
-/// VIP — the subscription product, on its own gold sell card. Shows the monthly
-/// price (or Active status) and taps into the VIP screen.
-class _VipSellCard extends StatelessWidget {
+/// VIP: the subscription, as the one gold thing on the profile.
+///
+/// It used to be a white row like every other, with a pale price chip, so
+/// nothing said "this is the premium tier". Now it's a crisp metallic card:
+/// a gold gradient, a glint that passes every few seconds (still with reduced
+/// motion), the three perks you actually get as chips, and the price on a
+/// dark button that reads as the action. Active VIP shows its end date
+/// instead of a price.
+class _VipSellCard extends StatefulWidget {
   const _VipSellCard();
 
   @override
+  State<_VipSellCard> createState() => _VipSellCardState();
+}
+
+class _VipSellCardState extends State<_VipSellCard>
+    with SingleTickerProviderStateMixin {
+  // One pass of the glint takes the first ~30% of the period; the rest is a
+  // pause, so it catches the eye without flickering.
+  late final AnimationController _glint;
+
+  @override
+  void initState() {
+    super.initState();
+    _glint = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4200),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduce) {
+      _glint.stop();
+    } else if (!_glint.isAnimating) {
+      _glint.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _glint.dispose();
+    super.dispose();
+  }
+
+  static const _ink = Color(0xFF2B1D00);
+
+  @override
   Widget build(BuildContext context) {
-    final p = Paper.of(context);
     final s = AppState.instance;
     final vip = s.barberVip;
-    return GestureDetector(
+    final until = s.vipUntil;
+    return PressableScale(
       onTap: () {
         HapticFeedback.selectionClick();
         Navigator.of(context)
             .push(FadeThroughPageRoute(child: const VipExplainerScreen()));
       },
-      behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: clayDecoration(p, radius: 20),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: AppColors.gold.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Icon(Icons.workspace_premium_rounded,
-                  size: 24, color: AppColors.gold),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFB8860B).withValues(alpha: 0.28),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(L.tierVipTitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.h4(context)),
-                      ),
-                      if (vip) ...[
-                        const SizedBox(width: 6),
-                        const _GoldPill(label: 'VIP'),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(L.vipTabSub,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodySmall(context)),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            // Monthly price chip (or Active).
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.gold.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                vip
-                    ? L.vipActiveChip
-                    : "${Money.group(AppState.vipMonthlySom)} so'm",
-                style: GoogleFonts.nunito(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFF8A6100),
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right_rounded,
-                size: 20, color: p.textTertiary),
           ],
         ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Stack(
+            children: [
+              // Metallic gold: champagne highlight to deep gold.
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFFFF1C1),
+                        Color(0xFFF6CF6A),
+                        Color(0xFFE2A93A),
+                        Color(0xFFC88A1E),
+                      ],
+                      stops: [0, 0.35, 0.72, 1],
+                    ),
+                  ),
+                ),
+              ),
+              // A crisp top edge, like light on a foil wrapper.
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                height: 1.5,
+                child: ColoredBox(color: Colors.white.withValues(alpha: 0.7)),
+              ),
+              // The crown, large and faint, in the corner.
+              Positioned(
+                right: -14,
+                top: -18,
+                child: Icon(Icons.workspace_premium_rounded,
+                    size: 120, color: Colors.white.withValues(alpha: 0.22)),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.55),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                width: 1.2),
+                          ),
+                          child: const Icon(Icons.workspace_premium_rounded,
+                              size: 22, color: Color(0xFFB8860B)),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(L.tierVipTitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900,
+                                    color: _ink,
+                                    height: 1.1,
+                                  )),
+                              Text(L.vipTabSub,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: _ink.withValues(alpha: 0.7),
+                                  )),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _VipPerkChip(
+                            icon: Icons.location_on_rounded,
+                            label: L.vipPerkGoldPin),
+                        _VipPerkChip(
+                            icon: Icons.trending_up_rounded,
+                            label: L.vipPerkTopSearch),
+                        _VipPerkChip(
+                            icon: Icons.bolt_rounded,
+                            label: L.upsUnit(AppState.vipMonthlyBoosts)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // The action: dark on gold, the most clickable thing here.
+                    Container(
+                      height: 46,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: _ink,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              vip && until != null
+                                  ? '${L.vipActiveChip} · ${DateFormat('d MMM').format(until)}'
+                                  : "${Money.group(AppState.vipMonthlySom)} so'm / ${L.perMonthShort}",
+                              style: GoogleFonts.nunito(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w900,
+                                color: const Color(0xFFFFD873),
+                              ),
+                            ),
+                          ),
+                          Text(
+                            vip ? L.vipManage : L.vipGetIt,
+                            style: GoogleFonts.nunito(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_forward_rounded,
+                              size: 18, color: Colors.white),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // The glint.
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedBuilder(
+                    animation: _glint,
+                    builder: (context, _) {
+                      final v = (_glint.value / 0.3).clamp(0.0, 1.0);
+                      if (v <= 0 || v >= 1) return const SizedBox.shrink();
+                      final x = -0.3 + 1.6 * Curves.easeInOutSine.transform(v);
+                      return DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withValues(alpha: 0),
+                              Colors.white.withValues(alpha: 0.55),
+                              Colors.white.withValues(alpha: 0),
+                            ],
+                            stops: [
+                              (x - 0.1).clamp(0.0, 1.0),
+                              x.clamp(0.0, 1.0),
+                              (x + 0.1).clamp(0.0, 1.0),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VipPerkChip extends StatelessWidget {
+  const _VipPerkChip({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: const Color(0xFF8A6100)),
+          const SizedBox(width: 3),
+          Text(label,
+              style: GoogleFonts.nunito(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF5A3F00),
+              )),
+        ],
       ),
     );
   }
@@ -566,30 +759,6 @@ class _AccentPill extends StatelessWidget {
             fontWeight: FontWeight.w900,
             letterSpacing: 0.5,
             color: AppColors.accent,
-          )),
-    );
-  }
-}
-
-/// A small gold status pill on the boost row (VIP / Live).
-class _GoldPill extends StatelessWidget {
-  const _GoldPill({required this.label});
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.gold.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(label,
-          style: GoogleFonts.nunito(
-            fontSize: 10,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.5,
-            color: const Color(0xFF8A6100),
           )),
     );
   }
