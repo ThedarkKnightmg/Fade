@@ -1,3 +1,7 @@
+> **Superseded on 8 Nov 2026 by [PLAY_LISTING.md](PLAY_LISTING.md).** The app now uses
+> precise location, the legal pages were updated (check-in, payments, a working contact
+> address) and the current URLs are on thedarkknightmg.github.io/Fade/. Kept for history.
+
 # Fade — Play Store submission pack
 
 Everything needed to submit, in order. Store-listing text lives in
