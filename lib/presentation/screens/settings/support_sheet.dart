@@ -9,7 +9,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../data/app_state.dart';
 import '../../widgets/primary_button.dart';
 
-const String _supportEmail = 'bizningproject@gmail.com';
+const String _supportEmail = 'fade.privacy.uz@gmail.com';
 
 /// "Help & feedback" — a bottom sheet where anyone (client or barber) can
 /// report a bug, pitch an idea, or just say something's wrong. Saved locally

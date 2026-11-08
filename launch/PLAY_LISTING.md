@@ -57,7 +57,7 @@ Har tashrif uchun ball yigʻing — bepul soch olishga yaqinlashing.
 Soʻrovlarni bir tegishda qabul qiling, kunlik jadvalni boshqaring, kelmay qolgan mijozlardan himoyalaning va yangi mijozlar oling. Roʻyxatdan oʻtish bepul.
 
 Toʻlov hozircha sartaroshxonada naqd pulda.
-Savollar: bizningproject@gmail.com
+Savollar: fade.privacy.uz@gmail.com
 ```
 
 ### Full description: Russian
@@ -88,7 +88,7 @@ Fade — приложение для онлайн-записи в барберш
 Принимайте заявки в одно нажатие, ведите расписание, защищайтесь от неявок и получайте новых клиентов. Регистрация бесплатна.
 
 Оплата пока наличными в салоне.
-Вопросы: bizningproject@gmail.com
+Вопросы: fade.privacy.uz@gmail.com
 ```
 
 ### Full description: English
@@ -119,7 +119,7 @@ Collect points with every visit toward a free haircut.
 Accept requests in one tap, run your day's schedule, stay protected from no-shows and get new clients. Joining is free.
 
 Payment is in cash at the shop for now.
-Questions: bizningproject@gmail.com
+Questions: fade.privacy.uz@gmail.com
 ```
 
 ### Graphics (in `marketing/play-store/`)
@@ -130,7 +130,7 @@ Questions: bizningproject@gmail.com
 ### Category and contact
 - App category: **Lifestyle** (or **Beauty**)
 - Tags: Beauty, Booking, Barber, Haircut
-- Email: bizningproject@gmail.com
+- Email: fade.privacy.uz@gmail.com
 - Website: https://thedarkknightmg.github.io/Fade/
 
 ### Release notes for 1.0.4 (closed test)
