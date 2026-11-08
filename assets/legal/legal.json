@@ -5,7 +5,7 @@
       "ru": "Условия использования",
       "uz": "Foydalanish shartlari"
     },
-    "updated": "16 July 2026",
+    "updated": "8 November 2026",
     "intro": {
       "en": "These Terms govern your use of the Fade mobile application (“Fade”), operated by Fade in Uzbekistan. By creating an account or using Fade, you agree to these Terms. If you do not agree, do not use Fade.",
       "ru": "Настоящие Условия регулируют использование вами мобильного приложения Fade («Fade»), управляемого Fade в Узбекистане. Создавая учётную запись или используя Fade, вы соглашаетесь с настоящими Условиями. Если вы не согласны, не используйте Fade.",
@@ -422,9 +422,9 @@
           {
             "type": "p",
             "text": {
-              "en": "Questions? Contact us at support@fade.uz.",
-              "ru": "Вопросы? Свяжитесь с нами по адресу support@fade.uz.",
-              "uz": "Savollaringiz bormi? support@fade.uz orqali biz bilan bog‘laning."
+              "en": "Questions? Contact us at bizningproject@gmail.com.",
+              "ru": "Вопросы? Свяжитесь с нами по адресу bizningproject@gmail.com.",
+              "uz": "Savollaringiz bormi? bizningproject@gmail.com orqali biz bilan bog‘laning."
             }
           }
         ]
@@ -437,7 +437,7 @@
       "ru": "Политика конфиденциальности",
       "uz": "Maxfiylik siyosati"
     },
-    "updated": "16 July 2026",
+    "updated": "8 November 2026",
     "intro": {
       "en": "This Privacy Policy explains what personal data the Fade mobile application (“Fade”, “we”, “us”) collects, why, and the choices you have. Fade is operated by Fade in Uzbekistan. By using Fade you agree to this Policy.",
       "ru": "Настоящая Политика конфиденциальности разъясняет, какие персональные данные собирает мобильное приложение Fade («Fade», «мы», «нас»), почему и какие у вас есть возможности выбора. Fade управляется Fade в Узбекистане. Используя Fade, вы соглашаетесь с настоящей Политикой.",
@@ -488,6 +488,16 @@
                 "uz": "**Fotosuratlar** — profil fotosurati; sartaroshxona va ish fotosuratlari (sartaroshlar uchun); sun’iy intellekt soch turmagi ko‘rinishi uchun tanlagan selfingiz. Profilingizni yaratish, sartaroshxonani ro‘yxatga olish va ko‘rinish yaratish uchun ishlatiladi."
               },
               {
+                "en": "**Arrival check-in** — when you scan a shop’s Fade poster on arrival, we record the time and whether your phone was within about 300 m of the shop. The distance is checked once, at that moment; we do not track your route. Used to confirm visits, protect barbers from no-shows and protect you from a wrong no-show mark.",
+                "ru": "**Отметка о прибытии** — когда вы сканируете постер Fade в салоне, мы сохраняем время и то, находился ли ваш телефон в пределах примерно 300 м от салона. Расстояние проверяется один раз, в этот момент; мы не отслеживаем ваш маршрут. Используется, чтобы подтвердить визит, защитить барберов от неявок, а вас — от ошибочной отметки о неявке.",
+                "uz": "**Kelganlikni belgilash** — sartaroshxonadagi Fade posterini skanerlaganingizda vaqtni va telefoningiz sartaroshxonadan taxminan 300 m ichida bo‘lgan-bo‘lmaganini saqlaymiz. Masofa faqat bir marta, o‘sha paytda tekshiriladi; yo‘lingizni kuzatmaymiz. Tashrifni tasdiqlash, sartaroshlarni kelmay qolishlardan va sizni noto‘g‘ri “kelmadi” belgisidan himoya qilish uchun ishlatiladi."
+              },
+              {
+                "en": "**Payments** — if you pay in the app: the amount, what it was for and whether it succeeded. You enter card details on Payme’s, Click’s or Google Play’s own payment page; Fade never sees or stores your card number.",
+                "ru": "**Платежи** — если вы платите в приложении: сумма, за что и прошёл ли платёж. Данные карты вы вводите на странице Payme, Click или Google Play; Fade никогда не видит и не хранит номер вашей карты.",
+                "uz": "**To‘lovlar** — ilovada to‘lasangiz: summa, nima uchun ekani va to‘lov o‘tgan-o‘tmagani. Karta ma’lumotlarini Payme, Click yoki Google Play’ning o‘z sahifasida kiritasiz; Fade karta raqamingizni hech qachon ko‘rmaydi va saqlamaydi."
+              },
+              {
                 "en": "**Bookings & activity** — appointments, messages with a barber, reviews you write. Used to operate the booking and messaging features.",
                 "ru": "**Бронирования и активность** — записи на приём, переписка с барбером, отзывы, которые вы пишете. Используется для работы функций бронирования и обмена сообщениями.",
                 "uz": "**Band qilishlar va faoliyat** — qabullar, sartarosh bilan yozishmalar, siz yozgan sharhlar. Band qilish va yozishmalar funksiyalarini ishlatish uchun ishlatiladi."
@@ -522,9 +532,9 @@
                 "uz": "**Google orqali kirish:** Google ismingizni, elektron pochta manzilingizni va profil rasmingizni ulashadi. Biz hech qachon Google parolingizni ko‘rmaymiz."
               },
               {
-                "en": "**Directly from you:** details you type, photos you add, and permissions you grant (location, camera).",
+                "en": "**Directly from you:** details you type, photos you add, and permissions you grant (location; camera, used only to scan a shop’s check-in QR or take a photo you choose).",
                 "ru": "**Непосредственно от вас:** данные, которые вы вводите, фотографии, которые вы добавляете, и разрешения, которые вы предоставляете (местоположение, камера).",
-                "uz": "**Bevosita sizdan:** siz kiritadigan ma’lumotlar, qo‘shadigan fotosuratlar va siz beradigan ruxsatlar (joylashuv, kamera)."
+                "uz": "**Bevosita sizdan:** siz kiritadigan ma’lumotlar, qo‘shadigan fotosuratlar va siz beradigan ruxsatlar (joylashuv; kamera — faqat sartaroshxona QR kodini skanerlash yoki siz tanlagan suratni olish uchun)."
               }
             ]
           }
@@ -589,6 +599,11 @@
                 "en": "**The AI image service** — only the selfie you submit for a preview, and only with your consent (see section 3).",
                 "ru": "**Сервис обработки изображений на базе ИИ** — только селфи, которое вы отправляете для предпросмотра, и только с вашего согласия (см. раздел 3).",
                 "uz": "**Sun’iy intellekt tasvir xizmati** — faqat siz ko‘rinish uchun yuborgan selfi va faqat sizning roziligingiz bilan (3-bo‘limga qarang)."
+              },
+              {
+                "en": "**Payment providers (Payme, Click, Google Play)** — to process a payment you choose to make. They handle your payment under their own terms.",
+                "ru": "**Платёжные системы (Payme, Click, Google Play)** — чтобы провести платёж, который вы решили совершить. Они обрабатывают платёж по своим условиям.",
+                "uz": "**To‘lov tizimlari (Payme, Click, Google Play)** — siz amalga oshirmoqchi bo‘lgan to‘lovni o‘tkazish uchun. Ular to‘lovni o‘z shartlari asosida bajaradi."
               },
               {
                 "en": "**A barber you book** — sees your name and the phone number needed to contact you about that booking. Your number is not shown publicly or to other clients.",
@@ -753,9 +768,9 @@
           {
             "type": "p",
             "text": {
-              "en": "Questions or requests: privacy@fade.uz.",
-              "ru": "Вопросы или запросы: privacy@fade.uz.",
-              "uz": "Savollar yoki so‘rovlar: privacy@fade.uz."
+              "en": "Questions or requests: bizningproject@gmail.com.",
+              "ru": "Вопросы или запросы: bizningproject@gmail.com.",
+              "uz": "Savollar yoki so‘rovlar: bizningproject@gmail.com."
             }
           }
         ]

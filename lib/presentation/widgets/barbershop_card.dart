@@ -38,7 +38,6 @@ class BarbershopCard extends StatelessWidget {
     final rawFree = MockData.timeSlotsFor(today).length -
         MockData.bookedSlotsFor(today, shopId: shop.id).length;
     final freeToday = rawFree < 0 ? 0 : rawFree;
-    final bookedWk = 9 + (shop.id.hashCode.abs() % 38);
 
     return Container(
       decoration: BoxDecoration(
@@ -142,7 +141,8 @@ class BarbershopCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           // Live average: the seed rating blended with every
                           // user review, so rating a shop 4★ moves this number.
-                          _RatingChip(rating: AppState.instance.shopRating(shop)),
+                          _RatingChip(
+                              rating: AppState.instance.shopRating(shop)),
                         ],
                       ),
                     ),
@@ -170,22 +170,13 @@ class BarbershopCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.local_fire_department_rounded,
-                            size: 14, color: Color(0xFFE0683C)),
-                        const SizedBox(width: 4),
-                        Text(
-                          L.wdBookedThisWeek(bookedWk),
-                          style: GoogleFonts.nunito(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFFE0683C),
-                          ),
-                        ),
-                        if (freeToday > 0 && freeToday <= 5) ...[
-                          const SizedBox(width: 10),
+                    // Only real signals here. (A "🔥 N booked this week"
+                    // line used to sit here, computed from the shop id, not
+                    // from bookings. Removed: invented activity misleads.)
+                    if (freeToday > 0 && freeToday <= 5) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
                           const Icon(Icons.bolt_rounded,
                               size: 14, color: AppColors.accent),
                           const SizedBox(width: 2),
@@ -198,8 +189,8 @@ class BarbershopCard extends StatelessWidget {
                             ),
                           ),
                         ],
-                      ],
-                    ),
+                      ),
+                    ],
                     const SizedBox(height: 10),
                     Row(
                       children: [
@@ -280,10 +271,13 @@ class _HeartButton extends StatelessWidget {
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: isFavourite ? AppColors.accent : Colors.white.withValues(alpha: 0.92),
+          color: isFavourite
+              ? AppColors.accent
+              : Colors.white.withValues(alpha: 0.92),
           shape: BoxShape.circle,
           boxShadow: const [
-            BoxShadow(color: Color(0x33000000), blurRadius: 6, offset: Offset(0, 2)),
+            BoxShadow(
+                color: Color(0x33000000), blurRadius: 6, offset: Offset(0, 2)),
           ],
         ),
         child: AnimatedSwitcher(
@@ -291,7 +285,9 @@ class _HeartButton extends StatelessWidget {
           transitionBuilder: (child, anim) =>
               ScaleTransition(scale: anim, child: child),
           child: Icon(
-            isFavourite ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+            isFavourite
+                ? Icons.favorite_rounded
+                : Icons.favorite_outline_rounded,
             key: ValueKey(isFavourite),
             size: 18,
             color: isFavourite ? Colors.white : const Color(0xFF8A93A3),
@@ -313,7 +309,8 @@ class _PremiumBadge extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(999),
         boxShadow: const [
-          BoxShadow(color: Color(0x55000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(
+              color: Color(0x55000000), blurRadius: 6, offset: Offset(0, 2)),
         ],
       ),
       child: Row(

@@ -324,9 +324,8 @@ class MockData {
   /// bookings"; no barber ever receives it. A ghost booking is far worse than
   /// an honest "no shops here yet", which is what `AppState.catalogueStatus`
   /// now drives the browse surfaces to show instead.
-  static final List<Barbershop> barbershops = SupabaseConfig.useRealCatalogue
-      ? <Barbershop>[]
-      : List.of(demoShops);
+  static final List<Barbershop> barbershops =
+      SupabaseConfig.useRealCatalogue ? <Barbershop>[] : List.of(demoShops);
 
   /// A shop that is always safe to read when a lookup misses.
   ///
@@ -349,6 +348,12 @@ class MockData {
     return List.generate(count, (i) => base.add(Duration(minutes: 30 * i)));
   }
 
+  /// True for a database UUID (a real, onboarded shop), false for a demo id.
+  static bool isRealId(String id) =>
+      RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+              caseSensitive: false)
+          .hasMatch(id);
+
   /// Which slots are already booked for a day — deterministic, so the same
   /// day + shop + barber always shows the same availability (~40% taken).
   /// Lets the booking grid show greyed-out, unavailable times.
@@ -359,6 +364,10 @@ class MockData {
     int startHour = 9,
     int endHour = 21,
   }) {
+    // Only the bundled demo shops get invented bookings. A real shop (its id is
+    // a database UUID) must never show a free time as taken: that turns a
+    // client away from a barber's actual empty chair.
+    if (shopId != null && isRealId(shopId)) return <DateTime>{};
     final seed =
         Object.hash(date.year, date.month, date.day, shopId, barberId) &
             0x7fffffff;
