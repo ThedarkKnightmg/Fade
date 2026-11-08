@@ -19,18 +19,26 @@ class _NativeLocator implements GeoLocator {
         return null;
       }
 
-      // Fast path: a cached fix (we've located before, or another app has)
-      // returns instantly — crucial indoors where a fresh GPS lock is slow.
+      // A cached fix is only trusted when it is fresh and tight. An old one
+      // (hours ago, another district, or the coarse ~2 km cell) is exactly
+      // what put people in the wrong place on the map.
       final last = await Geolocator.getLastKnownPosition();
-      if (last != null) return (lat: last.latitude, lng: last.longitude);
+      final fresh = last != null &&
+          DateTime.now().difference(last.timestamp).inMinutes < 2 &&
+          last.accuracy <= 100;
+      if (fresh) return (lat: last.latitude, lng: last.longitude);
 
-      // No cache yet — get a fresh fix. Medium accuracy uses network + GPS so
-      // it resolves quickly; a generous timeout avoids bailing out too early.
-      final p = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.medium),
-      ).timeout(const Duration(seconds: 20));
-      return (lat: p.latitude, lng: p.longitude);
+      try {
+        final p = await Geolocator.getCurrentPosition(
+          locationSettings:
+              const LocationSettings(accuracy: LocationAccuracy.high),
+        ).timeout(const Duration(seconds: 15));
+        return (lat: p.latitude, lng: p.longitude);
+      } catch (_) {
+        // No fresh fix in time (deep indoors): an older one beats nothing.
+        if (last != null) return (lat: last.latitude, lng: last.longitude);
+        rethrow;
+      }
     } catch (_) {
       return null;
     }

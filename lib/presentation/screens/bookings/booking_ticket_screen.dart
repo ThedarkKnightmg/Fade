@@ -49,7 +49,7 @@ class BookingTicketScreen extends StatelessWidget {
     try {
       final pos = await createLocator()
           .position()
-          .timeout(const Duration(seconds: 6));
+          .timeout(const Duration(seconds: 12));
       if (pos != null) {
         near = AppState.distanceMeters(pos.lat, pos.lng,
                 booking.barbershop.lat, booking.barbershop.lng) <=

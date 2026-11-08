@@ -1,8 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- Coarse location only — enough for "shops near you", and it keeps us out
-         of Play's precise-location review scrutiny (matches the Data Safety
-         form, which declares approximate location). -->
+    <!-- Precise location, foreground only. Coarse alone made Android blur the
+         fix to a ~2 km grid: the map put people in the wrong neighbourhood and
+         the arrival check-in (300 m) couldn't tell "at the shop" from "across
+         town". Android 12+ still lets the user pick "approximate". -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- Real notifications (booking confirmed/declined, new requests). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
