@@ -24,7 +24,7 @@ ol{padding-left:22px;margin:0}li{margin:8px 0}
 (function(){
 var P=new URLSearchParams(location.search);
 var val=(P.get('c')||'').trim().slice(0,64);
-document.querySelectorAll('[data-v]').forEach(function(e){e.textContent=val?(val.toUpperCase()):''});
+document.querySelectorAll('[data-v]').forEach(function(e){e.textContent=val?(val):''});
 document.querySelectorAll('[data-if-v]').forEach(function(e){if(!val)e.style.display='none'});
 document.querySelectorAll('[data-copy]').forEach(function(b){b.onclick=function(){
  var t=b.textContent;function ok(){b.textContent=b.dataset.done;setTimeout(function(){b.textContent=t},1600)}
