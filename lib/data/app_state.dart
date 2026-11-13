@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/format/money.dart';
 import '../core/i18n/app_language.dart';
 import '../core/i18n/strings.dart';
+import '../core/links.dart';
 import '../core/notifications/notify.dart';
 import '../core/supabase/feedback_service.dart';
 import '../core/supabase/supabase_service.dart';
@@ -1485,16 +1486,11 @@ class AppState extends ChangeNotifier
     return slug.isEmpty ? 'barber' : slug;
   }
 
-  // Base host for a barber's public booking link. Change this ONE constant to
-  // your deployed landing page (e.g. a free Cloudflare Worker at
-  // 'your-name.workers.dev') and every shared link points at the live page.
-  static const String bookingLinkBase = 'fade.uz';
-
-  /// Display form (no scheme): fade.uz/b/handle.
-  String get barberLink => '$bookingLinkBase/b/$barberHandle';
+  /// Display form (no scheme) of the barber's booking link — see [FadeLinks].
+  String get barberLink => FadeLinks.bookingDisplay(barberHandle);
 
   /// The full, tappable URL to share/copy — opens the barber's booking page.
-  String get barberBookingUrl => 'https://$barberLink';
+  String get barberBookingUrl => FadeLinks.booking(barberHandle);
 
   /// Slugify any barber's name the same way [barberHandle] does.
   static String handleFor(String name) {
@@ -1502,8 +1498,9 @@ class AppState extends ChangeNotifier
     return slug.isEmpty ? 'barber' : slug;
   }
 
-  /// Resolve a scanned booking code — a full URL, 'fade.uz/b/handle', or a
-  /// bare handle — to the shop that barber works at. Null if unknown.
+  /// Resolve a scanned booking code — the current link (`…/b/?h=handle`), an
+  /// older path-style one (`fade.uz/b/handle`), or a bare handle — to the shop
+  /// that barber works at. Null if unknown.
   Barbershop? shopFromBookingCode(String code) {
     final handle = _handleFromCode(code);
     if (handle == null) return null;
@@ -1519,6 +1516,14 @@ class AppState extends ChangeNotifier
 
   static String? _handleFromCode(String code) {
     var c = code.trim();
+    final h = RegExp(r'[?&]h=([^&#]+)').firstMatch(c);
+    if (h != null) {
+      try {
+        c = Uri.decodeQueryComponent(h.group(1)!);
+      } catch (_) {
+        c = h.group(1)!; // malformed %-escape — the slug pass below cleans it
+      }
+    }
     const marker = '/b/';
     final idx = c.indexOf(marker);
     if (idx >= 0) c = c.substring(idx + marker.length);

@@ -1,5 +1,6 @@
 import '../../data/app_state.dart';
 import 'app_language.dart';
+import '../links.dart';
 
 /// App copy in English / Russian / Uzbek. Every getter reads the live
 /// language from [AppState], and the root rebuilds the whole app whenever
@@ -662,9 +663,9 @@ class L {
   static String get inviteFailed =>
       _t("That code didn't work", 'Код не подошёл', "Kod ishlamadi");
   static String inviteShareMessage(String code) => _t(
-      'Book barbers on Fade ✂️ Use my code $code and we both win. https://fade.uz/i/$code',
-      'Барбершопы в Fade ✂️ Введи мой код $code — бонус нам обоим. https://fade.uz/i/$code',
-      "Fade’da sartaroshlar ✂️ Mening kodim $code — ikkalamizga bonus. https://fade.uz/i/$code");
+      'Book barbers on Fade ✂️ Use my code $code and we both win. ${FadeLinks.invite(code)}',
+      'Барбершопы в Fade ✂️ Введи мой код $code — бонус нам обоим. ${FadeLinks.invite(code)}',
+      "Fade’da sartaroshlar ✂️ Mening kodim $code — ikkalamizga bonus. ${FadeLinks.invite(code)}");
   static String get tPerkInstant => _t('Instant booking — no waiting to be confirmed',
       'Мгновенная бронь — без ожидания подтверждения',
       "Tez band qilish — tasdiqni kutmasdan");

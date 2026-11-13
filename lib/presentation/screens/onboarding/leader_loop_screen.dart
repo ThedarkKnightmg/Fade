@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/animations/app_animations.dart';
 import '../../../core/i18n/strings.dart';
+import '../../../core/links.dart';
 import '../../../core/location/geo_position.dart';
 import '../../../core/map/fast_tiles.dart';
 import '../../../core/photo/photo_source.dart';
@@ -197,7 +198,7 @@ class _LeaderLoopScreenState extends State<LeaderLoopScreen> {
   }
 
   String get _inviteLink =>
-      'https://fade.uz/join/${_created?.id ?? 'shop'}';
+      FadeLinks.join(_created?.id ?? 'shop');
   String get _inviteMessage =>
       L.inviteMessageFor(_name.text.trim(), _inviteLink);
 
@@ -684,8 +685,12 @@ class _LeaderLoopScreenState extends State<LeaderLoopScreen> {
                   children: [
                     Icon(Icons.link_rounded, size: 15, color: p.textTertiary),
                     const SizedBox(width: 6),
-                    Text('fade.uz/join',
-                        style: AppTypography.caption(context)),
+                    Flexible(
+                      child: Text('${FadeLinks.host}/join',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.caption(context)),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
