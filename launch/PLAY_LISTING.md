@@ -172,7 +172,8 @@ You are signed in as a client. The barber side: Profile → "Become a barber" �
 - Expected result: roughly 12+ / Teen because of the chat.
 
 ### Target audience
-- Age groups: **18 and over** only (the privacy policy says Fade isn't for children).
+- Age groups: **16–17** and **18 and over** (matches the Terms and Privacy Policy: Fade is for ages 16+).
+  Don't tick anything under 13 — that puts the app under Google's Families policy.
 - Appeals to children: **No**.
 
 ### Data safety
