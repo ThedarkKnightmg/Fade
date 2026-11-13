@@ -1,12 +1,14 @@
 # Free Supabase projects are paused after about a week without activity, and a
 # paused project takes sign-in (Telegram, Google) and the shop catalogue down
-# with it. This reads one row every three days so the project never looks idle.
+# with it. Supabase wants "a few user requests to the database each day" — one
+# ping every three days was NOT enough (the project paused on ~8 Oct 2026), so
+# this now reads real tables twice a day.
 # The key is the public publishable key, the same one shipped in the app.
 name: Keep Supabase awake
 
 on:
   schedule:
-    - cron: "17 6 */3 * *"
+    - cron: "17 6,18 * * *"
   workflow_dispatch:
 
 jobs:
@@ -23,5 +25,7 @@ jobs:
             -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
             "$SUPABASE_URL/rest/v1/barbershops?select=id&limit=1")
           echo "Supabase responded with HTTP $status"
+          # A second, different table so it reads as normal app traffic.
+          curl -s -o /dev/null --retry 2 -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY"             "$SUPABASE_URL/rest/v1/barbers?select=id&limit=5" || true
           # Fail loudly if the project is paused or gone, so GitHub emails you.
           test "$status" = "200"
