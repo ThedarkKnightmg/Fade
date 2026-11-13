@@ -2,7 +2,7 @@
 <html lang="uz">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fade — sartaroshga onlayn navbat, Toshkent</title>
 <meta name="description" content="Toshkent sartaroshxonalariga bir tegishda yoziling: xarita, narxlar, sharhlar va AI turmak sinash.">
 <meta name="theme-color" content="#2e8bff">
@@ -14,11 +14,23 @@
 <link rel="icon" href="assets/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900;1000&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
+<script>
+(function(){var d=document.documentElement,r=matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(r)return;d.classList.add('js');
+try{if(!sessionStorage.getItem('fade-intro')){d.classList.add('intro');sessionStorage.setItem('fade-intro','1')}}catch(e){}
+setTimeout(function(){if(!window.gsap){d.classList.remove('js','intro')}},3500);})();
+</script>
 </head>
 <body class="uz">
+<div class="intro-ov" aria-hidden="true"><div class="intro-a"></div><div class="intro-b"></div><div class="intro-line"></div><div class="intro-sc"><svg class="scissors-svg" viewBox="0 0 72 44" aria-hidden="true">
+<g class="bl-a"><path d="M33 22 L70 13 L68.5 18.5 Z"/><circle cx="14" cy="11" r="8.5" fill="none" stroke-width="4.5"/><path d="M21 15.5 L33 22" stroke-width="5" stroke-linecap="round"/></g>
+<g class="bl-b"><path d="M33 22 L70 31 L68.5 25.5 Z"/><circle cx="14" cy="33" r="8.5" fill="none" stroke-width="4.5"/><path d="M21 28.5 L33 22" stroke-width="5" stroke-linecap="round"/></g>
+<circle cx="33" cy="22" r="2.6" class="pivot"/></svg></div><div class="intro-word">Fade</div></div>
+<div class="cursor" aria-hidden="true"></div><div class="cursor-dot" aria-hidden="true"></div>
 
+<div class="progress" aria-hidden="true"></div>
 <header class="top">
   <div class="top-in">
     <a class="logo" href="index.html"><img src="assets/icon.png" alt="" width="36" height="36">Fade</a>
@@ -26,109 +38,114 @@
     <div class="langs" role="group" aria-label="Language">
       <button data-set="uz">UZ</button><button data-set="ru">RU</button><button data-set="en">EN</button>
     </div>
-    <a class="btn btn-sm" href="https://play.google.com/store/apps/details?id=uz.fade.app" rel="noopener"><span data-l="uz">Yuklab olish</span><span data-l="ru">Скачать</span><span data-l="en">Download</span></a>
+    <a class="btn btn-sm mag" href="https://play.google.com/store/apps/details?id=uz.fade.app" rel="noopener"><span data-l="uz">Yuklab olish</span><span data-l="ru">Скачать</span><span data-l="en">Download</span></a>
   </div>
 </header>
 <main>
 <section class="hero wrap">
   <div class="hero-copy">
-    <p class="eyebrow rise" style="--d:0"><span data-l="uz">Toshkent · mijozlar uchun bepul</span><span data-l="ru">Ташкент · бесплатно для клиентов</span><span data-l="en">Tashkent · free for clients</span></p>
-    <h1 class="rise" style="--d:1"><span data-l="uz">Sartaroshga navbat —<br><em>bir tegishda.</em></span><span data-l="ru">Запись к барберу —<br><em>в одно касание.</em></span><span data-l="en">Your barber,<br><em>booked in a tap.</em></span></h1>
-    <p class="lead rise" style="--d:2"><span data-l="uz">Yaqin atrofdagi sartaroshxonalarni xaritada toping, narx va sharhlarni ko‘ring, bo‘sh vaqtni tanlang. Qo‘ng‘iroq ham, navbat kutish ham yo‘q.</span><span data-l="ru">Найдите барбершопы рядом на карте, сравните цены и отзывы, выберите свободное время. Без звонков и очередей.</span><span data-l="en">Find barbershops near you on the map, compare prices and reviews, pick a free slot. No calls, no queues.</span></p>
-    <div class="cta-row rise" style="--d:3">
-      <a class="btn btn-play" href="https://play.google.com/store/apps/details?id=uz.fade.app" rel="noopener"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3.6 2.2c-.3.3-.4.7-.4 1.2v17.2c0 .5.1.9.4 1.2l9.7-9.8-9.7-9.8Zm10.6 10.7 2.7 2.7-11 6.3c-.4.2-.8.3-1.1.2l9.4-9.2Zm0-1.8L4.8 1.9c.3-.1.7 0 1.1.2l11 6.3-2.7 2.7Zm4.3-2.1 3 1.7c.9.5.9 1.8 0 2.3l-3 1.7-3-3 3-2.7Z"/></svg><span class="btn-stack"><small><span data-l="uz">Yuklab oling</span><span data-l="ru">Скачайте в</span><span data-l="en">Get it on</span></small><b>Google Play</b></span></a>
-      <a class="btn btn-ghost" href="barbers.html"><span data-l="uz">Sartaroshmisiz?</span><span data-l="ru">Вы барбер?</span><span data-l="en">Are you a barber?</span> <span aria-hidden="true">→</span></a>
+    <p class="eyebrow"><span data-l="uz">Toshkent · mijozlar uchun bepul</span><span data-l="ru">Ташкент · бесплатно для клиентов</span><span data-l="en">Tashkent · free for clients</span></p>
+    <h1 class="h-split"><span data-l="uz">Sartaroshga navbat — <em>bir tegishda.</em></span><span data-l="ru">Запись к барберу — <em>в одно касание.</em></span><span data-l="en">Your barber, <em>booked in a tap.</em></span></h1>
+    <p class="lead"><span data-l="uz">Yaqin atrofdagi sartaroshxonalarni xaritada toping, narx va sharhlarni ko‘ring, bo‘sh vaqtni tanlang. Qo‘ng‘iroq ham, navbat kutish ham yo‘q.</span><span data-l="ru">Найдите барбершопы рядом на карте, сравните цены и отзывы, выберите свободное время. Без звонков и очередей.</span><span data-l="en">Find barbershops near you on the map, compare prices and reviews, pick a free slot. No calls, no queues.</span></p>
+    <div class="cta-row">
+      <a class="btn btn-play mag " href="https://play.google.com/store/apps/details?id=uz.fade.app" rel="noopener"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3.6 2.2c-.3.3-.4.7-.4 1.2v17.2c0 .5.1.9.4 1.2l9.7-9.8-9.7-9.8Zm10.6 10.7 2.7 2.7-11 6.3c-.4.2-.8.3-1.1.2l9.4-9.2Zm0-1.8L4.8 1.9c.3-.1.7 0 1.1.2l11 6.3-2.7 2.7Zm4.3-2.1 3 1.7c.9.5.9 1.8 0 2.3l-3 1.7-3-3 3-2.7Z"/></svg><span class="btn-stack"><small><span data-l="uz">Yuklab oling</span><span data-l="ru">Скачайте в</span><span data-l="en">Get it on</span></small><b>Google Play</b></span></a>
+      <a class="btn btn-ghost mag" href="barbers.html"><span data-l="uz">Sartaroshmisiz?</span><span data-l="ru">Вы барбер?</span><span data-l="en">Are you a barber?</span> <span class="arr" aria-hidden="true">→</span></a>
     </div>
-    <ul class="ticks rise" style="--d:4">
+    <ul class="ticks">
       <li><span data-l="uz">Qo‘ng‘iroqsiz</span><span data-l="ru">Без звонков</span><span data-l="en">No calls</span></li>
       <li><span data-l="uz">Narxlar oldindan</span><span data-l="ru">Цены заранее</span><span data-l="en">Prices up front</span></li>
       <li><span data-l="uz">To‘lov sartaroshxonada</span><span data-l="ru">Оплата в барбершопе</span><span data-l="en">Pay at the shop</span></li>
     </ul>
   </div>
   <div class="hero-art">
-    <div class="phone tilt"><img class="" data-l="uz" src="assets/uz_home.webp" alt="Fade" width="540" height="960" loading="eager"><img class="" data-l="ru" src="assets/ru_home.webp" alt="Fade" width="540" height="960" loading="eager"><img class="" data-l="en" src="assets/uz_home.webp" alt="Fade" width="540" height="960" loading="eager"></div>
-    <img class="sticker s-star float" src="assets/ai_star.webp" alt="" width="200" height="200">
-    <img class="sticker s-pin float2" src="assets/map.webp" alt="" width="200" height="200">
-    <div class="ticket pop">
-      <div class="ticket-top"><span class="dot"></span><span data-l="uz">Yozildingiz</span><span data-l="ru">Вы записаны</span><span data-l="en">You're booked</span></div>
-      <b><span data-l="uz">Ertaga · 09:30</span><span data-l="ru">Завтра · 09:30</span><span data-l="en">Tomorrow · 09:30</span></b>
-      <span class="muted"><span data-l="uz">Soch + soqol</span><span data-l="ru">Стрижка + борода</span><span data-l="en">Cut + beard</span></span>
+    <div class="pole " aria-hidden="true"><div class="pole-stripes"></div><div class="pole-shine"></div></div>
+    <div class="phone-wrap"><div class="phone hero-phone"><img data-l="uz" src="assets/uz_home.webp" alt="Fade" width="540" height="960" loading="eager" decoding="async"><img data-l="ru" src="assets/ru_home.webp" alt="Fade" width="540" height="960" loading="eager" decoding="async"><img data-l="en" src="assets/uz_home.webp" alt="Fade" width="540" height="960" loading="eager" decoding="async"></div></div>
+    <img class="sticker s-star" data-depth="1.4" src="assets/ai_star.webp" alt="" width="200" height="200">
+    <img class="sticker s-pin" data-depth="-1" src="assets/map.webp" alt="" width="200" height="200">
+    <div class="ticket "><div class="ticket-top"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9"/><path d="M5.5 10.5l3 3 6-6.5"/></svg><span data-l="uz">Yozildingiz</span><span data-l="ru">Вы записаны</span><span data-l="en">You're booked</span></div><b><span data-l="uz">Ertaga · 09:30</span><span data-l="ru">Завтра · 09:30</span><span data-l="en">Tomorrow · 09:30</span></b><span class="muted"><span data-l="uz">Soch + soqol</span><span data-l="ru">Стрижка + борода</span><span data-l="en">Cut + beard</span></span></div>
+  </div>
+  <a class="scroll-hint" href="#how" aria-label="Scroll"><span></span></a>
+</section>
+
+<section class="marquee dark" aria-hidden="true"><div class="mq-track" data-l="uz"><span class="mq-f">Soch olish</span><span class="mq-dot">✂</span><span class="mq-o">Soqol</span><span class="mq-dot">✂</span><span class="mq-f">Fade</span><span class="mq-dot">✂</span><span class="mq-o">Navbatsiz</span><span class="mq-dot">✂</span><span class="mq-f">Toshkent</span><span class="mq-dot">✂</span><span class="mq-f">Soch olish</span><span class="mq-dot">✂</span><span class="mq-o">Soqol</span><span class="mq-dot">✂</span><span class="mq-f">Fade</span><span class="mq-dot">✂</span><span class="mq-o">Navbatsiz</span><span class="mq-dot">✂</span><span class="mq-f">Toshkent</span><span class="mq-dot">✂</span></div><div class="mq-track" data-l="ru"><span class="mq-f">Стрижка</span><span class="mq-dot">✂</span><span class="mq-o">Борода</span><span class="mq-dot">✂</span><span class="mq-f">Fade</span><span class="mq-dot">✂</span><span class="mq-o">Без очереди</span><span class="mq-dot">✂</span><span class="mq-f">Ташкент</span><span class="mq-dot">✂</span><span class="mq-f">Стрижка</span><span class="mq-dot">✂</span><span class="mq-o">Борода</span><span class="mq-dot">✂</span><span class="mq-f">Fade</span><span class="mq-dot">✂</span><span class="mq-o">Без очереди</span><span class="mq-dot">✂</span><span class="mq-f">Ташкент</span><span class="mq-dot">✂</span></div><div class="mq-track" data-l="en"><span class="mq-f">Haircut</span><span class="mq-dot">✂</span><span class="mq-o">Beard</span><span class="mq-dot">✂</span><span class="mq-f">Fade</span><span class="mq-dot">✂</span><span class="mq-o">No queue</span><span class="mq-dot">✂</span><span class="mq-f">Tashkent</span><span class="mq-dot">✂</span><span class="mq-f">Haircut</span><span class="mq-dot">✂</span><span class="mq-o">Beard</span><span class="mq-dot">✂</span><span class="mq-f">Fade</span><span class="mq-dot">✂</span><span class="mq-o">No queue</span><span class="mq-dot">✂</span><span class="mq-f">Tashkent</span><span class="mq-dot">✂</span></div></section>
+
+
+<section class="show" id="how">
+  <div class="show-in wrap">
+    <div class="show-copy">
+      <p class="kicker"><span data-l="uz">Qanday ishlaydi</span><span data-l="ru">Как это работает</span><span data-l="en">How it works</span></p>
+      <h2 class="split"><span data-l="uz">Uch qadam — va siz kreslodasiz.</span><span data-l="ru">Три шага — и вы в кресле.</span><span data-l="en">Three steps to the chair.</span></h2>
+      <div class="show-steps"><div class="sstep"><span class="snum">01</span><h3><span data-l="uz">Yaqinini toping</span><span data-l="ru">Найдите рядом</span><span data-l="en">Find one nearby</span></h3><p><span data-l="uz">Xaritada atrofingizdagi sartaroshxonalar — narx va reyting bilan.</span><span data-l="ru">Барбершопы вокруг вас на карте — с ценами и рейтингом.</span><span data-l="en">Shops around you on the map, with prices and ratings.</span></p></div><div class="sstep"><span class="snum">02</span><h3><span data-l="uz">Usta va vaqtni tanlang</span><span data-l="ru">Выберите мастера и время</span><span data-l="en">Pick a barber and a time</span></h3><p><span data-l="uz">Sharhlarni o‘qing, xizmatni tanlang, bo‘sh soatni band qiling.</span><span data-l="ru">Читайте отзывы, выбирайте услугу и свободный час.</span><span data-l="en">Read reviews, choose the service, grab a free slot.</span></p></div><div class="sstep"><span class="snum">03</span><h3><span data-l="uz">Keling va o‘tiring</span><span data-l="ru">Приходите и садитесь</span><span data-l="en">Walk in and sit down</span></h3><p><span data-l="uz">Kelganingizda QR’ni skanerlang — navbat kutish yo‘q.</span><span data-l="ru">По приходу отсканируйте QR — никакого ожидания.</span><span data-l="en">Scan the shop's QR on arrival — no waiting around.</span></p></div></div>
+      <div class="show-bar"><i></i></div>
+    </div>
+    <div class="show-stage">
+      <div class="show-glow"></div>
+      <div class="phone show-phone"><div class="screens"><div class="scr"><img data-l="uz" src="assets/uz_map.webp" alt="Map" width="540" height="960" loading="lazy" decoding="async"><img data-l="ru" src="assets/ru_map.webp" alt="Map" width="540" height="960" loading="lazy" decoding="async"><img data-l="en" src="assets/uz_map.webp" alt="Map" width="540" height="960" loading="lazy" decoding="async"></div><div class="scr"><img data-l="uz" src="assets/uz_shop.webp" alt="Shop" width="540" height="960" loading="lazy" decoding="async"><img data-l="ru" src="assets/ru_shop.webp" alt="Shop" width="540" height="960" loading="lazy" decoding="async"><img data-l="en" src="assets/uz_shop.webp" alt="Shop" width="540" height="960" loading="lazy" decoding="async"></div><div class="scr"><img data-l="uz" src="assets/uz_home.webp" alt="Home" width="540" height="960" loading="lazy" decoding="async"><img data-l="ru" src="assets/ru_home.webp" alt="Home" width="540" height="960" loading="lazy" decoding="async"><img data-l="en" src="assets/uz_home.webp" alt="Home" width="540" height="960" loading="lazy" decoding="async"></div></div><div class="ticket show-ticket"><div class="ticket-top"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9"/><path d="M5.5 10.5l3 3 6-6.5"/></svg><span data-l="uz">Yozildingiz</span><span data-l="ru">Вы записаны</span><span data-l="en">You're booked</span></div><b><span data-l="uz">Ertaga · 09:30</span><span data-l="ru">Завтра · 09:30</span><span data-l="en">Tomorrow · 09:30</span></b><span class="muted"><span data-l="uz">Kelishingizni kutamiz</span><span data-l="ru">Ждём вас</span><span data-l="en">See you there</span></span></div></div>
     </div>
   </div>
 </section>
 
-<div class="perf" aria-hidden="true"><span></span></div>
+<div class="cut wrap" aria-hidden="true"><div class="cut-track"><div class="cut-done"></div></div><div class="cut-sc"><svg class="scissors-svg" viewBox="0 0 72 44" aria-hidden="true">
+<g class="bl-a"><path d="M33 22 L70 13 L68.5 18.5 Z"/><circle cx="14" cy="11" r="8.5" fill="none" stroke-width="4.5"/><path d="M21 15.5 L33 22" stroke-width="5" stroke-linecap="round"/></g>
+<g class="bl-b"><path d="M33 22 L70 31 L68.5 25.5 Z"/><circle cx="14" cy="33" r="8.5" fill="none" stroke-width="4.5"/><path d="M21 28.5 L33 22" stroke-width="5" stroke-linecap="round"/></g>
+<circle cx="33" cy="22" r="2.6" class="pivot"/></svg></div></div>
 
-<section id="how" class="wrap section">
-  <p class="kicker reveal"><span data-l="uz">Qanday ishlaydi</span><span data-l="ru">Как это работает</span><span data-l="en">How it works</span></p>
-  <h2 class="reveal"><span data-l="uz">Uch qadam — va siz kreslodasiz.</span><span data-l="ru">Три шага — и вы в кресле.</span><span data-l="en">Three steps to the chair.</span></h2>
-  <ol class="steps">
-    <li class="step reveal"><img src="assets/map.webp" alt="" width="120" height="120" loading="lazy"><span class="num">01</span>
-      <h3><span data-l="uz">Yaqinini toping</span><span data-l="ru">Найдите рядом</span><span data-l="en">Find one nearby</span></h3>
-      <p><span data-l="uz">Xaritada atrofingizdagi sartaroshxonalar, narxlar va reyting.</span><span data-l="ru">Барбершопы вокруг вас на карте — с ценами и рейтингом.</span><span data-l="en">Shops around you on the map, with prices and ratings.</span></p></li>
-    <li class="step reveal"><img src="assets/book.webp" alt="" width="120" height="120" loading="lazy"><span class="num">02</span>
-      <h3><span data-l="uz">Vaqtni tanlang</span><span data-l="ru">Выберите время</span><span data-l="en">Pick a time</span></h3>
-      <p><span data-l="uz">Ustani va bo‘sh soatni tanlang — sartarosh tasdiqlaydi.</span><span data-l="ru">Выберите мастера и свободный час — барбер подтвердит.</span><span data-l="en">Choose the barber and a free slot — they confirm it.</span></p></li>
-    <li class="step reveal"><img src="assets/cuts.webp" alt="" width="120" height="120" loading="lazy"><span class="num">03</span>
-      <h3><span data-l="uz">Keling va o‘tiring</span><span data-l="ru">Приходите и садитесь</span><span data-l="en">Walk in and sit down</span></h3>
-      <p><span data-l="uz">Kelganingizda QR kodni skanerlang — navbat kutmasdan.</span><span data-l="ru">По приходу отсканируйте QR-код — без ожидания.</span><span data-l="en">Scan the shop's QR on arrival — no waiting around.</span></p></li>
-  </ol>
-</section>
-
-<section class="ai-band">
+<section class="ai">
+  <div class="ai-bg" aria-hidden="true"></div>
   <div class="wrap ai-in">
-    <div class="ai-copy reveal">
+    <div class="ai-copy">
       <p class="kicker light"><span data-l="uz">AI sinash</span><span data-l="ru">AI-примерка</span><span data-l="en">AI try-on</span></p>
-      <h2><span data-l="uz">Soch turmagini<br>oldindan ko‘ring.</span><span data-l="ru">Посмотрите стрижку<br>заранее.</span><span data-l="en">See the cut<br>before the cut.</span></h2>
-      <p><span data-l="uz">Rasmingizga turli turmaklarni sinab ko‘ring va sartaroshga aynan nimani xohlashingizni ko‘rsating. Endi “tepasini ozroq” deb tushuntirish shart emas.</span><span data-l="ru">Примерьте разные стрижки на своё фото и покажите барберу, чего именно хотите. Больше не нужно объяснять «сверху чуть-чуть».</span><span data-l="en">Try different styles on your own photo and show your barber exactly what you want. No more explaining “just a little off the top”.</span></p>
+      <h2 class="split"><span data-l="uz">Soch turmagini oldindan ko‘ring.</span><span data-l="ru">Посмотрите стрижку заранее.</span><span data-l="en">See the cut before the cut.</span></h2>
+      <p class="fade-up"><span data-l="uz">Ilova yuzingiz shaklini telefonning o‘zida aniqlaydi va mos turmaklarni taklif qiladi. Rasmingizda sinab ko‘ring — sartaroshga aynan nimani xohlashingizni ko‘rsating.</span><span data-l="ru">Приложение определяет форму лица прямо на телефоне и подбирает подходящие стрижки. Примерьте их на своё фото и покажите барберу, чего именно хотите.</span><span data-l="en">The app reads your face shape right on your phone and suggests cuts that suit it. Try them on your photo and show your barber exactly what you want.</span></p>
     </div>
-    <img class="ai-star float" src="assets/ai_star.webp" alt="" width="320" height="320" loading="lazy">
+    
+<div class="scan" aria-hidden="true">
+  <div class="scan-ring"></div><div class="scan-ring r2"></div>
+  <div class="scan-face">
+    <img src="assets/face.webp" alt="" width="270" height="444" loading="lazy">
+    <svg class="scan-mesh" viewBox="0 0 270 444" preserveAspectRatio="none"><g class="mesh-l"><line x1="167.4" y1="111.0" x2="158.0" y2="157.2"/><line x1="158.0" y1="157.2" x2="243.0" y2="159.8"/><line x1="158.0" y1="157.2" x2="162.0" y2="194.0"/><line x1="162.0" y1="194.0" x2="237.6" y2="194.0"/><line x1="243.0" y1="159.8" x2="237.6" y2="194.0"/><line x1="162.0" y1="194.0" x2="223.0" y2="239.8"/><line x1="237.6" y1="194.0" x2="223.0" y2="239.8"/><line x1="223.0" y1="239.8" x2="213.3" y2="281.9"/><line x1="213.3" y1="281.9" x2="197.1" y2="341.9"/><line x1="197.1" y1="341.9" x2="88.0" y2="270.8"/><line x1="88.0" y1="270.8" x2="32.4" y2="222.0"/><line x1="32.4" y1="222.0" x2="167.4" y2="111.0"/><line x1="88.0" y1="270.8" x2="162.0" y2="194.0"/><line x1="213.3" y1="281.9" x2="88.0" y2="270.8"/></g><g class="mesh-d"><circle cx="158.0" cy="157.2" r="3.2"/><circle cx="243.0" cy="159.8" r="3.2"/><circle cx="162.0" cy="194.0" r="3.2"/><circle cx="237.6" cy="194.0" r="3.2"/><circle cx="223.0" cy="239.8" r="3.2"/><circle cx="213.3" cy="281.9" r="3.2"/><circle cx="197.1" cy="341.9" r="3.2"/><circle cx="88.0" cy="270.8" r="3.2"/><circle cx="32.4" cy="222.0" r="3.2"/><circle cx="167.4" cy="111.0" r="3.2"/></g></svg>
+    <div class="scan-beam"></div>
   </div>
-</section>
-
-<section class="wrap section">
-  <p class="kicker reveal"><span data-l="uz">Ilova ichida</span><span data-l="ru">Внутри приложения</span><span data-l="en">Inside the app</span></p>
-  <h2 class="reveal"><span data-l="uz">Hammasi bir joyda.</span><span data-l="ru">Всё в одном месте.</span><span data-l="en">Everything in one place.</span></h2>
-  <div class="gallery reveal" tabindex="0" aria-label="Screens">
-    <figure><div class="phone sm"><img class="" data-l="uz" src="assets/uz_home.webp" alt="Home" width="540" height="960" loading="lazy"><img class="" data-l="ru" src="assets/ru_home.webp" alt="Home" width="540" height="960" loading="lazy"><img class="" data-l="en" src="assets/uz_home.webp" alt="Home" width="540" height="960" loading="lazy"></div><figcaption><span data-l="uz">Bosh sahifa</span><span data-l="ru">Главная</span><span data-l="en">Home</span></figcaption></figure>
-    <figure><div class="phone sm"><img class="" data-l="uz" src="assets/uz_shop.webp" alt="Shop" width="540" height="960" loading="lazy"><img class="" data-l="ru" src="assets/ru_shop.webp" alt="Shop" width="540" height="960" loading="lazy"><img class="" data-l="en" src="assets/uz_shop.webp" alt="Shop" width="540" height="960" loading="lazy"></div><figcaption><span data-l="uz">Narx, reyting, sharhlar</span><span data-l="ru">Цены, рейтинг, отзывы</span><span data-l="en">Prices, ratings, reviews</span></figcaption></figure>
-    <figure><div class="phone sm"><img class="" data-l="uz" src="assets/uz_map.webp" alt="Map" width="540" height="960" loading="lazy"><img class="" data-l="ru" src="assets/ru_map.webp" alt="Map" width="540" height="960" loading="lazy"><img class="" data-l="en" src="assets/uz_map.webp" alt="Map" width="540" height="960" loading="lazy"></div><figcaption><span data-l="uz">Xaritada yaqinlari</span><span data-l="ru">Рядом на карте</span><span data-l="en">Nearby on the map</span></figcaption></figure>
+  <div class="scan-tag tag-a"><i></i><span data-l="uz">Yuz shakli: oval</span><span data-l="ru">Форма лица: овал</span><span data-l="en">Face shape: oval</span></div>
+  <div class="scan-tag tag-b"><i></i><span class="cycle" data-words="Skin fade|Pompadour|Crop|Undercut|Buzz cut">Skin fade</span></div>
+</div>
   </div>
 </section>
 
 <section class="wrap section punch-sec">
-  <div class="punch-copy reveal">
+  <div class="punch-copy">
     <p class="kicker"><span data-l="uz">Fade ballari</span><span data-l="ru">Баллы Fade</span><span data-l="en">Fade Points</span></p>
-    <h2><span data-l="uz">Har tashrif — kartangizga belgi.</span><span data-l="ru">Каждый визит — отметка в карте.</span><span data-l="en">Every visit punches your card.</span></h2>
-    <p class="lead"><span data-l="uz">Har bir soch olish va har bir taklif qilingan do‘st sizni bepul soch olishga yaqinlashtiradi.</span><span data-l="ru">Каждая стрижка и каждый приглашённый друг приближают вас к бесплатной стрижке.</span><span data-l="en">Every cut and every friend you invite moves you toward a free haircut.</span></p>
+    <h2 class="split"><span data-l="uz">Har tashrif — kartangizga belgi.</span><span data-l="ru">Каждый визит — отметка в карте.</span><span data-l="en">Every visit punches your card.</span></h2>
+    <p class="lead fade-up"><span data-l="uz">Har bir soch olish va har bir taklif qilingan do‘st sizni bepul soch olishga yaqinlashtiradi.</span><span data-l="ru">Каждая стрижка и каждый приглашённый друг приближают вас к бесплатной стрижке.</span><span data-l="en">Every cut and every friend you invite moves you toward a free haircut.</span></p>
   </div>
-  <div class="punch reveal" aria-hidden="true">
+  <div class="punch" aria-hidden="true">
     <div class="punch-head"><b>Fade</b><span><span data-l="uz">Sodiqlik kartasi</span><span data-l="ru">Карта лояльности</span><span data-l="en">Loyalty card</span></span></div>
-    <div class="holes"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i><i style="--i:9"></i><i style="--i:10"></i><i style="--i:11"></i><i style="--i:12"></i><i style="--i:13"></i><i style="--i:14"></i><i style="--i:15"></i></div>
-    <div class="punch-foot"><span data-l="uz">Bepul soch olish</span><span data-l="ru">Бесплатная стрижка</span><span data-l="en">Free haircut</span> <span>✂</span></div>
+    <div class="holes"><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i></div>
+    <div class="punch-foot"><span data-l="uz">Bepul soch olish</span><span data-l="ru">Бесплатная стрижка</span><span data-l="en">Free haircut</span> <span class="gift">✂</span></div>
   </div>
 </section>
 
 <section class="wrap">
-  <a class="barber-band reveal" href="barbers.html">
-    <div>
+  <a class="band" href="barbers.html">
+    <div class="band-stripes" aria-hidden="true"></div>
+    <div class="band-copy">
       <p class="kicker light"><span data-l="uz">Sartaroshlar uchun</span><span data-l="ru">Для барберов</span><span data-l="en">For barbers</span></p>
       <h2><span data-l="uz">Bo‘sh soatlaringizni mijozlar to‘ldirsin.</span><span data-l="ru">Пусть клиенты заполнят ваши свободные часы.</span><span data-l="en">Let clients fill your empty hours.</span></h2>
     </div>
-    <span class="band-go"><span data-l="uz">Batafsil</span><span data-l="ru">Подробнее</span><span data-l="en">Learn more</span> →</span>
-    <img src="assets/cuts.webp" alt="" width="260" height="200" loading="lazy">
+    <span class="band-go mag"><span data-l="uz">Batafsil</span><span data-l="ru">Подробнее</span><span data-l="en">Learn more</span> <span class="arr">→</span></span>
   </a>
 </section>
 
 <section id="faq" class="wrap section narrow">
-  <p class="kicker reveal"><span data-l="uz">Savollar</span><span data-l="ru">Вопросы</span><span data-l="en">FAQ</span></p>
-  <h2 class="reveal"><span data-l="uz">Ko‘p so‘raladi.</span><span data-l="ru">Часто спрашивают.</span><span data-l="en">Good questions.</span></h2>
-  <details class="qa reveal"><summary><span data-l="uz">Fade pullikmi?</span><span data-l="ru">Fade платный?</span><span data-l="en">Does Fade cost anything?</span><i aria-hidden="true"></i></summary><div class="qa-a"><span data-l="uz">Yo‘q, mijozlar uchun ilova bepul. Siz faqat soch olish uchun sartaroshxonada to‘laysiz.</span><span data-l="ru">Нет, для клиентов приложение бесплатное. Вы платите только за стрижку в барбершопе.</span><span data-l="en">No — the app is free for clients. You only pay for the haircut, at the shop.</span></div></details><details class="qa reveal"><summary><span data-l="uz">Qanday to‘layman?</span><span data-l="ru">Как оплатить?</span><span data-l="en">How do I pay?</span><i aria-hidden="true"></i></summary><div class="qa-a"><span data-l="uz">Hozircha to‘lov sartaroshxonaning o‘zida. Ilovada narx oldindan ko‘rsatiladi, kutilmagan narx bo‘lmaydi.</span><span data-l="ru">Пока оплата прямо в барбершопе. Цена видна в приложении заранее — без сюрпризов.</span><span data-l="en">For now you pay at the shop. The price is shown in the app up front, so there are no surprises.</span></div></details><details class="qa reveal"><summary><span data-l="uz">Qaysi shaharlarda ishlaydi?</span><span data-l="ru">В каких городах работает?</span><span data-l="en">Which cities?</span><i aria-hidden="true"></i></summary><div class="qa-a"><span data-l="uz">Hozircha Toshkentda. Yangi sartaroshxonalar har hafta qo‘shilmoqda.</span><span data-l="ru">Пока в Ташкенте. Новые барбершопы добавляются постоянно.</span><span data-l="en">Tashkent for now, with new shops joining all the time.</span></div></details><details class="qa reveal"><summary><span data-l="uz">Yozilishni bekor qilsam bo‘ladimi?</span><span data-l="ru">Можно отменить запись?</span><span data-l="en">Can I cancel?</span><i aria-hidden="true"></i></summary><div class="qa-a"><span data-l="uz">Ha, “Mening yozuvlarim” bo‘limidan. Iltimos, oldindan bekor qiling — sartarosh vaqtini boshqa mijozga bera oladi.</span><span data-l="ru">Да, в разделе «Мои записи». Пожалуйста, отменяйте заранее — барбер сможет отдать время другому клиенту.</span><span data-l="en">Yes, from “My bookings”. Please cancel early so the barber can give the slot to someone else.</span></div></details><details class="qa reveal"><summary><span data-l="uz">Do‘stimdan taklif kodi oldim. Qayerga kiritaman?</span><span data-l="ru">Мне прислали код друга. Куда его ввести?</span><span data-l="en">A friend sent me a code. Where does it go?</span><i aria-hidden="true"></i></summary><div class="qa-a"><span data-l="uz">Ro‘yxatdan o‘ting, so‘ng <b>Sozlamalar → Do‘stlarni taklif qiling → Do‘st kodi bormi?</b></span><span data-l="ru">Зарегистрируйтесь, затем <b>Настройки → Пригласить друзей → Есть код друга?</b></span><span data-l="en">Sign up, then <b>Settings → Invite friends &amp; earn → Have a friend's code?</b></span></div></details><details class="qa reveal"><summary><span data-l="uz">Ma’lumotlarimni qanday o‘chiraman?</span><span data-l="ru">Как удалить мои данные?</span><span data-l="en">How do I delete my data?</span><i aria-hidden="true"></i></summary><div class="qa-a"><span data-l="uz">Ilovada: Profil → Sozlamalar → Hisobni o‘chirish. Yoki <a href="delete-account.html">bu sahifadagi</a> yo‘riqnoma bo‘yicha.</span><span data-l="ru">В приложении: Профиль → Настройки → Удалить аккаунт. Или по инструкции <a href="delete-account.html">на этой странице</a>.</span><span data-l="en">In the app: Profile → Settings → Delete account, or follow <a href="delete-account.html">this page</a>.</span></div></details>
+  <p class="kicker"><span data-l="uz">Savollar</span><span data-l="ru">Вопросы</span><span data-l="en">FAQ</span></p>
+  <h2 class="split"><span data-l="uz">Ko‘p so‘raladi.</span><span data-l="ru">Часто спрашивают.</span><span data-l="en">Good questions.</span></h2>
+  <div class="faq"><details class="qa"><summary><span data-l="uz">Fade pullikmi?</span><span data-l="ru">Fade платный?</span><span data-l="en">Does Fade cost anything?</span><i aria-hidden="true"></i></summary><div class="qa-a"><div class="qa-in"><span data-l="uz">Yo‘q, mijozlar uchun ilova bepul. Siz faqat soch olish uchun sartaroshxonada to‘laysiz.</span><span data-l="ru">Нет, для клиентов приложение бесплатное. Вы платите только за стрижку в барбершопе.</span><span data-l="en">No — the app is free for clients. You only pay for the haircut, at the shop.</span></div></div></details><details class="qa"><summary><span data-l="uz">Qanday to‘layman?</span><span data-l="ru">Как оплатить?</span><span data-l="en">How do I pay?</span><i aria-hidden="true"></i></summary><div class="qa-a"><div class="qa-in"><span data-l="uz">Hozircha to‘lov sartaroshxonaning o‘zida. Ilovada narx oldindan ko‘rsatiladi, kutilmagan narx bo‘lmaydi.</span><span data-l="ru">Пока оплата прямо в барбершопе. Цена видна в приложении заранее — без сюрпризов.</span><span data-l="en">For now you pay at the shop. The price is shown in the app up front, so there are no surprises.</span></div></div></details><details class="qa"><summary><span data-l="uz">Qaysi shaharlarda ishlaydi?</span><span data-l="ru">В каких городах работает?</span><span data-l="en">Which cities?</span><i aria-hidden="true"></i></summary><div class="qa-a"><div class="qa-in"><span data-l="uz">Hozircha Toshkentda. Yangi sartaroshxonalar qo‘shilib bormoqda.</span><span data-l="ru">Пока в Ташкенте. Новые барбершопы продолжают подключаться.</span><span data-l="en">Tashkent for now, with new shops joining.</span></div></div></details><details class="qa"><summary><span data-l="uz">Yozilishni bekor qilsam bo‘ladimi?</span><span data-l="ru">Можно отменить запись?</span><span data-l="en">Can I cancel?</span><i aria-hidden="true"></i></summary><div class="qa-a"><div class="qa-in"><span data-l="uz">Ha, “Mening yozuvlarim” bo‘limidan. Iltimos, oldindan bekor qiling — sartarosh vaqtini boshqa mijozga bera oladi.</span><span data-l="ru">Да, в разделе «Мои записи». Пожалуйста, отменяйте заранее — барбер сможет отдать время другому клиенту.</span><span data-l="en">Yes, from “My bookings”. Please cancel early so the barber can give the slot to someone else.</span></div></div></details><details class="qa"><summary><span data-l="uz">Do‘stimdan taklif kodi oldim. Qayerga kiritaman?</span><span data-l="ru">Мне прислали код друга. Куда его ввести?</span><span data-l="en">A friend sent me a code. Where does it go?</span><i aria-hidden="true"></i></summary><div class="qa-a"><div class="qa-in"><span data-l="uz">Ro‘yxatdan o‘ting, so‘ng <b>Sozlamalar → Do‘stlarni taklif qiling → Do‘st kodi bormi?</b></span><span data-l="ru">Зарегистрируйтесь, затем <b>Настройки → Пригласить друзей → Есть код друга?</b></span><span data-l="en">Sign up, then <b>Settings → Invite friends &amp; earn → Have a friend's code?</b></span></div></div></details><details class="qa"><summary><span data-l="uz">Ma’lumotlarimni qanday o‘chiraman?</span><span data-l="ru">Как удалить мои данные?</span><span data-l="en">How do I delete my data?</span><i aria-hidden="true"></i></summary><div class="qa-a"><div class="qa-in"><span data-l="uz">Ilovada: Profil → Sozlamalar → Hisobni o‘chirish. Yoki <a href="delete-account.html">bu sahifadagi</a> yo‘riqnoma bo‘yicha.</span><span data-l="ru">В приложении: Профиль → Настройки → Удалить аккаунт. Или по инструкции <a href="delete-account.html">на этой странице</a>.</span><span data-l="en">In the app: Profile → Settings → Delete account, or follow <a href="delete-account.html">this page</a>.</span></div></div></details></div>
 </section>
 
-<section class="wrap final reveal">
-  <h2><span data-l="uz">Keyingi soch olishingiz — Fade’da.</span><span data-l="ru">Следующая стрижка — через Fade.</span><span data-l="en">Book your next cut on Fade.</span></h2>
-  <a class="btn btn-play" href="https://play.google.com/store/apps/details?id=uz.fade.app" rel="noopener"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3.6 2.2c-.3.3-.4.7-.4 1.2v17.2c0 .5.1.9.4 1.2l9.7-9.8-9.7-9.8Zm10.6 10.7 2.7 2.7-11 6.3c-.4.2-.8.3-1.1.2l9.4-9.2Zm0-1.8L4.8 1.9c.3-.1.7 0 1.1.2l11 6.3-2.7 2.7Zm4.3-2.1 3 1.7c.9.5.9 1.8 0 2.3l-3 1.7-3-3 3-2.7Z"/></svg><span class="btn-stack"><small><span data-l="uz">Yuklab oling</span><span data-l="ru">Скачайте в</span><span data-l="en">Get it on</span></small><b>Google Play</b></span></a>
+<section class="final">
+  <div class="final-word" aria-hidden="true">Fade</div>
+  <h2 class="split"><span data-l="uz">Keyingi soch olishingiz — bir tegishda.</span><span data-l="ru">Следующая стрижка — в одно касание.</span><span data-l="en">Your next cut is one tap away.</span></h2>
+  <a class="btn btn-play mag big" href="https://play.google.com/store/apps/details?id=uz.fade.app" rel="noopener"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3.6 2.2c-.3.3-.4.7-.4 1.2v17.2c0 .5.1.9.4 1.2l9.7-9.8-9.7-9.8Zm10.6 10.7 2.7 2.7-11 6.3c-.4.2-.8.3-1.1.2l9.4-9.2Zm0-1.8L4.8 1.9c.3-.1.7 0 1.1.2l11 6.3-2.7 2.7Zm4.3-2.1 3 1.7c.9.5.9 1.8 0 2.3l-3 1.7-3-3 3-2.7Z"/></svg><span class="btn-stack"><small><span data-l="uz">Yuklab oling</span><span data-l="ru">Скачайте в</span><span data-l="en">Get it on</span></small><b>Google Play</b></span></a>
 </section>
 </main>
 
@@ -139,7 +156,7 @@
       <p class="muted"><span data-l="uz">Toshkent sartaroshlariga onlayn navbat.</span><span data-l="ru">Онлайн-запись к барберам Ташкента.</span><span data-l="en">Online booking for Tashkent barbers.</span></p>
     </div>
     <div class="foot-col">
-      <b><span data-l="uz">Fade</span><span data-l="ru">Fade</span><span data-l="en">Fade</span></b>
+      <b>Fade</b>
       <a href="index.html"><span data-l="uz">Mijozlar uchun</span><span data-l="ru">Для клиентов</span><span data-l="en">For clients</span></a>
       <a href="barbers.html"><span data-l="uz">Sartaroshlar uchun</span><span data-l="ru">Для барберов</span><span data-l="en">For barbers</span></a>
       <a href="https://play.google.com/store/apps/details?id=uz.fade.app" rel="noopener">Google Play</a>
@@ -158,6 +175,8 @@
   </div>
   <div class="wrap legal-line muted">© 2026 Fade</div>
 </footer>
-<script src="site.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<script src="site.js" defer></script>
 </body>
 </html>
