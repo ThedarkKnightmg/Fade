@@ -1,5 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Fade</title><script>
-(function(){var m=location.pathname.match(/\/Fade\/(i|b|join)\/([^\/?#]+)/);
+(function(){var base=location.pathname.indexOf('/Fade/')===0?'/Fade/':'/';
+var m=location.pathname.match(/\/(i|b|join)\/([^\/?#]+)/);
 var q={i:'c',b:'h',join:'s'};
-location.replace(m?'/Fade/'+m[1]+'/?'+q[m[1]]+'='+m[2]:'/Fade/');})();
+location.replace(m?base+m[1]+'/?'+q[m[1]]+'='+m[2]:base);})();
 </script></head><body></body></html>
