@@ -35,6 +35,69 @@ def play_btn(extra=""):
             f'<small>{T("Yuklab oling", "Скачайте в", "Get it on")}</small><b>Google Play</b></span></a>')
 
 
+CLIPPER = ('<svg viewBox="0 0 120 48" aria-hidden="true">'
+           '<rect class="cl-body" x="0" y="8" width="80" height="32" rx="16"/>'
+           '<rect class="cl-stripe" x="14" y="20" width="30" height="8" rx="4"/><circle class="cl-dot" cx="58" cy="24" r="4"/>'
+           '<rect class="cl-neck" x="76" y="11" width="13" height="26" rx="4"/>'
+           '<rect class="cl-blade" x="87" y="5" width="14" height="38" rx="3"/><g class="cl-blade">'
+           + "".join('<rect x="100" y="%.1f" width="10" height="2.6" rx="1.3"/>' % (6.5 + i * 4.6) for i in range(8))
+           + '</g></svg>')
+
+TICK = '<svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9"/><path d="M5.5 10.5l3 3 6-6.5"/></svg>'
+
+
+def hair_bits():
+    return ('<canvas class="hair" aria-hidden="true"></canvas>'
+            f'<div class="trim-hint" aria-hidden="true"><span>{T("Sochimni oling ✂", "Подстриги меня ✂", "Trim me ✂")}</span></div>'
+            f'<div class="fresh" aria-hidden="true">{T("Toza fade ✓", "Свежий фейд ✓", "Fresh fade ✓")}</div>')
+
+
+def booth():
+    days = [T("Bugun", "Сегодня", "Today"), T("Ertaga", "Завтра", "Tomorrow"), T("Indinga", "Послезавтра", "In 2 days")]
+    times = ["09:30", "10:15", "11:00", "12:30", "14:00", "15:30", "17:00", "18:30"]
+    d = "".join(f'<button type="button"{" class=on" if i == 1 else ""}>{x}</button>' for i, x in enumerate(days))
+    t = "".join(f'<button type="button">{x}</button>' for x in times)
+    return f"""
+<div class="booth" data-demo="book">
+  <span class="demo-tag">Demo</span>
+  <div class="booth-head"><img src="assets/face.webp" alt="" width="54" height="54" loading="lazy">
+    <div><b>{T("Soch + soqol", "Стрижка + борода", "Cut + beard")}</b><span>{T("45 daqiqa", "45 минут", "45 minutes")}</span></div></div>
+  <div class="days" data-on="1">{d}<i class="day-ink"></i></div>
+  <div class="slots">{t}</div>
+  <div class="printer">
+    <div class="printer-slot"></div>
+    <div class="paper">
+      <p class="paper-hint">{T("Vaqtni bosing — chipta shu yerdan chiqadi", "Нажмите на время — отсюда выйдет талон", "Tap a time — your ticket prints here")}</p>
+      <div class="pticket"><div class="ticket-top">{TICK}{T("Yozildingiz", "Вы записаны", "You're booked")}</div>
+        <b><span data-out="day"></span> · <span data-out="time"></span></b>
+        <small>{T("Bu demo. Haqiqiy navbat — ilovada.", "Это демо. Настоящая запись — в приложении.", "This is a demo. The real thing is in the app.")}</small></div>
+    </div>
+  </div>
+  <a class="btn booth-cta" href="{PLAY}" rel="noopener">{T("Ilovada band qilish", "Записаться в приложении", "Book it in the app")} <span class="arr">→</span></a>
+</div>"""
+
+
+def desk():
+    reqs = [("A", "Aziz", T("Soch olish", "Стрижка", "Haircut"), "15:00", 60000),
+            ("J", "Jasur", T("Soch + soqol", "Стрижка + борода", "Cut + beard"), "16:30", 90000),
+            ("S", "Sardor", T("Soch olish", "Стрижка", "Haircut"), "18:00", 60000)]
+    som = T("so‘m", "сум", "so‘m")
+    rows = "".join(f'<div class="trow"><span>{t}</span><i><span>{n} · {sv}</span></i></div>' for _a, n, sv, t, _p in reqs)
+    cards = "".join(
+        f'<div class="req" data-price="{p}"><div class="req-av">{a}</div><div><b>{n}</b><span>{sv} · {t} · {format(p, ",").replace(",", "&nbsp;")}</span></div>'
+        f'<button type="button">{T("Qabul qilish", "Принять", "Accept")}</button></div>'
+        for a, n, sv, t, p in reqs)
+    return f"""
+<div class="desk" data-demo="accept">
+  <span class="demo-tag">Demo</span>
+  <div class="desk-top"><span>{T("Bugungi daromad", "Доход за сегодня", "Today's earnings")}</span><b class="earn"><span data-earn>0</span> <small>{som}</small></b></div>
+  <div class="timeline">{rows}</div>
+  <div class="req-stack">{cards}</div>
+  <div class="desk-done"><span>{T("Kun to‘ldi! Haqiqiy mijozlar — ilovada.", "День заполнен! Настоящие клиенты — в приложении.", "Day's full! Real clients are in the app.")}</span>
+    <button type="button" data-reset>{T("Yana", "Ещё раз", "Again")}</button></div>
+</div>"""
+
+
 def pole(cls=""):
     return f'<div class="pole {cls}" aria-hidden="true"><div class="pole-stripes"></div><div class="pole-shine"></div></div>'
 
@@ -126,7 +189,7 @@ def showcase(sec_id, kicker, title, steps, screens, extra=""):
     </div>
     <div class="show-stage">
       <div class="show-glow"></div>
-      <div class="phone show-phone"><div class="screens">{sc}</div>{extra}</div>
+      <div class="phone-rise"><div class="phone show-phone"><div class="screens">{sc}</div>{extra}</div></div>
     </div>
   </div>
 </section>'''
@@ -160,12 +223,14 @@ def doc(title, desc, body, active):
 <script>
 (function(){{var d=document.documentElement,r=matchMedia('(prefers-reduced-motion: reduce)').matches;
 if(r)return;d.classList.add('js');
-try{{if(!sessionStorage.getItem('fade-intro')){{d.classList.add('intro');sessionStorage.setItem('fade-intro','1')}}}}catch(e){{}}
+try{{var s=sessionStorage;if(!s.getItem('fade-intro')||s.getItem('fade-nav')){{d.classList.add('intro');s.setItem('fade-intro','1')}}}}catch(e){{}}
 setTimeout(function(){{if(!window.gsap){{d.classList.remove('js','intro')}}}},3500);}})();
 </script>
 </head>
 <body class="uz">
-<div class="intro-ov" aria-hidden="true"><div class="intro-a"></div><div class="intro-b"></div><div class="intro-line"></div><div class="intro-sc">{SCISSORS}</div><div class="intro-word">Fade</div></div>
+<div class="intro-ov" aria-hidden="true"><div class="intro-word">Fade</div></div>
+<canvas class="clips" aria-hidden="true"></canvas>
+<div class="clipper" aria-hidden="true"><div class="clipper-in">{CLIPPER}</div></div>
 <div class="cursor" aria-hidden="true"></div><div class="cursor-dot" aria-hidden="true"></div>
 {nav(active)}
 <main>{body}</main>
@@ -202,6 +267,7 @@ def scan():
 HOME = f'''
 <section class="hero wrap">
   <div class="hero-copy">
+    {hair_bits()}
     <p class="eyebrow">{T("Toshkent · mijozlar uchun bepul", "Ташкент · бесплатно для клиентов", "Tashkent · free for clients")}</p>
     <h1 class="h-split">{T("Sartaroshga navbat — <em>bir tegishda.</em>", "Запись к барберу — <em>в одно касание.</em>", "Your barber, <em>booked in a tap.</em>")}</h1>
     <p class="lead">{T("Yaqin atrofdagi sartaroshxonalarni xaritada toping, narx va sharhlarni ko‘ring, bo‘sh vaqtni tanlang. Qo‘ng‘iroq ham, navbat kutish ham yo‘q.",
@@ -256,6 +322,15 @@ HOME = f'''
     </div>
     {scan()}
   </div>
+</section>
+
+<section class="wrap section demo-sec" id="try">
+  <div>
+    <p class="kicker">{T("Sinab ko‘ring", "Попробуйте", "Try it")}</p>
+    <h2 class="split">{T("Vaqtni tanlang. Tamom.", "Выберите время. Готово.", "Pick a time. Done.")}</h2>
+    <p class="lead fade-up">{T("Shu yerning o‘zida bosib ko‘ring — ilovada ham xuddi shunday tez.", "Нажмите прямо здесь — в приложении всё так же быстро.", "Tap right here — it's just as quick in the app.")}</p>
+  </div>
+  {booth()}
 </section>
 
 <section class="wrap section punch-sec">
@@ -318,6 +393,7 @@ def perk(icon, h, p):
 BARBERS = f'''
 <section class="hero wrap">
   <div class="hero-copy">
+    {hair_bits()}
     <p class="eyebrow">{T("Sartaroshlar va sartaroshxonalar uchun", "Для барберов и барбершопов", "For barbers and barbershops")}</p>
     <h1 class="h-split">{T("Bo‘sh kreslo — <em>yo‘qotilgan pul.</em>", "Пустое кресло — <em>потерянные деньги.</em>", "An empty chair <em>is lost money.</em>")}</h1>
     <p class="lead">{T("Fade yaqin atrofdagi mijozlarga sizni xaritada ko‘rsatadi va ular bo‘sh soatlaringizga o‘zlari yoziladi. Qo‘ng‘iroqlarsiz, daftarsiz.",
@@ -369,6 +445,15 @@ BARBERS = f'''
     {perk("★", T("Sharhlar sizniki", "Отзывы — ваши", "Reviews that are yours"), T("Haqiqiy tashriflardan keyingi sharhlar profilingizga yoziladi.", "Отзывы после реальных визитов пишутся в ваш профиль.", "Reviews from real visits go to your own profile."))}
     {perk("✂", T("Doimiy mijozlar", "Постоянные клиенты", "Regulars come back"), T("Mijoz “odatdagisini” bir tegishda qayta band qiladi.", "Клиент повторяет «как обычно» в одно касание.", "Clients rebook “the usual” in one tap."))}
   </ul>
+</section>
+
+<section class="wrap section demo-sec" id="try">
+  <div>
+    <p class="kicker">{T("Sinab ko‘ring", "Попробуйте", "Try it")}</p>
+    <h2 class="split">{T("Kunni uch tegishda to‘ldiring.", "Заполните день в три касания.", "Fill your day in three taps.")}</h2>
+    <p class="lead fade-up">{T("So‘rovlarni qabul qiling va daromad qanday o‘sishini ko‘ring.", "Принимайте заявки и смотрите, как растёт доход.", "Accept the requests and watch the earnings add up.")}</p>
+  </div>
+  {desk()}
 </section>
 
 <section class="wrap section join-sec">
