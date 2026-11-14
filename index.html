@@ -19,15 +19,14 @@
 <script>
 (function(){var d=document.documentElement,r=matchMedia('(prefers-reduced-motion: reduce)').matches;
 if(r)return;d.classList.add('js');
-try{if(!sessionStorage.getItem('fade-intro')){d.classList.add('intro');sessionStorage.setItem('fade-intro','1')}}catch(e){}
+try{var s=sessionStorage;if(!s.getItem('fade-intro')||s.getItem('fade-nav')){d.classList.add('intro');s.setItem('fade-intro','1')}}catch(e){}
 setTimeout(function(){if(!window.gsap){d.classList.remove('js','intro')}},3500);})();
 </script>
 </head>
 <body class="uz">
-<div class="intro-ov" aria-hidden="true"><div class="intro-a"></div><div class="intro-b"></div><div class="intro-line"></div><div class="intro-sc"><svg class="scissors-svg" viewBox="0 0 72 44" aria-hidden="true">
-<g class="bl-a"><path d="M33 22 L70 13 L68.5 18.5 Z"/><circle cx="14" cy="11" r="8.5" fill="none" stroke-width="4.5"/><path d="M21 15.5 L33 22" stroke-width="5" stroke-linecap="round"/></g>
-<g class="bl-b"><path d="M33 22 L70 31 L68.5 25.5 Z"/><circle cx="14" cy="33" r="8.5" fill="none" stroke-width="4.5"/><path d="M21 28.5 L33 22" stroke-width="5" stroke-linecap="round"/></g>
-<circle cx="33" cy="22" r="2.6" class="pivot"/></svg></div><div class="intro-word">Fade</div></div>
+<div class="intro-ov" aria-hidden="true"><div class="intro-word">Fade</div></div>
+<canvas class="clips" aria-hidden="true"></canvas>
+<div class="clipper" aria-hidden="true"><div class="clipper-in"><svg viewBox="0 0 120 48" aria-hidden="true"><rect class="cl-body" x="0" y="8" width="80" height="32" rx="16"/><rect class="cl-stripe" x="14" y="20" width="30" height="8" rx="4"/><circle class="cl-dot" cx="58" cy="24" r="4"/><rect class="cl-neck" x="76" y="11" width="13" height="26" rx="4"/><rect class="cl-blade" x="87" y="5" width="14" height="38" rx="3"/><g class="cl-blade"><rect x="100" y="6.5" width="10" height="2.6" rx="1.3"/><rect x="100" y="11.1" width="10" height="2.6" rx="1.3"/><rect x="100" y="15.7" width="10" height="2.6" rx="1.3"/><rect x="100" y="20.3" width="10" height="2.6" rx="1.3"/><rect x="100" y="24.9" width="10" height="2.6" rx="1.3"/><rect x="100" y="29.5" width="10" height="2.6" rx="1.3"/><rect x="100" y="34.1" width="10" height="2.6" rx="1.3"/><rect x="100" y="38.7" width="10" height="2.6" rx="1.3"/></g></svg></div></div>
 <div class="cursor" aria-hidden="true"></div><div class="cursor-dot" aria-hidden="true"></div>
 
 <div class="progress" aria-hidden="true"></div>
@@ -44,6 +43,7 @@ setTimeout(function(){if(!window.gsap){d.classList.remove('js','intro')}},3500);
 <main>
 <section class="hero wrap">
   <div class="hero-copy">
+    <canvas class="hair" aria-hidden="true"></canvas><div class="trim-hint" aria-hidden="true"><span><span data-l="uz">Sochimni oling ✂</span><span data-l="ru">Подстриги меня ✂</span><span data-l="en">Trim me ✂</span></span></div><div class="fresh" aria-hidden="true"><span data-l="uz">Toza fade ✓</span><span data-l="ru">Свежий фейд ✓</span><span data-l="en">Fresh fade ✓</span></div>
     <p class="eyebrow"><span data-l="uz">Toshkent · mijozlar uchun bepul</span><span data-l="ru">Ташкент · бесплатно для клиентов</span><span data-l="en">Tashkent · free for clients</span></p>
     <h1 class="h-split"><span data-l="uz">Sartaroshga navbat — <em>bir tegishda.</em></span><span data-l="ru">Запись к барберу — <em>в одно касание.</em></span><span data-l="en">Your barber, <em>booked in a tap.</em></span></h1>
     <p class="lead"><span data-l="uz">Yaqin atrofdagi sartaroshxonalarni xaritada toping, narx va sharhlarni ko‘ring, bo‘sh vaqtni tanlang. Qo‘ng‘iroq ham, navbat kutish ham yo‘q.</span><span data-l="ru">Найдите барбершопы рядом на карте, сравните цены и отзывы, выберите свободное время. Без звонков и очередей.</span><span data-l="en">Find barbershops near you on the map, compare prices and reviews, pick a free slot. No calls, no queues.</span></p>
@@ -80,7 +80,7 @@ setTimeout(function(){if(!window.gsap){d.classList.remove('js','intro')}},3500);
     </div>
     <div class="show-stage">
       <div class="show-glow"></div>
-      <div class="phone show-phone"><div class="screens"><div class="scr"><img data-l="uz" src="assets/uz_map.webp" alt="Map" width="540" height="960" loading="lazy" decoding="async"><img data-l="ru" src="assets/ru_map.webp" alt="Map" width="540" height="960" loading="lazy" decoding="async"><img data-l="en" src="assets/uz_map.webp" alt="Map" width="540" height="960" loading="lazy" decoding="async"></div><div class="scr"><img data-l="uz" src="assets/uz_shop.webp" alt="Shop" width="540" height="960" loading="lazy" decoding="async"><img data-l="ru" src="assets/ru_shop.webp" alt="Shop" width="540" height="960" loading="lazy" decoding="async"><img data-l="en" src="assets/uz_shop.webp" alt="Shop" width="540" height="960" loading="lazy" decoding="async"></div><div class="scr"><img data-l="uz" src="assets/uz_home.webp" alt="Home" width="540" height="960" loading="lazy" decoding="async"><img data-l="ru" src="assets/ru_home.webp" alt="Home" width="540" height="960" loading="lazy" decoding="async"><img data-l="en" src="assets/uz_home.webp" alt="Home" width="540" height="960" loading="lazy" decoding="async"></div></div><div class="ticket show-ticket"><div class="ticket-top"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9"/><path d="M5.5 10.5l3 3 6-6.5"/></svg><span data-l="uz">Yozildingiz</span><span data-l="ru">Вы записаны</span><span data-l="en">You're booked</span></div><b><span data-l="uz">Ertaga · 09:30</span><span data-l="ru">Завтра · 09:30</span><span data-l="en">Tomorrow · 09:30</span></b><span class="muted"><span data-l="uz">Kelishingizni kutamiz</span><span data-l="ru">Ждём вас</span><span data-l="en">See you there</span></span></div></div>
+      <div class="phone-rise"><div class="phone show-phone"><div class="screens"><div class="scr"><img data-l="uz" src="assets/uz_map.webp" alt="Map" width="540" height="960" loading="lazy" decoding="async"><img data-l="ru" src="assets/ru_map.webp" alt="Map" width="540" height="960" loading="lazy" decoding="async"><img data-l="en" src="assets/uz_map.webp" alt="Map" width="540" height="960" loading="lazy" decoding="async"></div><div class="scr"><img data-l="uz" src="assets/uz_shop.webp" alt="Shop" width="540" height="960" loading="lazy" decoding="async"><img data-l="ru" src="assets/ru_shop.webp" alt="Shop" width="540" height="960" loading="lazy" decoding="async"><img data-l="en" src="assets/uz_shop.webp" alt="Shop" width="540" height="960" loading="lazy" decoding="async"></div><div class="scr"><img data-l="uz" src="assets/uz_home.webp" alt="Home" width="540" height="960" loading="lazy" decoding="async"><img data-l="ru" src="assets/ru_home.webp" alt="Home" width="540" height="960" loading="lazy" decoding="async"><img data-l="en" src="assets/uz_home.webp" alt="Home" width="540" height="960" loading="lazy" decoding="async"></div></div><div class="ticket show-ticket"><div class="ticket-top"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9"/><path d="M5.5 10.5l3 3 6-6.5"/></svg><span data-l="uz">Yozildingiz</span><span data-l="ru">Вы записаны</span><span data-l="en">You're booked</span></div><b><span data-l="uz">Ertaga · 09:30</span><span data-l="ru">Завтра · 09:30</span><span data-l="en">Tomorrow · 09:30</span></b><span class="muted"><span data-l="uz">Kelishingizni kutamiz</span><span data-l="ru">Ждём вас</span><span data-l="en">See you there</span></span></div></div></div>
     </div>
   </div>
 </section>
@@ -110,6 +110,32 @@ setTimeout(function(){if(!window.gsap){d.classList.remove('js','intro')}},3500);
   <div class="scan-tag tag-b"><i></i><span class="cycle" data-words="Skin fade|Pompadour|Crop|Undercut|Buzz cut">Skin fade</span></div>
 </div>
   </div>
+</section>
+
+<section class="wrap section demo-sec" id="try">
+  <div>
+    <p class="kicker"><span data-l="uz">Sinab ko‘ring</span><span data-l="ru">Попробуйте</span><span data-l="en">Try it</span></p>
+    <h2 class="split"><span data-l="uz">Vaqtni tanlang. Tamom.</span><span data-l="ru">Выберите время. Готово.</span><span data-l="en">Pick a time. Done.</span></h2>
+    <p class="lead fade-up"><span data-l="uz">Shu yerning o‘zida bosib ko‘ring — ilovada ham xuddi shunday tez.</span><span data-l="ru">Нажмите прямо здесь — в приложении всё так же быстро.</span><span data-l="en">Tap right here — it's just as quick in the app.</span></p>
+  </div>
+  
+<div class="booth" data-demo="book">
+  <span class="demo-tag">Demo</span>
+  <div class="booth-head"><img src="assets/face.webp" alt="" width="54" height="54" loading="lazy">
+    <div><b><span data-l="uz">Soch + soqol</span><span data-l="ru">Стрижка + борода</span><span data-l="en">Cut + beard</span></b><span><span data-l="uz">45 daqiqa</span><span data-l="ru">45 минут</span><span data-l="en">45 minutes</span></span></div></div>
+  <div class="days" data-on="1"><button type="button"><span data-l="uz">Bugun</span><span data-l="ru">Сегодня</span><span data-l="en">Today</span></button><button type="button" class=on><span data-l="uz">Ertaga</span><span data-l="ru">Завтра</span><span data-l="en">Tomorrow</span></button><button type="button"><span data-l="uz">Indinga</span><span data-l="ru">Послезавтра</span><span data-l="en">In 2 days</span></button><i class="day-ink"></i></div>
+  <div class="slots"><button type="button">09:30</button><button type="button">10:15</button><button type="button">11:00</button><button type="button">12:30</button><button type="button">14:00</button><button type="button">15:30</button><button type="button">17:00</button><button type="button">18:30</button></div>
+  <div class="printer">
+    <div class="printer-slot"></div>
+    <div class="paper">
+      <p class="paper-hint"><span data-l="uz">Vaqtni bosing — chipta shu yerdan chiqadi</span><span data-l="ru">Нажмите на время — отсюда выйдет талон</span><span data-l="en">Tap a time — your ticket prints here</span></p>
+      <div class="pticket"><div class="ticket-top"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9"/><path d="M5.5 10.5l3 3 6-6.5"/></svg><span data-l="uz">Yozildingiz</span><span data-l="ru">Вы записаны</span><span data-l="en">You're booked</span></div>
+        <b><span data-out="day"></span> · <span data-out="time"></span></b>
+        <small><span data-l="uz">Bu demo. Haqiqiy navbat — ilovada.</span><span data-l="ru">Это демо. Настоящая запись — в приложении.</span><span data-l="en">This is a demo. The real thing is in the app.</span></small></div>
+    </div>
+  </div>
+  <a class="btn booth-cta" href="https://play.google.com/store/apps/details?id=uz.fade.app" rel="noopener"><span data-l="uz">Ilovada band qilish</span><span data-l="ru">Записаться в приложении</span><span data-l="en">Book it in the app</span> <span class="arr">→</span></a>
+</div>
 </section>
 
 <section class="wrap section punch-sec">
